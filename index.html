@@ -55,10 +55,10 @@
     .periodLabel{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:900}
     .periodTitle{font-size:clamp(16px,2vw,24px);line-height:1.05;font-weight:950;letter-spacing:-.45px}
     .periodMeta{display:flex;gap:6px;flex-wrap:wrap}
-    .pill{display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;font-size:10px;font-weight:900;border:1px solid var(--line);background:var(--soft);color:var(--muted)}
     .countdownWrap{display:grid;justify-items:end;gap:4px;min-width:110px}
     .countdown{font-size:clamp(18px,2vw,28px);line-height:1;font-weight:950;letter-spacing:-.45px}
     .countdownNote{font-size:11px;color:var(--muted);font-weight:800;text-align:right}
+    .pill{display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;font-size:10px;font-weight:900;border:1px solid var(--line);background:var(--soft);color:var(--muted)}
     .progress{height:8px;border-radius:999px;background:#eef2f7;overflow:hidden}
     .progressBar{height:100%;width:0;background:#111827;transition:width .4s ease}
     .headerRight{display:grid;justify-items:end;gap:8px}
@@ -240,11 +240,12 @@
       { name:'MEETING', start:'08:30', end:'09:00' },
       { name:'PERIOD 1', start:'09:00', end:'09:55' },
       { name:'PERIOD 2', start:'10:00', end:'10:55' },
+       { name:'TE MAAHUIR', start:'10:55', end:'11:25' },
       { name:'BREAK 1', start:'11:25', end:'12:00' },
       { name:'PERIOD 3', start:'12:00', end:'12:55' },
       { name:'BPERIOD 4', start:'13:00', end:'13:55' },
       { name:'BREAK 2', start:'13:55', end:'14:20' },
-      { name:'PERIOD 5', start:'14:20', end:'15:00' }
+      { name:'PERIOD 5', start:'14:20', end:'15:15' }
     ];
     const DEFAULT_STATE = {
       anchor:'',
@@ -258,6 +259,7 @@
 
     const state = loadState();
     const fileHandles = Object.create(null);
+    const runtimeSourceEvents = Object.create(null);
     const els = mapEls();
     let loadedEvents = [];
     let folderHandle = null;
@@ -329,6 +331,7 @@
         state.sources = [];
         loadedEvents = [];
         errors = [];
+        clearRuntimeSourceEvents();
         clearSavedFolderHandle();
         folderHandle = null;
         saveState();
@@ -388,7 +391,7 @@
     async function addFeed(){
       const raw = (els.feedUrl.value || '').trim();
       if (!raw) return;
-      state.sources.push({ id:uid(), type:'url', name:(els.feedName.value || '').trim() || prettyName(raw), value:normalizeFeedUrl(raw), enabled:true, status:'', cachedText:'', cachedAt:0 });
+      state.sources.push({ id:uid(), type:'url', name:(els.feedName.value || '').trim() || prettyName(raw), value:normalizeFeedUrl(raw), enabled:true, status:'', cachedText:'', cachedAt:0, lastLoadedVia:'' });
       els.feedUrl.value = '';
       els.feedName.value = '';
       saveState();
@@ -400,7 +403,9 @@
       const files = [...(els.icsFileInput.files || [])];
       for (const file of files){
         const text = await file.text();
-        state.sources.push({ id:uid(), type:'text', name:file.name.replace(/\.ics$/i,''), value:text, enabled:true, status:'Imported file', cachedText:'', cachedAt:Date.now() });
+        const id = uid();
+        state.sources.push({ id, type:'text', name:file.name.replace(/\.ics$/i,''), value:text, enabled:true, status:'Imported file', cachedText:text, cachedAt:Date.now(), lastLoadedVia:'imported file' });
+        runtimeSourceEvents[id] = dedupeEvents(parseICS(text, file.name.replace(/\.ics$/i,''), getExpansionRange().start, getExpansionRange().end));
       }
       els.icsFileInput.value = '';
       saveState();
@@ -411,7 +416,10 @@
     async function importPasted(){
       const text = (els.pasteText.value || '').trim();
       if (!text) return;
-      state.sources.push({ id:uid(), type:'text', name:(els.pasteName.value || 'Pasted calendar').trim(), value:text, enabled:true, status:'Imported paste', cachedText:'', cachedAt:Date.now() });
+      const id = uid();
+      const name = (els.pasteName.value || 'Pasted calendar').trim();
+      state.sources.push({ id, type:'text', name, value:text, enabled:true, status:'Imported paste', cachedText:text, cachedAt:Date.now(), lastLoadedVia:'pasted ICS' });
+      runtimeSourceEvents[id] = dedupeEvents(parseICS(text, name, getExpansionRange().start, getExpansionRange().end));
       els.pasteText.value = '';
       els.pasteName.value = '';
       saveState();
@@ -433,7 +441,8 @@
         const text = await file.text();
         const id = uid();
         fileHandles[id] = handle;
-        state.sources.push({ id, type:'fileHandle', name:file.name.replace(/\.ics$/i,''), value:file.name, enabled:true, status:'Mirror file linked for this session', cachedText:text, cachedAt:Date.now() });
+        state.sources.push({ id, type:'fileHandle', name:file.name.replace(/\.ics$/i,''), value:file.name, enabled:true, status:'Mirror file linked for this session', cachedText:text, cachedAt:Date.now(), lastLoadedVia:'mirror file' });
+        runtimeSourceEvents[id] = dedupeEvents(parseICS(text, file.name.replace(/\.ics$/i,''), getExpansionRange().start, getExpansionRange().end));
         saveState();
         render();
         reloadSources();
@@ -482,9 +491,11 @@
             existing.value = name;
             existing.type = 'folderFile';
           }else{
-            state.sources.push({ id, type:'folderFile', name:name.replace(/\.ics$/i,''), value:name, enabled:true, status:'Folder file discovered', cachedText:'', cachedAt:0 });
+            state.sources.push({ id, type:'folderFile', name:name.replace(/\.ics$/i,''), value:name, enabled:true, status:'Folder file discovered', cachedText:'', cachedAt:0, lastLoadedVia:'folder file' });
           }
         }
+        const removedFolderIds = state.sources.filter(source => source.type === 'folderFile' && !seen.has(String(source.value || '').toLowerCase())).map(source => source.id);
+        removedFolderIds.forEach(clearSourceRuntimeState);
         state.sources = state.sources.filter(source => source.type !== 'folderFile' || seen.has(String(source.value || '').toLowerCase()));
         saveState();
         render();
@@ -565,20 +576,22 @@
       const all = [];
       for (const source of state.sources){
         if (!source.enabled) continue;
+        let parsed = null;
         try{
           let text = '';
-          let usedCache = false;
+          let usedCacheText = false;
+          let via = source.lastLoadedVia || '';
+
           if (source.type === 'url'){
             try{
               const fetched = await fetchCalendarUrl(source.value);
               text = fetched.text;
-              source.cachedText = text;
-              source.cachedAt = Date.now();
-              source.lastLoadedVia = fetched.via;
+              via = fetched.via;
             }catch(err){
               if (source.cachedText){
                 text = source.cachedText;
-                usedCache = true;
+                usedCacheText = true;
+                via = 'cached copy';
               }else{
                 throw err;
               }
@@ -588,31 +601,42 @@
             if (!handle) throw new Error('Mirror file needs to be re-opened for this session');
             const file = await handle.getFile();
             text = await file.text();
-            source.cachedText = text;
-            source.cachedAt = Date.now();
+            via = 'mirror file';
           }else if (source.type === 'folderFile'){
             if (!folderHandle) throw new Error('Folder needs to be linked again');
             const handle = await folderHandle.getFileHandle(source.value);
             const file = await handle.getFile();
             text = await file.text();
-            source.cachedText = text;
-            source.cachedAt = Date.now();
+            via = 'folder file';
           }else{
             text = source.value || '';
+            via = source.lastLoadedVia || 'imported ICS';
           }
-          const parsed = dedupeEvents(parseICS(text, source.name, range.start, range.end));
-          if (usedCache){
+
+          parsed = dedupeEvents(parseICS(text, source.name, range.start, range.end));
+          runtimeSourceEvents[source.id] = parsed;
+          source.cachedText = text;
+          source.cachedAt = Date.now();
+          source.lastLoadedVia = via;
+
+          if (usedCacheText){
             source.status = 'Using cached copy from ' + formatTimestamp(source.cachedAt) + ' · ' + parsed.length + ' events';
-          }else if (source.type === 'url' && source.lastLoadedVia && source.lastLoadedVia !== 'direct'){ 
-            source.status = 'Loaded ' + parsed.length + ' events via ' + source.lastLoadedVia;
+          }else if (source.type === 'url' && via && via !== 'direct'){
+            source.status = 'Loaded ' + parsed.length + ' events via ' + via;
           }else{
             source.status = 'Loaded ' + parsed.length + ' events';
           }
-          all.push(...parsed);
         }catch(err){
-          source.status = 'Error: ' + (err && err.message ? err.message : 'Could not load');
-          errors.push(source.name + ': ' + source.status);
+          if (runtimeSourceEvents[source.id] && runtimeSourceEvents[source.id].length){
+            parsed = runtimeSourceEvents[source.id];
+            source.status = 'Using last good data · ' + parsed.length + ' events';
+            errors.push(source.name + ': ' + (err && err.message ? err.message : 'Could not refresh') + ' · showing last good data');
+          }else{
+            source.status = 'Error: ' + (err && err.message ? err.message : 'Could not load');
+            errors.push(source.name + ': ' + source.status);
+          }
         }
+        if (parsed) all.push(...parsed);
       }
       loadedEvents = dedupeEvents(all).sort((a,b) => Number(a.allDay) - Number(b.allDay) || a.start - b.start || a.end - b.end || a.title.localeCompare(b.title));
       saveState();
@@ -637,7 +661,6 @@
       else if (errors.length) els.statusChip.textContent = enabled + ' live · errors';
       else els.statusChip.textContent = enabled + ' live';
     }
-
 
     function renderPeriodStrip(){
       const now = new Date();
@@ -732,7 +755,7 @@
     }
 
     function renderSources(){
-      const folderText = folderHandle ? ('Linked folder · auto-loading .ics files') : ('No folder linked. Choose a folder once to auto-load every .ics file inside it.');
+      const folderText = folderHandle ? 'Linked folder · auto-loading .ics files' : 'No folder linked. Choose a folder once to auto-load every .ics file inside it.';
       els.folderStatusBox.textContent = folderText;
       if (!state.sources.length){
         els.sourceList.innerHTML = '<div class="empty">No saved calendar sources yet.</div>';
@@ -756,14 +779,21 @@
 
     function removeSource(id){
       state.sources = state.sources.filter(s => s.id !== id);
-      delete fileHandles[id];
+      clearSourceRuntimeState(id);
       saveState();
       render();
       reloadSources();
     }
 
-    window.toggleSource = toggleSource;
-    window.removeSource = removeSource;
+    function clearSourceRuntimeState(id){
+      delete fileHandles[id];
+      delete runtimeSourceEvents[id];
+    }
+
+    function clearRuntimeSourceEvents(){
+      Object.keys(runtimeSourceEvents).forEach(id => delete runtimeSourceEvents[id]);
+      Object.keys(fileHandles).forEach(id => delete fileHandles[id]);
+    }
 
     function getDisplayEvents(){
       return loadedEvents.filter(evt => !isWeekdayPlaceholder(evt)).filter(evt => state.includeAllDay || !evt.allDay);
@@ -777,7 +807,6 @@
       if (idx < 0) return false;
       return evt.start.getDay() === idx && !String(evt.location || '').trim() && !String(evt.description || '').trim();
     }
-
 
     function classifyEvent(evt){
       const title = normalizeTitle(evt.title);
@@ -1068,48 +1097,126 @@
 
     function formatTime(date){ return date.toLocaleTimeString([], { hour:'numeric', minute:'2-digit' }); }
     function formatClockRange(start, end){ return start.toLocaleTimeString([], { hour:'numeric', minute:'2-digit' }) + ' – ' + end.toLocaleTimeString([], { hour:'numeric', minute:'2-digit' }); }
-    function formatCountdown(ms){ const sec = Math.max(0, Math.floor(ms / 1000)); const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60; return h > 0 ? h + 'h ' + String(m).padStart(2,'0') + 'm' : m + ':' + String(s).padStart(2,'0'); }
+    function formatCountdown(ms){
+      const sec = Math.max(0, Math.floor(ms / 1000));
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      const s = sec % 60;
+      return h > 0 ? h + 'h ' + String(m).padStart(2,'0') + 'm' : m + ':' + String(s).padStart(2,'0');
+    }
     function formatRangeLabel(start, end){ return start.toLocaleDateString([], { day:'numeric', month:'short' }) + ' – ' + end.toLocaleDateString([], { day:'numeric', month:'short', year:'numeric' }); }
     function formatTimestamp(ts){ if (!ts) return 'unknown time'; try{ return new Date(ts).toLocaleString([], { year:'numeric', month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }); }catch(_){ return 'unknown time'; } }
     function sourceTypeLabel(type){ return ({ url:'Feed URL', text:'Imported ICS', fileHandle:'Mirror file', folderFile:'Folder ICS' })[type] || 'Calendar source'; }
+
     async function fetchCalendarUrl(url){
+      const normalized = normalizeFeedUrl(url);
+      const candidates = buildCalendarUrlCandidates(normalized);
       let lastError = null;
-      for (const candidate of buildCalendarUrlCandidates(url)){
+
+      for (const candidate of candidates){
         try{
-          const response = await fetch(candidate.url, { cache:'no-store' });
+          const response = await fetch(candidate.url, { cache:'no-store', mode:'cors' });
           if (!response.ok) throw new Error('HTTP ' + response.status);
           const text = normalizeCalendarText(await response.text());
-          if (!looksLikeCalendarText(text)) throw new Error('Response was not calendar data');
+          if (!looksLikeCalendarText(text)) throw new Error('Response was fetched, but it was not usable calendar text');
           return { text, via:candidate.label };
         }catch(err){
-          lastError = new Error((candidate.label === 'direct' ? '' : candidate.label + ' · ') + (err && err.message ? err.message : 'Could not fetch feed'));
+          lastError = err;
         }
       }
-      throw lastError || new Error('Could not fetch feed');
+
+      throw buildCalendarFetchError(normalized, lastError);
     }
+
     function buildCalendarUrlCandidates(url){
-      const normalized = normalizeFeedUrl(url);
-      const stamped = appendCacheBust(normalized);
-      const candidates = [{ url:stamped, label:'direct' }];
-      if (/^https?:/i.test(normalized)){
-        candidates.push({ url:'https://api.allorigins.win/raw?url=' + encodeURIComponent(stamped), label:'AllOrigins' });
-        candidates.push({ url:'https://cors.isomorphic-git.org/' + stamped, label:'isomorphic-git proxy' });
+      const candidates = [];
+      const seen = new Set();
+
+      const googleCid = extractGoogleCalendarCid(url);
+      if (googleCid){
+        pushCandidate(candidates, seen, 'https://calendar.google.com/calendar/ical/' + encodeURIComponent(googleCid) + '/public/basic.ics', 'google public iCal');
       }
-      return candidates;
+
+      pushCandidate(candidates, seen, url, 'direct');
+      return candidates.map(candidate => ({ ...candidate, url:appendCacheBust(candidate.url) }));
     }
+
+    function buildCalendarFetchError(url, err){
+      const message = err && err.message ? err.message : 'Could not fetch feed';
+      const onFilePage = location.protocol === 'file:';
+      const googleCid = extractGoogleCalendarCid(url);
+
+      if (onFilePage && /^https?:/i.test(url)){
+        if (googleCid){
+          return new Error('Live Google Calendar fetch is blocked from this file:// page. Use the calendar&#39;s public or secret iCal address on localhost, or mirror/download the .ics file locally.');
+        }
+        return new Error('Live feed fetch is blocked from this file:// page. Open the board through localhost/web server, or use a mirror/local .ics file.');
+      }
+
+      if (googleCid){
+        return new Error('That Google Calendar link is a viewer link, not a guaranteed live ICS feed. Use the calendar&#39;s public or secret iCal address, or mirror/download the .ics file.');
+      }
+
+      return new Error(message);
+    }
+
+    function pushCandidate(list, seen, url, label){
+      if (!url || seen.has(url)) return;
+      seen.add(url);
+      list.push({ url, label });
+    }
+
     function appendCacheBust(url){
       const sep = url.includes('?') ? '&' : '?';
       return url + sep + '_ts=' + Date.now();
     }
+
     function normalizeCalendarText(text){
-      return String(text || '').replace(/^﻿/, '').trim();
+      return String(text || '').replace(/^\uFEFF/, '').trim();
     }
+
     function looksLikeCalendarText(text){
-      const sample = String(text || '').slice(0, 4000).toUpperCase();
-      return sample.includes('BEGIN:VCALENDAR') && sample.includes('BEGIN:VEVENT');
+      const sample = String(text || '').slice(0, 12000).toUpperCase();
+      return sample.includes('BEGIN:VCALENDAR');
     }
-    function normalizeFeedUrl(url){ return String(url || '').trim().replace(/^webcal:/i, 'https:'); }
-    function prettyName(url){ try{ return new URL(normalizeFeedUrl(url)).hostname.replace(/^www\./,''); }catch(_){ return 'Calendar feed'; } }
+
+    function normalizeFeedUrl(url){
+      return String(url || '').trim().replace(/^webcal:/i, 'https:');
+    }
+
+    function extractGoogleCalendarCid(url){
+      try{
+        const parsed = new URL(url);
+        if (!/calendar\.google\.com$/i.test(parsed.hostname)) return '';
+        const cid = parsed.searchParams.get('cid');
+        if (!cid) return '';
+        return decodeGoogleCid(cid);
+      }catch(_){
+        return '';
+      }
+    }
+
+    function decodeGoogleCid(cid){
+      const raw = String(cid || '').trim();
+      try{
+        const base64 = raw.replace(/-/g, '+').replace(/_/g, '/');
+        const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, '=');
+        return decodeURIComponent(escape(atob(padded)));
+      }catch(_){
+        try{ return decodeURIComponent(raw); }catch(__){ return raw; }
+      }
+    }
+
+    function prettyName(url){
+      try{
+        const googleCid = extractGoogleCalendarCid(url);
+        if (googleCid) return googleCid.replace(/@.*/, '');
+        return new URL(normalizeFeedUrl(url)).hostname.replace(/^www\./,'');
+      }catch(_){
+        return 'Calendar feed';
+      }
+    }
+
     function normalizeTitle(text){ return String(text || '').trim().toLowerCase().replace(/\s+/g, ' '); }
     function uid(){ return (crypto && crypto.randomUUID ? crypto.randomUUID() : 'id_' + Math.random().toString(36).slice(2,10)); }
     function getFirstEntry(arr){ return Array.isArray(arr) && arr.length ? arr[0] : null; }
@@ -1119,8 +1226,6 @@
     function clampInt(value, min, max, fallback){ const n = Number(value); return Number.isFinite(n) ? Math.max(min, Math.min(max, Math.round(n))) : fallback; }
     function escapeHtml(text){ return String(text).replace(/[&<>"']/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[ch])); }
     function startOfDay(date){ return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0,0,0,0); }
-    function startOfMonth(date){ return new Date(date.getFullYear(), date.getMonth(), 1, 0,0,0,0); }
-    function endOfMonth(date){ return new Date(date.getFullYear(), date.getMonth() + 1, 0, 23,59,59,999); }
     function addDays(date, days){ const d = new Date(date); d.setDate(d.getDate() + days); return d; }
     function addMonths(date, months){ return new Date(date.getFullYear(), date.getMonth() + months, date.getDate(), date.getHours(), date.getMinutes(), date.getSeconds(), date.getMilliseconds()); }
     function startOfWeek(date){ const d = startOfDay(date); const offset = (d.getDay() + 6) % 7; d.setDate(d.getDate() - offset); return d; }
