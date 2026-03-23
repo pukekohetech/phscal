@@ -4,6 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>PHS Calendar Whiteboard</title>
+  <meta name="theme-color" content="#f6f7f8">
+  <meta name="application-name" content="PHS Calendar">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icons/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="icon" href="./icons/icon-512.png" sizes="512x512" type="image/png">
   <style>
     :root{
       --bg:#f6f7f8;
@@ -40,6 +45,8 @@
     *{box-sizing:border-box}
     html,body{height:100%}
     body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--text);background:var(--bg)}
+
+    [hidden]{display:none!important}
     button,input,textarea{font:inherit}
     .shell{max-width:1600px;margin:0 auto;padding:10px;display:grid;gap:10px;min-height:100vh}
     .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
@@ -154,6 +161,8 @@
           <button type="button" id="todayBtn">Today</button>
           <button type="button" id="nextBtn">Next 14 days</button>
           <button type="button" id="refreshBtn">Refresh</button>
+          <button type="button" id="fullscreenBtn">Full screen</button>
+          <button type="button" id="installBtn" hidden>Install app</button>
         </div>
       </div>
     </section>
@@ -267,11 +276,12 @@
     let inactivityTimer = null;
     let errors = [];
     let busy = false;
+    let deferredInstallPrompt = null;
 
     init();
 
     function mapEls(){
-      const ids = ['statusChip','rangeChip','sourceChip','periodLabel','periodTitle','periodMeta','periodProgress','periodCountdown','periodCountdownNote','clockTime','clockDate','prevBtn','todayBtn','nextBtn','refreshBtn','noticeBox','errorBox','daysList','feedUrl','feedName','addFeedBtn','exampleBtn','icsFileInput','importFilesBtn','mirrorFileBtn','chooseFolderBtn','scanFolderBtn','pasteName','pasteText','importPasteBtn','refreshMinutes','returnMinutes','showWeekends','includeAllDay','periodsText','saveSettingsBtn','resetPeriodsBtn','reloadAllBtn','clearAllBtn','sourceList','folderStatusBox'];
+      const ids = ['statusChip','rangeChip','sourceChip','periodLabel','periodTitle','periodMeta','periodProgress','periodCountdown','periodCountdownNote','clockTime','clockDate','prevBtn','todayBtn','nextBtn','refreshBtn','fullscreenBtn','installBtn','noticeBox','errorBox','daysList','feedUrl','feedName','addFeedBtn','exampleBtn','icsFileInput','importFilesBtn','mirrorFileBtn','chooseFolderBtn','scanFolderBtn','pasteName','pasteText','importPasteBtn','refreshMinutes','returnMinutes','showWeekends','includeAllDay','periodsText','saveSettingsBtn','resetPeriodsBtn','reloadAllBtn','clearAllBtn','sourceList','folderStatusBox'];
       return Object.fromEntries(ids.map(id => [id, document.getElementById(id)]));
     }
 
@@ -294,6 +304,7 @@
       armRefresh();
       armInactivity();
       render();
+      wirePWA();
       await restoreSavedFolderHandle();
       if (state.sources.length) reloadSources();
     }
@@ -332,6 +343,8 @@
       });
       els.refreshBtn.addEventListener('click', reloadSources);
       els.reloadAllBtn.addEventListener('click', reloadSources);
+      if (els.fullscreenBtn) els.fullscreenBtn.addEventListener('click', toggleFullscreen);
+      if (els.installBtn) els.installBtn.addEventListener('click', installApp);
       els.addFeedBtn.addEventListener('click', addFeed);
       els.exampleBtn.addEventListener('click', () => { els.feedUrl.value = DEFAULT_FEED; els.feedName.value = 'Pukekohe High School'; });
       els.importFilesBtn.addEventListener('click', importFiles);
@@ -727,7 +740,7 @@
 
     function renderMessages(){
       const notes = [];
-      if (location.protocol === 'file:' && state.sources.some(s => s.type === 'url')) notes.push('Live URL refresh from a file:// page is often blocked by the browser. Use localhost, a mirror .ics file, or choose a local folder so the board can auto-load every .ics file in it.');
+      if (location.protocol === 'file:' && state.sources.some(s => s.type === 'url')) notes.push('Live URL refresh from a file:// page is often blocked by the browser. Install and serve this PWA from localhost or HTTPS for reliable live feeds, or use a mirror .ics file / folder mode for local updates.');
       if (state.sources.some(s => s.type === 'fileHandle')) notes.push('Mirror file handles only last for this browser session. Re-open the file next time you open the whiteboard.');
       if (folderHandle) notes.push('Folder mode is active. All .ics files in the linked folder are scanned automatically.');
       els.noticeBox.hidden = notes.length === 0;
@@ -843,6 +856,61 @@
         if (Array.isArray(parsed) && parsed.length) rows = parsed;
       }catch(_){ }
       return rows.map(row => ({ ...row, start:timeOnDate(date, row.start), end:timeOnDate(date, row.end) })).filter(row => row.start && row.end).sort((a,b) => a.start - b.start);
+    }
+
+
+    function wirePWA(){
+      if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./service-worker.js').catch(() => {});
+        }, { once:true });
+      }
+      window.addEventListener('beforeinstallprompt', event => {
+        event.preventDefault();
+        deferredInstallPrompt = event;
+        if (els.installBtn) els.installBtn.hidden = false;
+      });
+      window.addEventListener('appinstalled', () => {
+        deferredInstallPrompt = null;
+        if (els.installBtn) els.installBtn.hidden = true;
+      });
+      updateFullscreenButton();
+      document.addEventListener('fullscreenchange', updateFullscreenButton);
+      window.addEventListener('resize', updateFullscreenButton);
+    }
+
+    async function installApp(){
+      if (!deferredInstallPrompt) return;
+      try{
+        await deferredInstallPrompt.prompt();
+        await deferredInstallPrompt.userChoice;
+      }catch(_){
+      }finally{
+        deferredInstallPrompt = null;
+        if (els.installBtn) els.installBtn.hidden = true;
+      }
+    }
+
+    async function toggleFullscreen(){
+      try{
+        if (document.fullscreenElement){
+          await document.exitFullscreen();
+        }else{
+          await document.documentElement.requestFullscreen();
+        }
+      }catch(_){ }
+      updateFullscreenButton();
+    }
+
+    function updateFullscreenButton(){
+      if (!els.fullscreenBtn) return;
+      const standalone = window.matchMedia('(display-mode: standalone)').matches || window.matchMedia('(display-mode: fullscreen)').matches || navigator.standalone;
+      if (standalone) {
+        els.fullscreenBtn.hidden = true;
+        return;
+      }
+      els.fullscreenBtn.hidden = false;
+      els.fullscreenBtn.textContent = document.fullscreenElement ? 'Exit full screen' : 'Full screen';
     }
 
     function tickClock(){
