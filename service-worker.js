@@ -1,4 +1,4 @@
-const CACHE = 'phs-calendar-pwa-v3';
+const CACHE = 'phs-calendar-pwa-v2';
 const APP_SHELL = [
   './',
   './index.html',
@@ -23,24 +23,31 @@ self.addEventListener('fetch', event => {
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
 
-  // App shell: cache first.
+  // App shell on same origin: network first for HTML, cache first for static assets.
   if (url.origin === self.location.origin) {
+    const wantsHtml = request.mode === 'navigate' || request.destination === 'document' || url.pathname.endsWith('/index.html') || url.pathname === '/' || url.pathname === '';
+
+    if (wantsHtml) {
+      event.respondWith(
+        fetch(request).then(response => {
+          const copy = response.clone();
+          caches.open(CACHE).then(cache => cache.put('./index.html', copy)).catch(() => {});
+          return response;
+        }).catch(() => caches.match(request).then(match => match || caches.match('./index.html')))
+      );
+      return;
+    }
+
     event.respondWith(
       caches.match(request).then(cached => cached || fetch(request).then(response => {
         const copy = response.clone();
         caches.open(CACHE).then(cache => cache.put(request, copy)).catch(() => {});
         return response;
-      }).catch(() => caches.match('./index.html')))
+      }))
     );
     return;
   }
 
-  // Cross-origin calendar requests: network first, cache last good copy.
-  event.respondWith(
-    fetch(request).then(response => {
-      const copy = response.clone();
-      caches.open(CACHE).then(cache => cache.put(request, copy)).catch(() => {});
-      return response;
-    }).catch(() => caches.match(request))
-  );
+  // Do not service-worker-cache remote calendar feeds.
+  event.respondWith(fetch(request));
 });

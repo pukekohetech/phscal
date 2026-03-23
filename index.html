@@ -256,6 +256,7 @@
       { name:'BREAK 2', start:'13:55', end:'14:20' },
       { name:'PERIOD 5', start:'14:20', end:'15:15' }
     ];
+
     const DEFAULT_STATE = {
       anchor:'',
       refreshMinutes:15,
@@ -644,12 +645,19 @@
 
           parsed = dedupeEvents(parseICS(text, source.name, range.start, range.end));
           runtimeSourceEvents[source.id] = parsed;
-          source.cachedText = text;
-          source.cachedAt = Date.now();
+
+          const previousCachedText = source.cachedText || '';
+          const contentChanged = text !== previousCachedText;
+          if (!usedCacheText){
+            source.cachedText = text;
+            if (contentChanged || !source.cachedAt) source.cachedAt = Date.now();
+          }
           source.lastLoadedVia = via;
 
           if (usedCacheText){
             source.status = 'Using cached copy from ' + formatTimestamp(source.cachedAt) + ' · ' + parsed.length + ' events';
+          }else if (contentChanged){
+            source.status = 'Updated · ' + parsed.length + ' events' + (source.type === 'url' && via && via !== 'direct' ? ' via ' + via : '');
           }else if (source.type === 'url' && via && via !== 'direct'){
             source.status = 'Loaded ' + parsed.length + ' events via ' + via;
           }else{
