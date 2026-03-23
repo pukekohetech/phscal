@@ -234,13 +234,13 @@
   </div>
 
   <script>
-    const DEFAULT_FEED = 'https://pukekohe.school.kiwi/ics/e425fc949d7eb75cfd-b192b49e533214e689.ics';
+    const DEFAULT_FEED = 'https://github.com/pukekohetech/phscal/blob/main/PHS%20Calendar.ics';
     const STORE_KEY = 'phs_calendar_whiteboard_v2';
     const DEFAULT_PERIODS = [
       { name:'MEETING', start:'08:30', end:'09:00' },
       { name:'PERIOD 1', start:'09:00', end:'09:55' },
       { name:'PERIOD 2', start:'10:00', end:'10:55' },
-       { name:'TE MAAHUIR', start:'10:55', end:'11:25' },
+      { name:'TE MAAHURI', start:'10:55', end:'11:25' },
       { name:'BREAK 1', start:'11:25', end:'12:00' },
       { name:'PERIOD 3', start:'12:00', end:'12:55' },
       { name:'BPERIOD 4', start:'13:00', end:'13:55' },
@@ -286,6 +286,7 @@
 
     async function init(){
       if (!state.anchor) state.anchor = startOfDay(new Date()).toISOString();
+      ensureDefaultSource();
       syncControls();
       bindEvents();
       tickClock();
@@ -295,6 +296,21 @@
       render();
       await restoreSavedFolderHandle();
       if (state.sources.length) reloadSources();
+    }
+
+    function ensureDefaultSource(){
+      if (Array.isArray(state.sources) && state.sources.length) return;
+      state.sources = [{
+        id: uid(),
+        type:'url',
+        name:'Pukekohe High School',
+        value:DEFAULT_FEED,
+        enabled:true,
+        status:'',
+        cachedText:'',
+        cachedAt:0
+      }];
+      saveState();
     }
 
     function syncControls(){
@@ -1137,6 +1153,11 @@
         pushCandidate(candidates, seen, 'https://calendar.google.com/calendar/ical/' + encodeURIComponent(googleCid) + '/public/basic.ics', 'google public iCal');
       }
 
+      const githubRawUrl = convertGitHubCalendarUrl(url);
+      if (githubRawUrl && githubRawUrl !== url){
+        pushCandidate(candidates, seen, githubRawUrl, 'github raw');
+      }
+
       pushCandidate(candidates, seen, url, 'direct');
       return candidates.map(candidate => ({ ...candidate, url:appendCacheBust(candidate.url) }));
     }
@@ -1145,16 +1166,24 @@
       const message = err && err.message ? err.message : 'Could not fetch feed';
       const onFilePage = location.protocol === 'file:';
       const googleCid = extractGoogleCalendarCid(url);
+      const githubRawUrl = convertGitHubCalendarUrl(url);
 
       if (onFilePage && /^https?:/i.test(url)){
         if (googleCid){
           return new Error('Live Google Calendar fetch is blocked from this file:// page. Use the calendar&#39;s public or secret iCal address on localhost, or mirror/download the .ics file locally.');
+        }
+        if (githubRawUrl && githubRawUrl !== url){
+          return new Error('Live GitHub calendar fetch is blocked from this file:// page. Open the board through localhost/web server, or mirror/download the .ics file locally.');
         }
         return new Error('Live feed fetch is blocked from this file:// page. Open the board through localhost/web server, or use a mirror/local .ics file.');
       }
 
       if (googleCid){
         return new Error('That Google Calendar link is a viewer link, not a guaranteed live ICS feed. Use the calendar&#39;s public or secret iCal address, or mirror/download the .ics file.');
+      }
+
+      if (githubRawUrl && githubRawUrl !== url){
+        return new Error('That GitHub link is a blob viewer link. The board tried the matching raw file automatically, but the fetch still failed.');
       }
 
       return new Error(message);
@@ -1184,6 +1213,21 @@
       return String(url || '').trim().replace(/^webcal:/i, 'https:');
     }
 
+    function convertGitHubCalendarUrl(url){
+      try{
+        const parsed = new URL(normalizeFeedUrl(url));
+        if (!/^github\.com$/i.test(parsed.hostname)) return '';
+        const parts = parsed.pathname.split('/').filter(Boolean);
+        if (parts.length < 5) return '';
+        const [owner, repo, section, branch, ...rest] = parts;
+        if (section !== 'blob' && section !== 'raw') return '';
+        if (!rest.length) return '';
+        return 'https://raw.githubusercontent.com/' + owner + '/' + repo + '/' + branch + '/' + rest.map(segment => encodeURIComponent(decodeURIComponent(segment))).join('/');
+      }catch(_){
+        return '';
+      }
+    }
+
     function extractGoogleCalendarCid(url){
       try{
         const parsed = new URL(url);
@@ -1211,6 +1255,12 @@
       try{
         const googleCid = extractGoogleCalendarCid(url);
         if (googleCid) return googleCid.replace(/@.*/, '');
+        const githubRawUrl = convertGitHubCalendarUrl(url);
+        if (githubRawUrl){
+          const parsed = new URL(githubRawUrl);
+          const pathParts = parsed.pathname.split('/').filter(Boolean);
+          return decodeURIComponent(pathParts[pathParts.length - 1] || 'Calendar feed').replace(/\.ics$/i, '');
+        }
         return new URL(normalizeFeedUrl(url)).hostname.replace(/^www\./,'');
       }catch(_){
         return 'Calendar feed';
