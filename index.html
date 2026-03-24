@@ -39,6 +39,14 @@
       --pld-bg:#fff7ed;
       --pou:#be185d;
       --pou-bg:#fdf2f8;
+      --holiday:#059669;
+      --holiday-bg:#ecfdf5;
+      --exam:#dc2626;
+      --exam-bg:#fef2f2;
+      --nzqa:#4338ca;
+      --nzqa-bg:#eef2ff;
+      --trip:#0f766e;
+      --trip-bg:#f0fdfa;
       --generic:#64748b;
       --generic-bg:#f8fafc;
     }
@@ -78,6 +86,10 @@
     button.danger{background:#fff5f5;border-color:#f1c5bf;color:#9a2c1e}
     .main{padding:10px}
     .messages{display:grid;gap:8px;margin-bottom:10px}
+    .searchRow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;margin-bottom:10px}
+    .searchBox{display:flex;gap:8px;align-items:center;min-width:0}
+    #searchInput{flex:1;min-width:0;padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--text);font-weight:700}
+    #searchInput::placeholder{color:var(--muted)}
     .notice,.error{padding:11px 13px;border-radius:14px;font-size:13px;font-weight:700}
     .notice{background:var(--notice-bg);color:var(--notice);border:1px solid #d7e2ee}
     .error{background:var(--error-bg);color:var(--error);border:1px solid #efc6c1}
@@ -97,6 +109,10 @@
     .event.department{border-left-color:var(--department);background:var(--department-bg)}
     .event.pld{border-left-color:var(--pld);background:var(--pld-bg)}
     .event.pou{border-left-color:var(--pou);background:var(--pou-bg)}
+    .event.holiday{border-left-color:var(--holiday);background:var(--holiday-bg)}
+    .event.exam{border-left-color:var(--exam);background:var(--exam-bg)}
+    .event.nzqa{border-left-color:var(--nzqa);background:var(--nzqa-bg)}
+    .event.trip{border-left-color:var(--trip);background:var(--trip-bg)}
     .event.now{box-shadow:inset 0 0 0 1px rgba(17,24,39,.18), 0 2px 8px rgba(15,23,42,.05)}
     .eventHead{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
     .eventTitleWrap{display:grid;gap:5px;min-width:0}
@@ -122,7 +138,8 @@
     .footer{padding:0 6px 2px;text-align:center;font-size:11px;color:var(--muted);font-weight:700}
     @media (min-width:1500px){.days{grid-template-columns:repeat(3,minmax(0,1fr));}}
     @media (max-width:1180px){.header{grid-template-columns:1fr}.headerRight{justify-items:start}.date,.countdownNote{text-align:left}.settingsBody,.days{grid-template-columns:1fr}}
-    @media (max-width:640px){.shell{padding:8px}.header,.main{padding:10px}.dayTitle{font-size:17px}.toolbar{justify-content:flex-start}}
+    @media (max-width:1180px){.searchRow{grid-template-columns:1fr}}
+    @media (max-width:640px){.shell{padding:8px}.header,.main{padding:10px}.dayTitle{font-size:17px}.toolbar{justify-content:flex-start}.searchBox{flex-wrap:wrap}}
   </style>
 </head>
 <body>
@@ -171,6 +188,13 @@
       <div class="messages" id="messagesWrap">
         <div class="notice" id="noticeBox" hidden></div>
         <div id="errorBox"></div>
+      </div>
+      <div class="searchRow">
+        <div class="searchBox">
+          <input id="searchInput" type="text" placeholder="Search events, visits, assemblies, locations...">
+          <button type="button" id="clearSearchBtn">Clear</button>
+        </div>
+        <div class="chip" id="searchInfo">Showing all events</div>
       </div>
       <div class="days" id="daysList"></div>
     </section>
@@ -249,20 +273,20 @@
       { name:'MEETING', start:'08:30', end:'09:00' },
       { name:'PERIOD 1', start:'09:00', end:'09:55' },
       { name:'PERIOD 2', start:'10:00', end:'10:55' },
-      { name:'TE MAAHURI', start:'10:55', end:'11:25' },
+       { name:'TE MAAHURI', start:'10:55', end:'11:25' },
       { name:'BREAK 1', start:'11:25', end:'12:00' },
       { name:'PERIOD 3', start:'12:00', end:'12:55' },
       { name:'BPERIOD 4', start:'13:00', end:'13:55' },
       { name:'BREAK 2', start:'13:55', end:'14:20' },
       { name:'PERIOD 5', start:'14:20', end:'15:15' }
     ];
-
     const DEFAULT_STATE = {
       anchor:'',
       refreshMinutes:15,
       returnMinutes:5,
       showWeekends:true,
       includeAllDay:true,
+      searchTerm:'',
       periodsText: JSON.stringify(DEFAULT_PERIODS, null, 2),
       sources:[]
     };
@@ -282,7 +306,7 @@
     init();
 
     function mapEls(){
-      const ids = ['statusChip','rangeChip','sourceChip','periodLabel','periodTitle','periodMeta','periodProgress','periodCountdown','periodCountdownNote','clockTime','clockDate','prevBtn','todayBtn','nextBtn','refreshBtn','fullscreenBtn','installBtn','noticeBox','errorBox','daysList','feedUrl','feedName','addFeedBtn','exampleBtn','icsFileInput','importFilesBtn','mirrorFileBtn','chooseFolderBtn','scanFolderBtn','pasteName','pasteText','importPasteBtn','refreshMinutes','returnMinutes','showWeekends','includeAllDay','periodsText','saveSettingsBtn','resetPeriodsBtn','reloadAllBtn','clearAllBtn','sourceList','folderStatusBox'];
+      const ids = ['statusChip','rangeChip','sourceChip','periodLabel','periodTitle','periodMeta','periodProgress','periodCountdown','periodCountdownNote','clockTime','clockDate','prevBtn','todayBtn','nextBtn','refreshBtn','fullscreenBtn','installBtn','noticeBox','errorBox','searchInput','clearSearchBtn','searchInfo','daysList','feedUrl','feedName','addFeedBtn','exampleBtn','icsFileInput','importFilesBtn','mirrorFileBtn','chooseFolderBtn','scanFolderBtn','pasteName','pasteText','importPasteBtn','refreshMinutes','returnMinutes','showWeekends','includeAllDay','periodsText','saveSettingsBtn','resetPeriodsBtn','reloadAllBtn','clearAllBtn','sourceList','folderStatusBox'];
       return Object.fromEntries(ids.map(id => [id, document.getElementById(id)]));
     }
 
@@ -330,6 +354,7 @@
       els.returnMinutes.value = state.returnMinutes;
       els.showWeekends.checked = !!state.showWeekends;
       els.includeAllDay.checked = !!state.includeAllDay;
+      els.searchInput.value = state.searchTerm || '';
       els.periodsText.value = state.periodsText || JSON.stringify(DEFAULT_PERIODS, null, 2);
     }
 
@@ -344,6 +369,11 @@
       });
       els.refreshBtn.addEventListener('click', reloadSources);
       els.reloadAllBtn.addEventListener('click', reloadSources);
+      els.searchInput.addEventListener('input', event => setSearchTerm(event.target.value));
+      els.clearSearchBtn.addEventListener('click', () => {
+        setSearchTerm('');
+        els.searchInput.focus();
+      });
       if (els.fullscreenBtn) els.fullscreenBtn.addEventListener('click', toggleFullscreen);
       if (els.installBtn) els.installBtn.addEventListener('click', installApp);
       els.addFeedBtn.addEventListener('click', addFeed);
@@ -645,19 +675,12 @@
 
           parsed = dedupeEvents(parseICS(text, source.name, range.start, range.end));
           runtimeSourceEvents[source.id] = parsed;
-
-          const previousCachedText = source.cachedText || '';
-          const contentChanged = text !== previousCachedText;
-          if (!usedCacheText){
-            source.cachedText = text;
-            if (contentChanged || !source.cachedAt) source.cachedAt = Date.now();
-          }
+          source.cachedText = text;
+          source.cachedAt = Date.now();
           source.lastLoadedVia = via;
 
           if (usedCacheText){
             source.status = 'Using cached copy from ' + formatTimestamp(source.cachedAt) + ' · ' + parsed.length + ' events';
-          }else if (contentChanged){
-            source.status = 'Updated · ' + parsed.length + ' events' + (source.type === 'url' && via && via !== 'direct' ? ' via ' + via : '');
           }else if (source.type === 'url' && via && via !== 'direct'){
             source.status = 'Loaded ' + parsed.length + ' events via ' + via;
           }else{
@@ -684,6 +707,7 @@
     function render(){
       renderTop();
       renderMessages();
+      renderSearch();
       renderPeriodStrip();
       renderDays();
       renderSources();
@@ -697,6 +721,17 @@
       if (!enabled) els.statusChip.textContent = 'No calendars';
       else if (errors.length) els.statusChip.textContent = enabled + ' live · errors';
       else els.statusChip.textContent = enabled + ' live';
+    }
+
+    function renderSearch(){
+      const term = normalizeSearchTerm(state.searchTerm);
+      const filteredEvents = getVisibleEvents(term);
+      const dayCount = countDaysWithEvents(filteredEvents);
+      els.searchInput.value = state.searchTerm || '';
+      els.clearSearchBtn.disabled = !term;
+      els.searchInfo.textContent = term
+        ? 'Search: ' + filteredEvents.length + ' match' + (filteredEvents.length === 1 ? '' : 'es') + ' in ' + dayCount + ' day' + (dayCount === 1 ? '' : 's')
+        : 'Showing all events';
     }
 
     function renderPeriodStrip(){
@@ -758,15 +793,17 @@
 
     function renderDays(){
       const range = getVisibleRange();
-      const events = getDisplayEvents();
+      const term = normalizeSearchTerm(state.searchTerm);
+      const events = getVisibleEvents(term);
       const days = [];
       for (let day = startOfDay(range.start); day <= startOfDay(range.end); day = addDays(day, 1)){
         if (!state.showWeekends && isWeekend(day)) continue;
         const dayEvents = events.filter(evt => overlapsDay(evt, day)).sort((a,b) => Number(a.allDay) - Number(b.allDay) || a.start - b.start || a.end - b.end || a.title.localeCompare(b.title));
+        if (term && !dayEvents.length) continue;
         days.push({ day:new Date(day), events:dayEvents });
       }
       if (!days.length){
-        els.daysList.innerHTML = '<div class="empty">No days to show in this range.</div>';
+        els.daysList.innerHTML = '<div class="empty">' + (term ? 'No events matched your search in this 14-day view.' : 'No days to show in this range.') + '</div>';
         return;
       }
       els.daysList.innerHTML = days.map(renderDay).join('');
@@ -832,8 +869,50 @@
       Object.keys(fileHandles).forEach(id => delete fileHandles[id]);
     }
 
+    function setSearchTerm(value){
+      state.searchTerm = String(value || '').replace(/\s+/g, ' ').trimStart();
+      saveState();
+      render();
+    }
+
+    function normalizeSearchTerm(value){
+      return normalizeTitle(String(value || '').trim());
+    }
+
+    function eventMatchesSearch(evt, term){
+      if (!term) return true;
+      const kind = classifyEvent(evt);
+      const haystack = [
+        evt.title,
+        evt.location,
+        evt.description,
+        evt.categories,
+        evt.sourceName,
+        kind.label,
+        evt.allDay ? 'all day' : '',
+        evt.start.toLocaleDateString([], { weekday:'long', day:'numeric', month:'long', year:'numeric' })
+      ].join(' ');
+      return normalizeTitle(haystack).includes(term);
+    }
+
+    function countDaysWithEvents(events){
+      const range = getVisibleRange();
+      const seen = new Set();
+      for (let day = startOfDay(range.start); day <= startOfDay(range.end); day = addDays(day, 1)){
+        if (!state.showWeekends && isWeekend(day)) continue;
+        if (events.some(evt => overlapsDay(evt, day))) seen.add(startOfDay(day).toISOString());
+      }
+      return seen.size;
+    }
+
     function getDisplayEvents(){
       return loadedEvents.filter(evt => !isWeekdayPlaceholder(evt)).filter(evt => state.includeAllDay || !evt.allDay);
+    }
+
+    function getVisibleEvents(term = ''){
+      const range = getVisibleRange();
+      const normalizedTerm = normalizeSearchTerm(term);
+      return getDisplayEvents().filter(evt => overlapsRange(evt, range.start, addDays(range.end, 1))).filter(evt => !normalizedTerm || eventMatchesSearch(evt, normalizedTerm));
     }
 
     function isWeekdayPlaceholder(evt){
@@ -847,13 +926,21 @@
 
     function classifyEvent(evt){
       const title = normalizeTitle(evt.title);
-      if (title.includes('pou taahuu')) return { className:'pou', label:'Pou Taahuu' };
+      const description = normalizeTitle(evt.description);
+      const location = normalizeTitle(evt.location);
+      const categories = normalizeTitle(evt.categories);
+      const haystack = [title, description, location, categories].join(' ');
+      if (haystack.includes('pou taahuu')) return { className:'pou', label:'Pou Taahuu' };
+      if (haystack.includes('holiday') || haystack.includes('holidays')) return { className:'holiday', label:'Holiday' };
+      if (haystack.includes('nzqa')) return { className:'nzqa', label:'NZQA' };
+      if (haystack.includes('exam') || haystack.includes('exams')) return { className:'exam', label:'Exam' };
+      if (haystack.includes('trip') || haystack.includes('hikoi') || haystack.includes('noho')) return { className:'trip', label:'Trip' };
       if (title.includes('department meeting') || title.includes('department hui')) return { className:'department', label:'Department' };
-      if (title === 'pld' || title.includes('professional learning development')) return { className:'pld', label:'PLD' };
-      if (title.includes('assembly')) return { className:'assembly', label:'Assembly' };
-      if (title.includes('hui')) return { className:'hui', label:'Hui' };
-      if (title.includes('visit') || title.includes('expo') || title.includes('course planning')) return { className:'visit', label:'Visit' };
-      if (title.includes('meeting') || title.includes('brief') || title.includes('conference')) return { className:'meeting', label:'Meeting' };
+      if (title === 'pld' || haystack.includes('professional learning development')) return { className:'pld', label:'PLD' };
+      if (haystack.includes('assembly')) return { className:'assembly', label:'Assembly' };
+      if (haystack.includes('hui')) return { className:'hui', label:'Hui' };
+      if (haystack.includes('visit') || haystack.includes('expo') || haystack.includes('course planning')) return { className:'visit', label:'Visit' };
+      if (haystack.includes('meeting') || haystack.includes('brief') || haystack.includes('conference')) return { className:'meeting', label:'Meeting' };
       return { className:'generic', label: evt.allDay ? 'All day' : 'Event' };
     }
 
