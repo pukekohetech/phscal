@@ -279,6 +279,7 @@
       { name:'BPERIOD 4', start:'13:00', end:'13:55' },
       { name:'BREAK 2', start:'13:55', end:'14:20' },
       { name:'PERIOD 5', start:'14:20', end:'15:15' }
+
     ];
     const DEFAULT_STATE = {
       anchor:'',
@@ -726,12 +727,12 @@
     function renderSearch(){
       const term = normalizeSearchTerm(state.searchTerm);
       const filteredEvents = getVisibleEvents(term);
-      const dayCount = countDaysWithEvents(filteredEvents);
+      const dayCount = countDaysWithEvents(filteredEvents, !!term);
       els.searchInput.value = state.searchTerm || '';
       els.clearSearchBtn.disabled = !term;
       els.searchInfo.textContent = term
-        ? 'Search: ' + filteredEvents.length + ' match' + (filteredEvents.length === 1 ? '' : 'es') + ' in ' + dayCount + ' day' + (dayCount === 1 ? '' : 's')
-        : 'Showing all events';
+        ? 'Search: ' + filteredEvents.length + ' match' + (filteredEvents.length === 1 ? '' : 'es') + ' across ' + dayCount + ' day' + (dayCount === 1 ? '' : 's') + ' in loaded calendar'
+        : 'Showing next 14 days';
     }
 
     function renderPeriodStrip(){
@@ -796,14 +797,36 @@
       const term = normalizeSearchTerm(state.searchTerm);
       const events = getVisibleEvents(term);
       const days = [];
-      for (let day = startOfDay(range.start); day <= startOfDay(range.end); day = addDays(day, 1)){
-        if (!state.showWeekends && isWeekend(day)) continue;
-        const dayEvents = events.filter(evt => overlapsDay(evt, day)).sort((a,b) => Number(a.allDay) - Number(b.allDay) || a.start - b.start || a.end - b.end || a.title.localeCompare(b.title));
-        if (term && !dayEvents.length) continue;
-        days.push({ day:new Date(day), events:dayEvents });
+
+      if (term){
+        const dayMap = new Map();
+        for (const evt of events){
+          const lastDay = startOfDay(evt.allDay ? addDays(evt.end, -1) : evt.end);
+          for (let day = startOfDay(evt.start); day <= lastDay; day = addDays(day, 1)){
+            if (!state.showWeekends && isWeekend(day)) continue;
+            const key = startOfDay(day).toISOString();
+            if (!dayMap.has(key)) dayMap.set(key, { day:new Date(day), events:[] });
+          }
+        }
+        for (const group of dayMap.values()){
+          group.events = events
+            .filter(evt => overlapsDay(evt, group.day))
+            .sort((a,b) => Number(a.allDay) - Number(b.allDay) || a.start - b.start || a.end - b.end || a.title.localeCompare(b.title));
+          if (group.events.length) days.push(group);
+        }
+        days.sort((a,b) => a.day - b.day);
+      }else{
+        for (let day = startOfDay(range.start); day <= startOfDay(range.end); day = addDays(day, 1)){
+          if (!state.showWeekends && isWeekend(day)) continue;
+          const dayEvents = events
+            .filter(evt => overlapsDay(evt, day))
+            .sort((a,b) => Number(a.allDay) - Number(b.allDay) || a.start - b.start || a.end - b.end || a.title.localeCompare(b.title));
+          days.push({ day:new Date(day), events:dayEvents });
+        }
       }
+
       if (!days.length){
-        els.daysList.innerHTML = '<div class="empty">' + (term ? 'No events matched your search in this 14-day view.' : 'No days to show in this range.') + '</div>';
+        els.daysList.innerHTML = '<div class="empty">' + (term ? 'No events matched your search in the loaded calendar.' : 'No days to show in this range.') + '</div>';
         return;
       }
       els.daysList.innerHTML = days.map(renderDay).join('');
@@ -895,9 +918,18 @@
       return normalizeTitle(haystack).includes(term);
     }
 
-    function countDaysWithEvents(events){
-      const range = getVisibleRange();
+    function countDaysWithEvents(events, useWholeCalendar = false){
       const seen = new Set();
+      if (useWholeCalendar){
+        for (const evt of events){
+          for (let day = startOfDay(evt.start); day <= startOfDay(evt.allDay ? addDays(evt.end, -1) : evt.end); day = addDays(day, 1)){
+            if (!state.showWeekends && isWeekend(day)) continue;
+            seen.add(startOfDay(day).toISOString());
+          }
+        }
+        return seen.size;
+      }
+      const range = getVisibleRange();
       for (let day = startOfDay(range.start); day <= startOfDay(range.end); day = addDays(day, 1)){
         if (!state.showWeekends && isWeekend(day)) continue;
         if (events.some(evt => overlapsDay(evt, day))) seen.add(startOfDay(day).toISOString());
@@ -910,9 +942,11 @@
     }
 
     function getVisibleEvents(term = ''){
-      const range = getVisibleRange();
       const normalizedTerm = normalizeSearchTerm(term);
-      return getDisplayEvents().filter(evt => overlapsRange(evt, range.start, addDays(range.end, 1))).filter(evt => !normalizedTerm || eventMatchesSearch(evt, normalizedTerm));
+      const events = getDisplayEvents().filter(evt => !normalizedTerm || eventMatchesSearch(evt, normalizedTerm));
+      if (normalizedTerm) return events;
+      const range = getVisibleRange();
+      return events.filter(evt => overlapsRange(evt, range.start, addDays(range.end, 1)));
     }
 
     function isWeekdayPlaceholder(evt){
