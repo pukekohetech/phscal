@@ -1,0 +1,1962 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PHS Calendar Whiteboard</title>
+  <meta name="theme-color" content="#f6f7f8">
+  <meta name="application-name" content="PHS Calendar">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icons/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="icon" href="./icons/icon-512.png" sizes="512x512" type="image/png">
+  <style>
+    :root{
+      --bg:#f6f7f8;
+      --card:#ffffff;
+      --text:#111827;
+      --muted:#6b7280;
+      --line:#e5e7eb;
+      --line-strong:#cbd5e1;
+      --soft:#f8fafc;
+      --today:#fffdf2;
+      --error:#8a1f11;
+      --error-bg:#fcebea;
+      --notice:#334155;
+      --notice-bg:#eef3f8;
+      --shadow:0 8px 24px rgba(15,23,42,.05);
+      --radius:18px;
+      --meeting:#2563eb;
+      --meeting-bg:#eff6ff;
+      --assembly:#ea580c;
+      --assembly-bg:#fff7ed;
+      --hui:#7c3aed;
+      --hui-bg:#f5f3ff;
+      --visit:#0f766e;
+      --visit-bg:#ecfdf5;
+      --department:#b45309;
+      --department-bg:#fffbeb;
+      --pld:#7c2d12;
+      --pld-bg:#fff7ed;
+      --pou:#be185d;
+      --pou-bg:#fdf2f8;
+      --holiday:#059669;
+      --holiday-bg:#ecfdf5;
+      --exam:#dc2626;
+      --exam-bg:#fef2f2;
+      --nzqa:#4338ca;
+      --nzqa-bg:#eef2ff;
+      --trip:#0f766e;
+      --trip-bg:#f0fdfa;
+      --generic:#64748b;
+      --generic-bg:#f8fafc;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--text);background:var(--bg)}
+
+    [hidden]{display:none!important}
+    button,input,textarea{font:inherit}
+    .shell{max-width:1600px;margin:0 auto;padding:10px;display:grid;gap:10px;min-height:100vh}
+    .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+    .header{padding:8px 10px;display:grid;grid-template-columns:minmax(130px,.55fr) minmax(280px,1.35fr) auto;gap:10px;align-items:center}
+    .brand{display:grid;gap:8px;align-content:center}
+    .title{font-size:clamp(15px,1.7vw,21px);line-height:1;font-weight:950;letter-spacing:-.5px}
+    .sub{font-size:11px;color:var(--muted);font-weight:700}
+    .meta,.toolbar,.source-actions,.actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+    .meta{gap:6px}
+    .chip{display:inline-flex;align-items:center;padding:4px 8px;border:1px solid var(--line);border-radius:999px;background:var(--soft);font-size:10px;font-weight:900;color:var(--muted)}
+    .periodStrip{display:grid;gap:6px;border:1px solid var(--line);border-radius:14px;background:#fff;padding:8px 10px;min-width:0}
+    .periodTop{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+    .periodLabel{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:900}
+    .periodTitle{font-size:clamp(16px,2vw,24px);line-height:1.05;font-weight:950;letter-spacing:-.45px}
+    .periodMeta{display:flex;gap:6px;flex-wrap:wrap}
+    .countdownWrap{display:grid;justify-items:end;gap:4px;min-width:110px}
+    .countdown{font-size:clamp(18px,2vw,28px);line-height:1;font-weight:950;letter-spacing:-.45px}
+    .countdownNote{font-size:11px;color:var(--muted);font-weight:800;text-align:right}
+    .pill{display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;font-size:10px;font-weight:900;border:1px solid var(--line);background:var(--soft);color:var(--muted)}
+    .progress{height:8px;border-radius:999px;background:#eef2f7;overflow:hidden}
+    .progressBar{height:100%;width:0;background:#111827;transition:width .4s ease}
+    .headerRight{display:grid;justify-items:end;gap:8px}
+    .clock{font-size:clamp(22px,3.4vw,40px);line-height:1;font-weight:950;letter-spacing:-.7px}
+    .date{font-size:11px;color:var(--muted);font-weight:800;text-align:right}
+    .toolbar button{padding:7px 10px}
+    button{border:1px solid var(--line);border-radius:12px;padding:9px 12px;background:#fff;color:var(--text);font-weight:900;cursor:pointer}
+    button:hover{background:var(--soft)}
+    button:active{transform:translateY(1px)}
+    button.danger{background:#fff5f5;border-color:#f1c5bf;color:#9a2c1e}
+    .main{padding:10px}
+    .messages{display:grid;gap:8px;margin-bottom:10px}
+    .searchRow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;margin-bottom:10px}
+    .searchBox{display:flex;gap:8px;align-items:center;min-width:0}
+    #searchInput{flex:1;min-width:0;padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--text);font-weight:700}
+    #searchInput::placeholder{color:var(--muted)}
+    .notice,.error{padding:11px 13px;border-radius:14px;font-size:13px;font-weight:700}
+    .notice{background:var(--notice-bg);color:var(--notice);border:1px solid #d7e2ee}
+    .error{background:var(--error-bg);color:var(--error);border:1px solid #efc6c1}
+    .days{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-content:start}
+    .day{border:1px solid var(--line);border-radius:15px;padding:10px;background:#fff;display:grid;gap:8px;min-height:110px;align-content:start}
+    .day.today{background:var(--today);border-color:var(--line-strong)}
+    .dayHead{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+    .eyebrow{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:900}
+    .dayTitle{font-size:18px;line-height:1.1;font-weight:950;letter-spacing:-.28px}
+    .count{font-size:10px;font-weight:900;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:4px 8px;background:#fff}
+    .eventList{display:grid;gap:6px}
+    .event{border:1px solid var(--line);border-left:6px solid var(--generic);border-radius:13px;padding:8px 10px;background:#fff}
+    .event.meeting{border-left-color:var(--meeting);background:var(--meeting-bg)}
+    .event.assembly{border-left-color:var(--assembly);background:var(--assembly-bg)}
+    .event.hui{border-left-color:var(--hui);background:var(--hui-bg)}
+    .event.visit{border-left-color:var(--visit);background:var(--visit-bg)}
+    .event.department{border-left-color:var(--department);background:var(--department-bg)}
+    .event.pld{border-left-color:var(--pld);background:var(--pld-bg)}
+    .event.pou{border-left-color:var(--pou);background:var(--pou-bg)}
+    .event.holiday{border-left-color:var(--holiday);background:var(--holiday-bg)}
+    .event.exam{border-left-color:var(--exam);background:var(--exam-bg)}
+    .event.nzqa{border-left-color:var(--nzqa);background:var(--nzqa-bg)}
+    .event.trip{border-left-color:var(--trip);background:var(--trip-bg)}
+    .event.now{box-shadow:inset 0 0 0 1px rgba(17,24,39,.18), 0 2px 8px rgba(15,23,42,.05)}
+    .eventHead{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+    .eventTitleWrap{display:grid;gap:5px;min-width:0}
+    .eventTitle{font-size:14px;font-weight:900;letter-spacing:-.18px}
+    .eventBadge{display:inline-flex;align-items:center;width:max-content;padding:3px 7px;border-radius:999px;font-size:9px;font-weight:950;letter-spacing:.05em;text-transform:uppercase;border:1px solid rgba(0,0,0,.08);background:#fff;color:var(--muted)}
+    .eventTime{font-size:11px;font-weight:900;color:var(--muted);white-space:nowrap}
+    .eventMeta{margin-top:5px;font-size:12px;color:var(--muted);line-height:1.35}
+    .empty{border:1px dashed var(--line);border-radius:14px;padding:12px;color:var(--muted);font-size:14px;font-weight:700;background:#fcfcfb}
+    details.settings{overflow:hidden}
+    details.settings summary{list-style:none;cursor:pointer;padding:14px 16px;font-weight:900}
+    details.settings summary::-webkit-details-marker{display:none}
+    .settingsBody{padding:0 16px 16px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .card{border:1px solid var(--line);border-radius:16px;background:#fff;padding:14px;display:grid;gap:12px}
+    .field{display:grid;gap:6px}
+    .field label{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:900}
+    input[type="text"],input[type="url"],input[type="number"],textarea{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--text)}
+    textarea{min-height:110px;resize:vertical;line-height:1.45}
+    .check{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:800;color:var(--text)}
+    .sources{display:grid;gap:10px}
+    .source{border:1px solid var(--line);border-radius:14px;padding:10px;background:#fff}
+    .sourceName{font-size:15px;font-weight:900}
+    .sourceStatus{margin-top:4px;font-size:13px;color:var(--muted);line-height:1.4}
+    .footer{padding:0 6px 2px;text-align:center;font-size:11px;color:var(--muted);font-weight:700}
+    @media (min-width:1500px){.days{grid-template-columns:repeat(3,minmax(0,1fr));}}
+    @media (max-width:1180px){.header{grid-template-columns:1fr}.headerRight{justify-items:start}.date,.countdownNote{text-align:left}.settingsBody,.days{grid-template-columns:1fr}}
+    @media (max-width:1180px){.searchRow{grid-template-columns:1fr}}
+    @media (max-width:640px){.shell{padding:8px}.header,.main{padding:10px}.dayTitle{font-size:17px}.toolbar{justify-content:flex-start}.searchBox{flex-wrap:wrap}}
+  
+/* --- Local event editor + backup/download --- */
+.formGrid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:start}
+.formGrid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;align-items:start}
+@media (max-width:640px){.formGrid2,.formGrid4{grid-template-columns:1fr}}
+.localHint{font-size:12px;color:var(--muted);font-weight:800;line-height:1.35}
+.eventMini{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.eventMiniTitle{font-weight:950}
+.eventMiniMeta{margin-top:4px;font-size:12px;color:var(--muted);font-weight:800;line-height:1.35}
+
+</style>
+</head>
+<body>
+  <div class="shell">
+    <section class="panel header">
+      <div class="brand">
+        <div class="title">Pukekohe calendar</div>
+        <div class="sub">SCHOOL NURSE 021 324 645   TRUANCY OFFICER 021 658 582  https://sites.google.com/view/phstech</div>
+        <div class="meta">
+          <div class="chip" id="statusChip">No calendars</div>
+          <div class="chip" id="rangeChip">Next 14 days</div>
+          <div class="chip" id="sourceChip">0 src</div>
+        </div>
+      </div>
+
+      <div class="periodStrip">
+        <div class="periodTop">
+          <div>
+            <div class="periodLabel" id="periodLabel">Current period</div>
+            <div class="periodTitle" id="periodTitle">Outside timetable</div>
+          </div>
+          <div class="countdownWrap">
+            <div class="countdown" id="periodCountdown">—</div>
+            <div class="countdownNote" id="periodCountdownNote">No active period</div>
+          </div>
+        </div>
+        <div class="periodMeta" id="periodMeta"></div>
+        <div class="progress"><div class="progressBar" id="periodProgress"></div></div>
+      </div>
+
+      <div class="headerRight">
+        <div class="clock" id="clockTime">--:--</div>
+        <div class="date" id="clockDate">—</div>
+        <div class="toolbar">
+          <button type="button" id="prevBtn">Previous 14 days</button>
+          <button type="button" id="todayBtn">Today</button>
+          <button type="button" id="nextBtn">Next 14 days</button>
+          <button type="button" id="refreshBtn">Refresh</button>
+          <button type="button" id="fullscreenBtn">Full screen</button>
+          <button type="button" id="installBtn" hidden>Install app</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel main">
+      <div class="messages" id="messagesWrap">
+        <div class="notice" id="noticeBox" hidden></div>
+        <div id="errorBox"></div>
+      </div>
+      <div class="searchRow">
+        <div class="searchBox">
+          <input id="searchInput" type="text" placeholder="Search events, visits, assemblies, locations...">
+          <button type="button" id="clearSearchBtn">Clear</button>
+        </div>
+        <div class="chip" id="searchInfo">Showing all events</div>
+      </div>
+      <div class="days" id="daysList"></div>
+    </section>
+
+    <details class="panel settings">
+      <summary>Calendar sources and settings</summary>
+      <div class="settingsBody">
+        <div class="card">
+          <div class="field">
+            <label for="feedUrl">ICS feed URL</label>
+            <input id="feedUrl" type="url" placeholder="https://example.com/calendar.ics or webcal://...">
+          </div>
+          <div class="field">
+            <label for="feedName">Feed name</label>
+            <input id="feedName" type="text" placeholder="Optional label">
+          </div>
+          <div class="actions">
+            <button type="button" id="addFeedBtn">Add feed</button>
+            <button type="button" id="exampleBtn">Use Pukekohe feed</button>
+          </div>
+          <div class="field">
+            <label for="icsFileInput">Import .ics file</label>
+            <input id="icsFileInput" type="file" accept=".ics,text/calendar" multiple>
+          </div>
+          <div class="actions">
+            <button type="button" id="importFilesBtn">Import file(s)</button>
+            <button type="button" id="mirrorFileBtn">Open mirror file</button>
+            <button type="button" id="chooseFolderBtn">Choose folder</button>
+            <button type="button" id="scanFolderBtn">Scan folder</button>
+          </div>
+          <div class="field">
+            <label for="pasteName">Pasted calendar name</label>
+            <input id="pasteName" type="text" placeholder="Optional label">
+          </div>
+          <div class="field">
+            <label for="pasteText">Paste raw ICS text</label>
+            <textarea id="pasteText" placeholder="Paste raw ICS here"></textarea>
+          </div>
+          <button type="button" id="importPasteBtn">Import pasted calendar</button>
+    <hr style="border:none;border-top:1px solid var(--line);margin:14px 0"> 
+    <div class="field"> 
+      <label for="newEventTitle">Add an event (saved locally)</label> 
+      <div class="localHint">These events are stored in this browser. Use Download/Backup to move them to another device.</div> 
+      <input id="newEventTitle" type="text" placeholder="Event title"> 
+    </div> 
+    <div class="formGrid4"> 
+      <div class="field"> 
+        <label for="newEventStartDate">Start date</label> 
+        <input id="newEventStartDate" type="date"> 
+      </div> 
+      <div class="field"> 
+        <label for="newEventStartTime">Start time</label> 
+        <input id="newEventStartTime" type="time"> 
+      </div> 
+      <div class="field"> 
+        <label for="newEventEndDate">End date</label> 
+        <input id="newEventEndDate" type="date"> 
+      </div> 
+      <div class="field"> 
+        <label for="newEventEndTime">End time</label> 
+        <input id="newEventEndTime" type="time"> 
+      </div> 
+    </div> 
+    <label class="check"><input id="newEventAllDay" type="checkbox"> All-day event</label> 
+    <div class="formGrid2"> 
+      <div class="field"> 
+        <label for="newEventLocation">Location</label> 
+        <input id="newEventLocation" type="text" placeholder="Optional"> 
+      </div> 
+      <div class="field"> 
+        <label for="newEventCategories">Category</label> 
+        <input id="newEventCategories" type="text" placeholder="e.g. Meeting, Visit"> 
+      </div> 
+    </div> 
+    <div class="field"> 
+      <label for="newEventDescription">Description</label> 
+      <textarea id="newEventDescription" placeholder="Optional notes"></textarea> 
+    </div> 
+    <div class="actions"> 
+      <button type="button" id="addEventBtn">Add event</button> 
+      <button type="button" id="clearEventFormBtn">Clear</button> 
+      <button type="button" id="downloadMyEventsBtn">Download my events (.ics)</button> 
+    </div> 
+    <div class="sources" id="myEventsList"></div> 
+
+        </div>
+
+        <div class="card">
+          <div class="field">
+            <label for="refreshMinutes">Refresh every (minutes)</label>
+            <input id="refreshMinutes" type="number" min="1" max="180" step="1">
+          </div>
+          <div class="field">
+            <label for="returnMinutes">Return to current 14 days after inactivity (minutes)</label>
+            <input id="returnMinutes" type="number" min="1" max="180" step="1">
+          </div>
+          <label class="check"><input id="showWeekends" type="checkbox"> Show weekends</label>
+          <label class="check"><input id="includeAllDay" type="checkbox"> Show all-day events</label>
+          <div class="field">
+            <label for="periodsText">Period timetable (JSON)</label>
+            <textarea id="periodsText"></textarea>
+          </div>
+          <div class="actions">
+            <button type="button" id="saveSettingsBtn">Save settings</button>
+            <button type="button" id="resetPeriodsBtn">Reset periods</button>
+            <button type="button" id="reloadAllBtn">Reload all</button>
+            <button type="button" id="clearAllBtn" class="danger">Remove all calendars</button>
+          </div>
+          
+    <hr style="border:none;border-top:1px solid var(--line);margin:14px 0"> 
+    <div class="field"> 
+      <label>Backup / download</label> 
+      <div class="actions"> 
+        <button type="button" id="downloadVisibleIcsBtn">Download visible (14 days) .ics</button> 
+        <button type="button" id="downloadMergedIcsBtn">Download loaded (≈1 year) .ics</button> 
+        <button type="button" id="backupJsonBtn">Backup settings (.json)</button> 
+      </div> 
+    </div> 
+    <div class="field"> 
+      <label for="restoreJsonInput">Restore backup (.json)</label> 
+      <input id="restoreJsonInput" type="file" accept="application/json,.json"> 
+    </div> 
+    <div class="actions"> 
+      <button type="button" id="restoreJsonBtn">Restore backup</button> 
+    </div> 
+<div class="empty" id="folderStatusBox">No folder linked.</div>
+          <div class="sources" id="sourceList"></div>
+        </div>
+      </div>
+    </details>
+
+    <div class="footer">Weekday placeholders such as Monday and Tuesday are filtered out automatically. Timed events stay first, all-day events move to the bottom, and a chosen folder can auto-load every .ics file it contains.</div>
+  </div>
+
+  <script>
+    const DEFAULT_FEED = 'https://github.com/pukekohetech/phscal/blob/main/PHS%20Calendar.ics';
+    const STORE_KEY = 'phs_calendar_whiteboard_v2';
+ const LOCAL_SOURCE_ID = 'local:my-events';
+    const DEFAULT_PERIODS = [
+      { name:'MEETING', start:'08:30', end:'09:00' },
+      { name:'PERIOD 1', start:'09:00', end:'09:55' },
+      { name:'PERIOD 2', start:'10:00', end:'10:55' },
+       { name:'TE MAAHURI', start:'10:55', end:'11:25' },
+      { name:'BREAK 1', start:'11:25', end:'12:00' },
+      { name:'PERIOD 3', start:'12:00', end:'12:55' },
+      { name:'BPERIOD 4', start:'13:00', end:'13:55' },
+      { name:'BREAK 2', start:'13:55', end:'14:20' },
+      { name:'PERIOD 5', start:'14:20', end:'15:15' }
+
+    ];
+    const DEFAULT_STATE = {
+      anchor:'',
+      refreshMinutes:15,
+      returnMinutes:5,
+      showWeekends:true,
+      includeAllDay:true,
+      searchTerm:'',
+      periodsText: JSON.stringify(DEFAULT_PERIODS, null, 2),
+      sources:[]
+    };
+
+    const state = loadState();
+    const fileHandles = Object.create(null);
+    const runtimeSourceEvents = Object.create(null);
+    const els = mapEls();
+    let loadedEvents = [];
+    let folderHandle = null;
+    let refreshTimer = null;
+    let inactivityTimer = null;
+    let errors = [];
+    let busy = false;
+    let deferredInstallPrompt = null;
+
+    init();
+
+    function mapEls(){
+      const ids = ['statusChip','rangeChip','sourceChip','periodLabel','periodTitle','periodMeta','periodProgress','periodCountdown','periodCountdownNote','clockTime','clockDate','prevBtn','todayBtn','nextBtn','refreshBtn','fullscreenBtn','installBtn','noticeBox','errorBox','searchInput','clearSearchBtn','searchInfo','daysList','feedUrl','feedName','addFeedBtn','exampleBtn','icsFileInput','importFilesBtn','mirrorFileBtn','chooseFolderBtn','scanFolderBtn','pasteName','pasteText','importPasteBtn','refreshMinutes','returnMinutes','showWeekends','includeAllDay','periodsText','saveSettingsBtn','resetPeriodsBtn','reloadAllBtn','clearAllBtn','sourceList','folderStatusBox', 'newEventTitle', 'newEventStartDate', 'newEventStartTime', 'newEventEndDate', 'newEventEndTime', 'newEventAllDay', 'newEventLocation', 'newEventCategories', 'newEventDescription', 'addEventBtn', 'clearEventFormBtn', 'downloadMyEventsBtn', 'myEventsList', 'downloadVisibleIcsBtn', 'downloadMergedIcsBtn', 'backupJsonBtn', 'restoreJsonInput', 'restoreJsonBtn'];
+      return Object.fromEntries(ids.map(id => [id, document.getElementById(id)]));
+    }
+
+    function structuredClone(obj){ return JSON.parse(JSON.stringify(obj)); }
+    function loadState(){
+      try{
+        const parsed = JSON.parse(localStorage.getItem(STORE_KEY) || '{}');
+        return { ...structuredClone(DEFAULT_STATE), ...parsed, sources:Array.isArray(parsed.sources) ? parsed.sources : [] };
+      }catch(_){ return structuredClone(DEFAULT_STATE); }
+    }
+    function saveState(){ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+
+    async function init(){
+      if (!state.anchor) state.anchor = startOfDay(new Date()).toISOString();
+      ensureDefaultSource();
+ ensureLocalSource();
+      syncControls();
+      bindEvents();
+ setDefaultEventForm();
+      tickClock();
+      setInterval(tickClock, 1000);
+      armRefresh();
+      armInactivity();
+      render();
+      wirePWA();
+      await restoreSavedFolderHandle();
+      if (state.sources.length) reloadSources();
+    }
+
+    function ensureDefaultSource(){
+      if (Array.isArray(state.sources) && state.sources.length) return;
+      state.sources = [{
+        id: uid(),
+        type:'url',
+        name:'Pukekohe High School',
+        value:DEFAULT_FEED,
+        enabled:true,
+        status:'',
+        cachedText:'',
+        cachedAt:0
+      }];
+      saveState();
+    }
+
+    function syncControls(){
+      els.refreshMinutes.value = state.refreshMinutes;
+      els.returnMinutes.value = state.returnMinutes;
+      els.showWeekends.checked = !!state.showWeekends;
+      els.includeAllDay.checked = !!state.includeAllDay;
+      els.searchInput.value = state.searchTerm || '';
+      els.periodsText.value = state.periodsText || JSON.stringify(DEFAULT_PERIODS, null, 2);
+    }
+
+    function bindEvents(){
+      els.prevBtn.addEventListener('click', () => shiftRange(-1));
+      els.nextBtn.addEventListener('click', () => shiftRange(1));
+      els.todayBtn.addEventListener('click', () => {
+        state.anchor = startOfDay(new Date()).toISOString();
+        saveState();
+        registerActivity();
+        render();
+      });
+      els.refreshBtn.addEventListener('click', reloadSources);
+      els.reloadAllBtn.addEventListener('click', reloadSources);
+      els.searchInput.addEventListener('input', event => setSearchTerm(event.target.value));
+      els.clearSearchBtn.addEventListener('click', () => {
+        setSearchTerm('');
+        els.searchInput.focus();
+      });
+      if (els.fullscreenBtn) els.fullscreenBtn.addEventListener('click', toggleFullscreen);
+      if (els.installBtn) els.installBtn.addEventListener('click', installApp);
+      els.addFeedBtn.addEventListener('click', addFeed);
+      els.exampleBtn.addEventListener('click', () => { els.feedUrl.value = DEFAULT_FEED; els.feedName.value = 'Pukekohe High School'; });
+      els.importFilesBtn.addEventListener('click', importFiles);
+      els.importPasteBtn.addEventListener('click', importPasted);
+      els.mirrorFileBtn.addEventListener('click', openMirrorFile);
+      els.chooseFolderBtn.addEventListener('click', chooseFolder);
+      els.scanFolderBtn.addEventListener('click', () => syncFolderSources(true));
+      els.sourceList.addEventListener('click', handleSourceListClick);
+      els.saveSettingsBtn.addEventListener('click', saveSettingsAction);
+      els.resetPeriodsBtn.addEventListener('click', () => { els.periodsText.value = JSON.stringify(DEFAULT_PERIODS, null, 2); });
+      els.clearAllBtn.addEventListener('click', () => {
+        if (!confirm('Remove all saved calendars from this browser?')) return;
+        state.sources = [];
+        loadedEvents = [];
+        errors = [];
+        clearRuntimeSourceEvents();
+        clearSavedFolderHandle();
+        folderHandle = null;
+        saveState();
+        render();
+      });
+      
+ els.addEventBtn.addEventListener('click', addEventFromForm);
+ els.clearEventFormBtn.addEventListener('click', clearEventForm);
+ els.downloadMyEventsBtn.addEventListener('click', downloadMyEvents);
+ els.downloadVisibleIcsBtn.addEventListener('click', downloadVisibleIcs);
+ els.downloadMergedIcsBtn.addEventListener('click', downloadMergedIcs);
+ els.backupJsonBtn.addEventListener('click', downloadBackupJson);
+ els.restoreJsonBtn.addEventListener('click', restoreBackupJson);
+ els.newEventAllDay.addEventListener('change', syncAllDayUI);
+ els.newEventStartDate.addEventListener('change', syncEventDatesFromStart);
+ els.newEventStartTime.addEventListener('change', syncEventTimesFromStart);
+ els.myEventsList.addEventListener('click', handleMyEventsClick);
+
+ window.addEventListener('focus', reloadSources);
+      ['click','keydown','mousemove','touchstart','scroll'].forEach(evt => window.addEventListener(evt, registerActivity, { passive:true }));
+    }
+
+    function handleSourceListClick(event){
+      const button = event.target.closest('button[data-action][data-id]');
+      if (!button) return;
+      const id = button.getAttribute('data-id');
+      const action = button.getAttribute('data-action');
+      if (!id || !action) return;
+      registerActivity();
+      if (action === 'toggle') toggleSource(id);
+      if (action === 'remove') removeSource(id);
+    }
+
+    function registerActivity(){ armInactivity(); }
+
+    function armRefresh(){
+      if (refreshTimer) clearInterval(refreshTimer);
+      refreshTimer = setInterval(reloadSources, clampInt(state.refreshMinutes, 1, 180, 15) * 60000);
+    }
+
+    function armInactivity(){
+      if (inactivityTimer) clearTimeout(inactivityTimer);
+      inactivityTimer = setTimeout(() => {
+        state.anchor = startOfDay(new Date()).toISOString();
+        saveState();
+        render();
+      }, clampInt(state.returnMinutes, 1, 180, 5) * 60000);
+    }
+
+    function shiftRange(direction){
+      const anchor = getAnchorDate();
+      state.anchor = addDays(anchor, direction * 14).toISOString();
+      saveState();
+      registerActivity();
+      render();
+    }
+
+    function saveSettingsAction(){
+      state.refreshMinutes = clampInt(els.refreshMinutes.value, 1, 180, 15);
+      state.returnMinutes = clampInt(els.returnMinutes.value, 1, 180, 5);
+      state.showWeekends = !!els.showWeekends.checked;
+      state.includeAllDay = !!els.includeAllDay.checked;
+      state.periodsText = els.periodsText.value || JSON.stringify(DEFAULT_PERIODS, null, 2);
+      saveState();
+      armRefresh();
+      armInactivity();
+      render();
+    }
+
+    async function addFeed(){
+      const raw = (els.feedUrl.value || '').trim();
+      if (!raw) return;
+      state.sources.push({ id:uid(), type:'url', name:(els.feedName.value || '').trim() || prettyName(raw), value:normalizeFeedUrl(raw), enabled:true, status:'', cachedText:'', cachedAt:0, lastLoadedVia:'' });
+      els.feedUrl.value = '';
+      els.feedName.value = '';
+      saveState();
+      render();
+      reloadSources();
+    }
+
+    async function importFiles(){
+      const files = [...(els.icsFileInput.files || [])];
+      for (const file of files){
+        const text = await file.text();
+        const id = uid();
+        state.sources.push({ id, type:'text', name:file.name.replace(/\.ics$/i,''), value:text, enabled:true, status:'Imported file', cachedText:text, cachedAt:Date.now(), lastLoadedVia:'imported file' });
+        runtimeSourceEvents[id] = dedupeEvents(parseICS(text, file.name.replace(/\.ics$/i,''), getExpansionRange().start, getExpansionRange().end));
+      }
+      els.icsFileInput.value = '';
+      saveState();
+      render();
+      reloadSources();
+    }
+
+    async function importPasted(){
+      const text = (els.pasteText.value || '').trim();
+      if (!text) return;
+      const id = uid();
+      const name = (els.pasteName.value || 'Pasted calendar').trim();
+      state.sources.push({ id, type:'text', name, value:text, enabled:true, status:'Imported paste', cachedText:text, cachedAt:Date.now(), lastLoadedVia:'pasted ICS' });
+      runtimeSourceEvents[id] = dedupeEvents(parseICS(text, name, getExpansionRange().start, getExpansionRange().end));
+      els.pasteText.value = '';
+      els.pasteName.value = '';
+      saveState();
+      render();
+      reloadSources();
+    }
+
+    async function openMirrorFile(){
+      if (!window.showOpenFilePicker){
+        alert('This browser does not support opening a mirror file directly. Use Import file(s) instead.');
+        return;
+      }
+      try{
+        const [handle] = await window.showOpenFilePicker({
+          types:[{ description:'ICS calendar', accept:{ 'text/calendar':['.ics'], 'text/plain':['.ics'] } }],
+          multiple:false
+        });
+        const file = await handle.getFile();
+        const text = await file.text();
+        const id = uid();
+        fileHandles[id] = handle;
+        state.sources.push({ id, type:'fileHandle', name:file.name.replace(/\.ics$/i,''), value:file.name, enabled:true, status:'Mirror file linked for this session', cachedText:text, cachedAt:Date.now(), lastLoadedVia:'mirror file' });
+        runtimeSourceEvents[id] = dedupeEvents(parseICS(text, file.name.replace(/\.ics$/i,''), getExpansionRange().start, getExpansionRange().end));
+        saveState();
+        render();
+        reloadSources();
+      }catch(_){ }
+    }
+
+    async function chooseFolder(){
+      if (!window.showDirectoryPicker){
+        alert('This browser does not support folder access. Use Chrome or Edge, or import .ics files manually.');
+        return;
+      }
+      try{
+        const handle = await window.showDirectoryPicker({ mode:'read' });
+        const granted = await verifyReadPermission(handle, true);
+        if (!granted) throw new Error('Folder permission not granted');
+        folderHandle = handle;
+        await saveSavedFolderHandle(handle);
+        await syncFolderSources(true);
+      }catch(_){ }
+    }
+
+    async function restoreSavedFolderHandle(){
+      try{
+        const handle = await getSavedFolderHandle();
+        if (!handle) return;
+        const granted = await verifyReadPermission(handle, false);
+        if (!granted) return;
+        folderHandle = handle;
+        await syncFolderSources(false);
+      }catch(_){ }
+    }
+
+    async function syncFolderSources(triggerReload = true){
+      if (!folderHandle) { renderSources();
+ renderMyEvents(); return; }
+      try{
+        const granted = await verifyReadPermission(folderHandle, false);
+        if (!granted) throw new Error('Folder permission expired');
+        const seen = new Set();
+        for await (const [name, handle] of folderHandle.entries()){
+          if (!handle || handle.kind !== 'file' || !/\.ics$/i.test(name)) continue;
+          seen.add(name.toLowerCase());
+          const id = 'folder:' + name.toLowerCase();
+          const existing = state.sources.find(source => source.id === id);
+          if (existing){
+            existing.name = name.replace(/\.ics$/i,'');
+            existing.value = name;
+            existing.type = 'folderFile';
+          }else{
+            state.sources.push({ id, type:'folderFile', name:name.replace(/\.ics$/i,''), value:name, enabled:true, status:'Folder file discovered', cachedText:'', cachedAt:0, lastLoadedVia:'folder file' });
+          }
+        }
+        const removedFolderIds = state.sources.filter(source => source.type === 'folderFile' && !seen.has(String(source.value || '').toLowerCase())).map(source => source.id);
+        removedFolderIds.forEach(clearSourceRuntimeState);
+        state.sources = state.sources.filter(source => source.type !== 'folderFile' || seen.has(String(source.value || '').toLowerCase()));
+        saveState();
+        render();
+        if (triggerReload) reloadSources();
+      }catch(err){
+        folderHandle = null;
+        await clearSavedFolderHandle();
+        errors.push('Folder: ' + (err && err.message ? err.message : 'Could not scan folder'));
+        render();
+      }
+    }
+
+    async function verifyReadPermission(handle, request){
+      if (!handle || !handle.queryPermission) return true;
+      let permission = await handle.queryPermission({ mode:'read' });
+      if (permission === 'granted') return true;
+      if (!request) return false;
+      permission = await handle.requestPermission({ mode:'read' });
+      return permission === 'granted';
+    }
+
+    async function getSavedFolderHandle(){
+      if (!('indexedDB' in window)) return null;
+      const db = await openHandleDb();
+      try{
+        return await new Promise((resolve, reject) => {
+          const tx = db.transaction('handles', 'readonly');
+          const req = tx.objectStore('handles').get('calendarFolder');
+          req.onsuccess = () => resolve(req.result || null);
+          req.onerror = () => reject(req.error);
+        });
+      } finally { db.close(); }
+    }
+
+    async function saveSavedFolderHandle(handle){
+      if (!('indexedDB' in window)) return;
+      const db = await openHandleDb();
+      try{
+        await new Promise((resolve, reject) => {
+          const tx = db.transaction('handles', 'readwrite');
+          tx.objectStore('handles').put(handle, 'calendarFolder');
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => reject(tx.error);
+        });
+      } finally { db.close(); }
+    }
+
+    async function clearSavedFolderHandle(){
+      if (!('indexedDB' in window)) return;
+      const db = await openHandleDb();
+      try{
+        await new Promise((resolve, reject) => {
+          const tx = db.transaction('handles', 'readwrite');
+          tx.objectStore('handles').delete('calendarFolder');
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => reject(tx.error);
+        });
+      } finally { db.close(); }
+    }
+
+    function openHandleDb(){
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open('phsCalendarWhiteboardHandles', 1);
+        req.onupgradeneeded = () => {
+          if (!req.result.objectStoreNames.contains('handles')) req.result.createObjectStore('handles');
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function reloadSources(){
+      if (busy) return;
+      busy = true;
+      errors = [];
+      await syncFolderSources(false);
+      const range = getExpansionRange();
+      const all = [];
+      for (const source of state.sources){
+        if (!source.enabled) continue;
+        let parsed = null;
+        try{
+          let text = '';
+          let usedCacheText = false;
+          let via = source.lastLoadedVia || '';
+
+          if (source.type === 'url'){
+            try{
+              const fetched = await fetchCalendarUrl(source.value);
+              text = fetched.text;
+              via = fetched.via;
+            }catch(err){
+              if (source.cachedText){
+                text = source.cachedText;
+                usedCacheText = true;
+                via = 'cached copy';
+              }else{
+                throw err;
+              }
+            }
+          }else if (source.type === 'fileHandle'){
+            const handle = fileHandles[source.id];
+            if (!handle) throw new Error('Mirror file needs to be re-opened for this session');
+            const file = await handle.getFile();
+            text = await file.text();
+            via = 'mirror file';
+          }else if (source.type === 'folderFile'){
+            if (!folderHandle) throw new Error('Folder needs to be linked again');
+            const handle = await folderHandle.getFileHandle(source.value);
+            const file = await handle.getFile();
+            text = await file.text();
+            via = 'folder file';
+          
+          }else if (source.type === 'local'){
+            text = buildICSFromLocalEvents(source.localEvents || [], source.name || 'My events');
+            via = 'local events';
+          }else{
+            text = source.value || '';
+            via = source.lastLoadedVia || 'imported ICS';
+          }
+
+          parsed = dedupeEvents(parseICS(text, source.name, range.start, range.end));
+          runtimeSourceEvents[source.id] = parsed;
+          source.cachedText = text;
+          source.cachedAt = Date.now();
+          source.lastLoadedVia = via;
+
+          if (usedCacheText){
+            source.status = 'Using cached copy from ' + formatTimestamp(source.cachedAt) + ' · ' + parsed.length + ' events';
+          }else if (source.type === 'url' && via && via !== 'direct'){
+            source.status = 'Loaded ' + parsed.length + ' events via ' + via;
+          }else{
+            source.status = 'Loaded ' + parsed.length + ' events';
+          }
+        }catch(err){
+          if (runtimeSourceEvents[source.id] && runtimeSourceEvents[source.id].length){
+            parsed = runtimeSourceEvents[source.id];
+            source.status = 'Using last good data · ' + parsed.length + ' events';
+            errors.push(source.name + ': ' + (err && err.message ? err.message : 'Could not refresh') + ' · showing last good data');
+          }else{
+            source.status = 'Error: ' + (err && err.message ? err.message : 'Could not load');
+            errors.push(source.name + ': ' + source.status);
+          }
+        }
+        if (parsed) all.push(...parsed);
+      }
+      loadedEvents = dedupeEvents(all).sort((a,b) => Number(a.allDay) - Number(b.allDay) || a.start - b.start || a.end - b.end || a.title.localeCompare(b.title));
+      saveState();
+      render();
+      busy = false;
+    }
+
+    function render(){
+      renderTop();
+      renderMessages();
+      renderSearch();
+      renderPeriodStrip();
+      renderDays();
+      renderSources();
+    }
+
+    function renderTop(){
+      const range = getVisibleRange();
+      const enabled = state.sources.filter(s => s.enabled).length;
+      els.rangeChip.textContent = formatRangeLabel(range.start, range.end);
+      els.sourceChip.textContent = state.sources.length + ' source' + (state.sources.length === 1 ? '' : 's');
+      if (!enabled) els.statusChip.textContent = 'No calendars';
+      else if (errors.length) els.statusChip.textContent = enabled + ' live · errors';
+      else els.statusChip.textContent = enabled + ' live';
+    }
+
+    function renderSearch(){
+      const term = normalizeSearchTerm(state.searchTerm);
+      const filteredEvents = getVisibleEvents(term);
+      const dayCount = countDaysWithEvents(filteredEvents, !!term);
+      els.searchInput.value = state.searchTerm || '';
+      els.clearSearchBtn.disabled = !term;
+      els.searchInfo.textContent = term
+        ? 'Search: ' + filteredEvents.length + ' match' + (filteredEvents.length === 1 ? '' : 'es') + ' across ' + dayCount + ' day' + (dayCount === 1 ? '' : 's') + ' in loaded calendar'
+        : 'Showing next 14 days';
+    }
+
+    function renderPeriodStrip(){
+      const now = new Date();
+      const periods = getPeriodsForDate(now);
+      const currentPeriod = periods.find(p => now >= p.start && now < p.end) || null;
+      const nextPeriod = periods.find(p => p.start > now) || null;
+      const todaysEvents = getDisplayEvents().filter(evt => overlapsDay(evt, now));
+      const activeEvent = todaysEvents.filter(evt => !evt.allDay && evt.start <= now && evt.end > now).sort((a,b) => a.end - b.end)[0] || null;
+
+      let start = null, end = null;
+      if (currentPeriod){
+        els.periodLabel.textContent = 'Current period';
+        els.periodTitle.textContent = currentPeriod.name;
+        start = currentPeriod.start;
+        end = currentPeriod.end;
+      }else if (activeEvent){
+        els.periodLabel.textContent = 'Current event';
+        els.periodTitle.textContent = activeEvent.title;
+        start = activeEvent.start;
+        end = activeEvent.end;
+      }else{
+        els.periodLabel.textContent = 'Next period';
+        els.periodTitle.textContent = nextPeriod ? nextPeriod.name : 'Outside timetable';
+      }
+
+      const pills = [];
+      if (currentPeriod) pills.push('<span class="pill">' + escapeHtml(formatClockRange(currentPeriod.start, currentPeriod.end)) + '</span>');
+      if (activeEvent && (!currentPeriod || activeEvent.title !== currentPeriod.name)) pills.push('<span class="pill">Event now · ' + escapeHtml(activeEvent.title) + '</span>');
+      if (!currentPeriod && nextPeriod) pills.push('<span class="pill">Starts ' + escapeHtml(nextPeriod.start.toLocaleTimeString([], { hour:'numeric', minute:'2-digit' })) + '</span>');
+      if (!currentPeriod && !activeEvent && !nextPeriod) pills.push('<span class="pill">No more periods today</span>');
+      els.periodMeta.innerHTML = pills.join(' ');
+
+      if (start && end){
+        const progress = Math.max(0, Math.min(100, ((now - start) / (end - start)) * 100));
+        els.periodProgress.style.width = progress.toFixed(1) + '%';
+        els.periodCountdown.textContent = formatCountdown(end - now);
+        els.periodCountdownNote.textContent = 'Ends at ' + end.toLocaleTimeString([], { hour:'numeric', minute:'2-digit' });
+      }else if (nextPeriod){
+        els.periodProgress.style.width = '0%';
+        els.periodCountdown.textContent = formatCountdown(nextPeriod.start - now);
+        els.periodCountdownNote.textContent = 'Starts at ' + nextPeriod.start.toLocaleTimeString([], { hour:'numeric', minute:'2-digit' });
+      }else{
+        els.periodProgress.style.width = '0%';
+        els.periodCountdown.textContent = '—';
+        els.periodCountdownNote.textContent = 'No active period';
+      }
+    }
+
+    function renderMessages(){
+      const notes = [];
+      if (location.protocol === 'file:' && state.sources.some(s => s.type === 'url')) notes.push('Live URL refresh from a file:// page is often blocked by the browser. Install and serve this PWA from localhost or HTTPS for reliable live feeds, or use a mirror .ics file / folder mode for local updates.');
+      if (state.sources.some(s => s.type === 'fileHandle')) notes.push('Mirror file handles only last for this browser session. Re-open the file next time you open the whiteboard.');
+      if (folderHandle) notes.push('Folder mode is active. All .ics files in the linked folder are scanned automatically.');
+      els.noticeBox.hidden = notes.length === 0;
+      els.noticeBox.textContent = notes.join(' ');
+      els.errorBox.innerHTML = errors.map(err => '<div class="error">' + escapeHtml(err) + '</div>').join('');
+    }
+
+    function renderDays(){
+      const range = getVisibleRange();
+      const term = normalizeSearchTerm(state.searchTerm);
+      const events = getVisibleEvents(term);
+      const days = [];
+
+      if (term){
+        const dayMap = new Map();
+        for (const evt of events){
+          const lastDay = startOfDay(evt.allDay ? addDays(evt.end, -1) : evt.end);
+          for (let day = startOfDay(evt.start); day <= lastDay; day = addDays(day, 1)){
+            if (!state.showWeekends && isWeekend(day)) continue;
+            const key = startOfDay(day).toISOString();
+            if (!dayMap.has(key)) dayMap.set(key, { day:new Date(day), events:[] });
+          }
+        }
+        for (const group of dayMap.values()){
+          group.events = events
+            .filter(evt => overlapsDay(evt, group.day))
+            .sort((a,b) => Number(a.allDay) - Number(b.allDay) || a.start - b.start || a.end - b.end || a.title.localeCompare(b.title));
+          if (group.events.length) days.push(group);
+        }
+        days.sort((a,b) => a.day - b.day);
+      }else{
+        for (let day = startOfDay(range.start); day <= startOfDay(range.end); day = addDays(day, 1)){
+          if (!state.showWeekends && isWeekend(day)) continue;
+          const dayEvents = events
+            .filter(evt => overlapsDay(evt, day))
+            .sort((a,b) => Number(a.allDay) - Number(b.allDay) || a.start - b.start || a.end - b.end || a.title.localeCompare(b.title));
+          days.push({ day:new Date(day), events:dayEvents });
+        }
+      }
+
+      if (!days.length){
+        els.daysList.innerHTML = '<div class="empty">' + (term ? 'No events matched your search in the loaded calendar.' : 'No days to show in this range.') + '</div>';
+        return;
+      }
+      els.daysList.innerHTML = days.map(renderDay).join('');
+    }
+
+    function renderDay(group){
+      const day = group.day;
+      const today = isSameDay(day, new Date());
+      const title = today ? 'Today' : day.toLocaleDateString([], { weekday:'long' });
+      const sub = day.toLocaleDateString([], { day:'numeric', month:'long', year:'numeric' });
+      const items = group.events.length ? group.events.map(evt => renderEvent(evt, day)).join('') : '<div class="empty">No events.</div>';
+      return '<section class="day' + (today ? ' today' : '') + '"><div class="dayHead"><div><div class="eyebrow">' + escapeHtml(title) + '</div><div class="dayTitle">' + escapeHtml(sub) + '</div></div><div class="count">' + group.events.length + ' item' + (group.events.length === 1 ? '' : 's') + '</div></div><div class="eventList">' + items + '</div></section>';
+    }
+
+    function renderEvent(evt, day){
+      const kind = classifyEvent(evt);
+      const meta = [];
+      if (evt.location) meta.push(escapeHtml(evt.location));
+      if (evt.description) meta.push(escapeHtml(trimText(evt.description, 100)));
+      const happeningNow = !evt.allDay && nowBetween(evt.start, evt.end, new Date());
+      const timeLabel = formatEventForDay(evt, day) + (happeningNow ? ' · Now' : '');
+      return '<article class="event ' + kind.className + (happeningNow ? ' now' : '') + '"><div class="eventHead"><div class="eventTitleWrap"><div class="eventBadge">' + escapeHtml(kind.label) + '</div><div class="eventTitle">' + escapeHtml(evt.title) + '</div></div><div class="eventTime">' + escapeHtml(timeLabel) + '</div></div>' + (meta.length ? '<div class="eventMeta">' + meta.join(' · ') + '</div>' : '') + '</article>';
+    }
+
+    function renderSources(){
+      const folderText = folderHandle ? 'Linked folder · auto-loading .ics files' : 'No folder linked. Choose a folder once to auto-load every .ics file inside it.';
+      els.folderStatusBox.textContent = folderText;
+      if (!state.sources.length){
+        els.sourceList.innerHTML = '<div class="empty">No saved calendar sources yet.</div>';
+        return;
+      }
+      els.sourceList.innerHTML = state.sources.map(source => {
+        const toggleLabel = source.enabled ? 'Disable' : 'Enable';
+        const removeButton = source.type === 'folderFile' ? '' : '<button type="button" class="danger" data-action="remove" data-id="' + escapeHtml(source.id) + '">Remove</button>';
+        return '<div class="source"><div class="sourceName">' + escapeHtml(source.name) + '</div><div class="sourceStatus">' + escapeHtml(sourceTypeLabel(source.type)) + ' · ' + escapeHtml(source.status || 'Not loaded yet') + '</div><div class="source-actions" style="margin-top:8px"><button type="button" data-action="toggle" data-id="' + escapeHtml(source.id) + '">' + toggleLabel + '</button>' + removeButton + '</div></div>';
+      }).join('');
+    }
+
+    function toggleSource(id){
+      const source = state.sources.find(s => s.id === id);
+      if (!source) return;
+      source.enabled = !source.enabled;
+      saveState();
+      render();
+      reloadSources();
+    }
+
+    function removeSource(id){
+      state.sources = state.sources.filter(s => s.id !== id);
+      clearSourceRuntimeState(id);
+      saveState();
+      render();
+      reloadSources();
+    }
+
+    function clearSourceRuntimeState(id){
+      delete fileHandles[id];
+      delete runtimeSourceEvents[id];
+    }
+
+    function clearRuntimeSourceEvents(){
+      Object.keys(runtimeSourceEvents).forEach(id => delete runtimeSourceEvents[id]);
+      Object.keys(fileHandles).forEach(id => delete fileHandles[id]);
+    }
+
+    function setSearchTerm(value){
+      state.searchTerm = String(value || '').replace(/\s+/g, ' ').trimStart();
+      saveState();
+      render();
+    }
+
+    function normalizeSearchTerm(value){
+      return normalizeTitle(String(value || '').trim());
+    }
+
+    function eventMatchesSearch(evt, term){
+      if (!term) return true;
+      const kind = classifyEvent(evt);
+      const haystack = [
+        evt.title,
+        evt.location,
+        evt.description,
+        evt.categories,
+        evt.sourceName,
+        kind.label,
+        evt.allDay ? 'all day' : '',
+        evt.start.toLocaleDateString([], { weekday:'long', day:'numeric', month:'long', year:'numeric' })
+      ].join(' ');
+      return normalizeTitle(haystack).includes(term);
+    }
+
+    function countDaysWithEvents(events, useWholeCalendar = false){
+      const seen = new Set();
+      if (useWholeCalendar){
+        for (const evt of events){
+          for (let day = startOfDay(evt.start); day <= startOfDay(evt.allDay ? addDays(evt.end, -1) : evt.end); day = addDays(day, 1)){
+            if (!state.showWeekends && isWeekend(day)) continue;
+            seen.add(startOfDay(day).toISOString());
+          }
+        }
+        return seen.size;
+      }
+      const range = getVisibleRange();
+      for (let day = startOfDay(range.start); day <= startOfDay(range.end); day = addDays(day, 1)){
+        if (!state.showWeekends && isWeekend(day)) continue;
+        if (events.some(evt => overlapsDay(evt, day))) seen.add(startOfDay(day).toISOString());
+      }
+      return seen.size;
+    }
+
+    function getDisplayEvents(){
+      return loadedEvents.filter(evt => !isWeekdayPlaceholder(evt)).filter(evt => state.includeAllDay || !evt.allDay);
+    }
+
+    function getVisibleEvents(term = ''){
+      const normalizedTerm = normalizeSearchTerm(term);
+      const events = getDisplayEvents().filter(evt => !normalizedTerm || eventMatchesSearch(evt, normalizedTerm));
+      if (normalizedTerm) return events;
+      const range = getVisibleRange();
+      return events.filter(evt => overlapsRange(evt, range.start, addDays(range.end, 1)));
+    }
+
+    function isWeekdayPlaceholder(evt){
+      if (!evt || !evt.allDay) return false;
+      const title = normalizeTitle(evt.title);
+      const names = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+      const idx = names.indexOf(title);
+      if (idx < 0) return false;
+      return evt.start.getDay() === idx && !String(evt.location || '').trim() && !String(evt.description || '').trim();
+    }
+
+    function classifyEvent(evt){
+      const title = normalizeTitle(evt.title);
+      const description = normalizeTitle(evt.description);
+      const location = normalizeTitle(evt.location);
+      const categories = normalizeTitle(evt.categories);
+      const haystack = [title, description, location, categories].join(' ');
+      if (haystack.includes('pou taahuu')) return { className:'pou', label:'Pou Taahuu' };
+      if (haystack.includes('holiday') || haystack.includes('holidays')) return { className:'holiday', label:'Holiday' };
+      if (haystack.includes('nzqa')) return { className:'nzqa', label:'NZQA' };
+      if (haystack.includes('exam') || haystack.includes('exams')) return { className:'exam', label:'Exam' };
+      if (haystack.includes('trip') || haystack.includes('hikoi') || haystack.includes('noho')) return { className:'trip', label:'Trip' };
+      if (title.includes('department meeting') || title.includes('department hui')) return { className:'department', label:'Department' };
+      if (title === 'pld' || haystack.includes('professional learning development')) return { className:'pld', label:'PLD' };
+      if (haystack.includes('assembly')) return { className:'assembly', label:'Assembly' };
+      if (haystack.includes('hui')) return { className:'hui', label:'Hui' };
+      if (haystack.includes('visit') || haystack.includes('expo') || haystack.includes('course planning')) return { className:'visit', label:'Visit' };
+      if (haystack.includes('meeting') || haystack.includes('brief') || haystack.includes('conference')) return { className:'meeting', label:'Meeting' };
+      return { className:'generic', label: evt.allDay ? 'All day' : 'Event' };
+    }
+
+    function getPeriodsForDate(date){
+      let rows = DEFAULT_PERIODS;
+      try{
+        const parsed = JSON.parse(state.periodsText || '[]');
+        if (Array.isArray(parsed) && parsed.length) rows = parsed;
+      }catch(_){ }
+      return rows.map(row => ({ ...row, start:timeOnDate(date, row.start), end:timeOnDate(date, row.end) })).filter(row => row.start && row.end).sort((a,b) => a.start - b.start);
+    }
+
+
+    function wirePWA(){
+      if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./service-worker.js').catch(() => {});
+        }, { once:true });
+      }
+      window.addEventListener('beforeinstallprompt', event => {
+        event.preventDefault();
+        deferredInstallPrompt = event;
+        if (els.installBtn) els.installBtn.hidden = false;
+      });
+      window.addEventListener('appinstalled', () => {
+        deferredInstallPrompt = null;
+        if (els.installBtn) els.installBtn.hidden = true;
+      });
+      updateFullscreenButton();
+      document.addEventListener('fullscreenchange', updateFullscreenButton);
+      window.addEventListener('resize', updateFullscreenButton);
+    }
+
+    async function installApp(){
+      if (!deferredInstallPrompt) return;
+      try{
+        await deferredInstallPrompt.prompt();
+        await deferredInstallPrompt.userChoice;
+      }catch(_){
+      }finally{
+        deferredInstallPrompt = null;
+        if (els.installBtn) els.installBtn.hidden = true;
+      }
+    }
+
+    async function toggleFullscreen(){
+      try{
+        if (document.fullscreenElement){
+          await document.exitFullscreen();
+        }else{
+          await document.documentElement.requestFullscreen();
+        }
+      }catch(_){ }
+      updateFullscreenButton();
+    }
+
+    function updateFullscreenButton(){
+      if (!els.fullscreenBtn) return;
+      const standalone = window.matchMedia('(display-mode: standalone)').matches || window.matchMedia('(display-mode: fullscreen)').matches || navigator.standalone;
+      if (standalone) {
+        els.fullscreenBtn.hidden = true;
+        return;
+      }
+      els.fullscreenBtn.hidden = false;
+      els.fullscreenBtn.textContent = document.fullscreenElement ? 'Exit full screen' : 'Full screen';
+    }
+
+    function tickClock(){
+      const now = new Date();
+      els.clockTime.textContent = now.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+      els.clockDate.textContent = now.toLocaleDateString([], { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+      renderPeriodStrip();
+    }
+
+    function getAnchorDate(){
+      const d = state.anchor ? new Date(state.anchor) : new Date();
+      return Number.isNaN(d.getTime()) ? startOfDay(new Date()) : startOfDay(d);
+    }
+    function getVisibleRange(){
+      const anchor = getAnchorDate();
+      return { start:startOfDay(anchor), end:addDays(startOfDay(anchor), 13) };
+    }
+    function getExpansionRange(){
+      const range = getVisibleRange();
+      return { start:addDays(range.start, -35), end:addDays(range.end, 370) };
+    }
+
+    function parseICS(text, sourceName, rangeStart, rangeEnd){
+      const normalized = normalizeICSText(text);
+      const lines = unfoldICS(normalized);
+      const blocks = [];
+      let current = null;
+      for (const rawLine of lines){
+        const line = String(rawLine || '');
+        const trimmed = line.trim();
+        if (/^BEGIN:VEVENT$/i.test(trimmed)){
+          current = [];
+          continue;
+        }
+        if (/^END:VEVENT$/i.test(trimmed)){
+          if (current && current.length) blocks.push(current.slice());
+          current = null;
+          continue;
+        }
+        if (current) current.push(trimmed);
+      }
+      const out = [];
+      for (const block of blocks){
+        const base = parseEventBlock(block, sourceName);
+        if (!base) continue;
+        out.push(...expandEvent(base, rangeStart, rangeEnd));
+      }
+      return out;
+    }
+
+    function normalizeICSText(text){
+      const raw = String(text || '').replace(/^\uFEFF/, '').replace(/\u00A0/g, ' ').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+      const lines = raw.split('\n');
+      const nonEmpty = lines.filter(line => line.trim().length);
+      if (!nonEmpty.length) return raw;
+      const indents = nonEmpty.map(line => (line.match(/^[ \t]+/) || [''])[0].length);
+      const minIndent = Math.min(...indents);
+      if (minIndent > 0 && indents.every(n => n >= minIndent)) return lines.map(line => line.slice(Math.min(minIndent, line.length))).join('\n');
+      return raw;
+    }
+
+    function unfoldICS(text){
+      const src = String(text || '').split('\n');
+      const out = [];
+      for (const line of src){
+        if ((line.startsWith(' ') || line.startsWith('\t')) && out.length) out[out.length - 1] += line.slice(1);
+        else out.push(line);
+      }
+      return out;
+    }
+
+    function parseEventBlock(lines, sourceName){
+      const props = {};
+      for (const line of lines){
+        const idx = line.indexOf(':');
+        if (idx < 0) continue;
+        const left = line.slice(0, idx);
+        const value = line.slice(idx + 1);
+        const parts = left.split(';');
+        const key = parts[0].trim().toUpperCase();
+        const params = {};
+        for (let i = 1; i < parts.length; i++){
+          const p = parts[i];
+          const eq = p.indexOf('=');
+          if (eq > -1) params[p.slice(0, eq).trim().toUpperCase()] = p.slice(eq + 1).trim();
+        }
+        if (!props[key]) props[key] = [];
+        props[key].push({ value, params });
+      }
+      const status = getFirstValue(props.STATUS);
+      if (String(status || '').toUpperCase() === 'CANCELLED') return null;
+      const startEntry = getFirstEntry(props.DTSTART);
+      if (!startEntry) return null;
+      const start = parseICalDate(startEntry.value, startEntry.params);
+      if (!start) return null;
+      let end = null;
+      const endEntry = getFirstEntry(props.DTEND);
+      if (endEntry) end = parseICalDate(endEntry.value, endEntry.params);
+      if (!end){
+        const duration = getFirstValue(props.DURATION);
+        const endDate = duration ? addDuration(start.date, duration) : (start.isDate ? addDays(start.date, 1) : new Date(start.date.getTime() + 3600000));
+        end = { date:endDate, isDate:start.isDate };
+      }
+      const exdates = [];
+      (props.EXDATE || []).forEach(entry => {
+        String(entry.value || '').split(',').forEach(item => {
+          const parsed = parseICalDate(item, entry.params);
+          if (parsed) exdates.push(parsed.date.getTime());
+        });
+      });
+      return {
+        uid:decodeICalText(getFirstValue(props.UID) || uid()),
+        title:decodeICalText(getFirstValue(props.SUMMARY) || 'Untitled event'),
+        description:decodeICalText(getFirstValue(props.DESCRIPTION) || ''),
+        location:decodeICalText(getFirstValue(props.LOCATION) || ''),
+        categories:decodeICalText(getFirstValue(props.CATEGORIES) || ''),
+        start:start.date,
+        end:end.date,
+        allDay:!!start.isDate,
+        rrule:getFirstValue(props.RRULE) || '',
+        exdates,
+        sourceName
+      };
+    }
+
+    function expandEvent(event, rangeStart, rangeEnd){
+      if (!event.rrule){
+        return overlapsRange(event, rangeStart, addDays(rangeEnd, 1)) ? [decorateOccurrence(event, event.start, event.end)] : [];
+      }
+      const rule = parseRRule(event.rrule);
+      const until = rule.until ? (parseICalDate(rule.until, {}) || {}).date : null;
+      const duration = Math.max(1, event.end - event.start);
+      const occurrences = [];
+      const limit = Math.min(rule.count || 800, 800);
+      let generated = 0;
+
+      if (rule.freq === 'DAILY'){
+        let cursor = new Date(event.start);
+        while (generated < limit && cursor < addDays(rangeEnd, 400)){
+          if (until && cursor > until) break;
+          const end = new Date(cursor.getTime() + duration);
+          if (!event.exdates.includes(cursor.getTime()) && overlapsRange({ start:cursor, end }, rangeStart, addDays(rangeEnd, 1))) occurrences.push(decorateOccurrence(event, cursor, end));
+          cursor = addDays(cursor, rule.interval);
+          generated++;
+        }
+        return occurrences;
+      }
+
+      if (rule.freq === 'WEEKLY'){
+        const byDays = (rule.byday.length ? rule.byday : [weekdayCode(event.start)]).map(dayCodeToIndex);
+        let weekStart = startOfWeek(event.start);
+        while (generated < limit && weekStart < addDays(rangeEnd, 400)){
+          for (const dow of byDays){
+            const baseDay = addDays(weekStart, dow);
+            if (baseDay < startOfDay(event.start)) continue;
+            const current = cloneDateWithTime(baseDay, event.start);
+            if (until && current > until) return occurrences;
+            const end = new Date(current.getTime() + duration);
+            if (!event.exdates.includes(current.getTime()) && overlapsRange({ start:current, end }, rangeStart, addDays(rangeEnd, 1))) occurrences.push(decorateOccurrence(event, current, end));
+            generated++;
+            if (generated >= limit) break;
+          }
+          weekStart = addDays(weekStart, 7 * rule.interval);
+        }
+        return occurrences;
+      }
+
+      if (rule.freq === 'MONTHLY'){
+        let cursor = new Date(event.start);
+        while (generated < limit && cursor < addDays(rangeEnd, 900)){
+          if (until && cursor > until) break;
+          const end = new Date(cursor.getTime() + duration);
+          if (!event.exdates.includes(cursor.getTime()) && overlapsRange({ start:cursor, end }, rangeStart, addDays(rangeEnd, 1))) occurrences.push(decorateOccurrence(event, cursor, end));
+          cursor = addMonths(cursor, rule.interval);
+          generated++;
+        }
+        return occurrences;
+      }
+
+      if (rule.freq === 'YEARLY'){
+        let cursor = new Date(event.start);
+        while (generated < limit && cursor < addDays(rangeEnd, 3650)){
+          if (until && cursor > until) break;
+          const end = new Date(cursor.getTime() + duration);
+          if (!event.exdates.includes(cursor.getTime()) && overlapsRange({ start:cursor, end }, rangeStart, addDays(rangeEnd, 1))) occurrences.push(decorateOccurrence(event, cursor, end));
+          cursor = new Date(cursor.getFullYear() + rule.interval, cursor.getMonth(), cursor.getDate(), cursor.getHours(), cursor.getMinutes(), cursor.getSeconds(), cursor.getMilliseconds());
+          generated++;
+        }
+        return occurrences;
+      }
+
+      return overlapsRange(event, rangeStart, addDays(rangeEnd, 1)) ? [decorateOccurrence(event, event.start, event.end)] : [];
+    }
+
+    function dedupeEvents(events){
+      const seen = new Set();
+      const out = [];
+      for (const evt of events){
+        const key = [evt.uid || '', evt.start.getTime(), evt.end.getTime(), normalizeTitle(evt.title)].join('|');
+        if (seen.has(key)) continue;
+        seen.add(key);
+        out.push(evt);
+      }
+      return out;
+    }
+
+    function decorateOccurrence(base, start, end){
+      return { ...base, id:(base.uid || '') + '_' + start.toISOString(), start:new Date(start), end:new Date(end) };
+    }
+
+    function parseRRule(text){
+      const out = { freq:'', interval:1, count:800, until:'', byday:[] };
+      String(text || '').split(';').forEach(part => {
+        const [k,v] = part.split('=');
+        if (!k || v == null) return;
+        const key = k.toUpperCase();
+        if (key === 'FREQ') out.freq = v.toUpperCase();
+        if (key === 'INTERVAL') out.interval = Math.max(1, Number(v) || 1);
+        if (key === 'COUNT') out.count = Math.max(1, Number(v) || 1);
+        if (key === 'UNTIL') out.until = v;
+        if (key === 'BYDAY') out.byday = v.toUpperCase().split(',').map(x => x.trim()).filter(Boolean).map(x => x.replace(/^[+-]?\d+/, ''));
+      });
+      return out;
+    }
+
+    function parseICalDate(value, params){
+      if (!value) return null;
+      const raw = String(value).trim();
+      const isDate = String((params && params.VALUE) || '').toUpperCase() === 'DATE' || /^\d{8}$/.test(raw);
+      if (/^\d{8}$/.test(raw)) return { date:new Date(Number(raw.slice(0,4)), Number(raw.slice(4,6)) - 1, Number(raw.slice(6,8)), 0,0,0,0), isDate:true };
+      if (/^\d{8}T\d{6}Z$/.test(raw)) return { date:new Date(raw.slice(0,4) + '-' + raw.slice(4,6) + '-' + raw.slice(6,8) + 'T' + raw.slice(9,11) + ':' + raw.slice(11,13) + ':' + raw.slice(13,15) + 'Z'), isDate:false };
+      if (/^\d{8}T\d{4}Z$/.test(raw)) return { date:new Date(raw.slice(0,4) + '-' + raw.slice(4,6) + '-' + raw.slice(6,8) + 'T' + raw.slice(9,11) + ':' + raw.slice(11,13) + ':00Z'), isDate:false };
+      if (/^\d{8}T\d{6}$/.test(raw) || /^\d{8}T\d{4}$/.test(raw)){
+        const y = Number(raw.slice(0,4));
+        const m = Number(raw.slice(4,6)) - 1;
+        const d = Number(raw.slice(6,8));
+        const hh = Number(raw.slice(9,11));
+        const mm = Number(raw.slice(11,13));
+        const ss = raw.length >= 15 ? Number(raw.slice(13,15)) : 0;
+        return { date:new Date(y,m,d,hh,mm,ss,0), isDate:false };
+      }
+      const parsed = new Date(raw);
+      return Number.isNaN(parsed.getTime()) ? null : { date:parsed, isDate };
+    }
+
+    function addDuration(start, raw){
+      const m = /^P(?:(\d+)W)?(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$/i.exec(String(raw || '').trim());
+      if (!m) return new Date(start.getTime() + 3600000);
+      const weeks = Number(m[1] || 0), days = Number(m[2] || 0), hours = Number(m[3] || 0), mins = Number(m[4] || 0), secs = Number(m[5] || 0);
+      return new Date(start.getTime() + (((weeks * 7 + days) * 24 + hours) * 60 + mins) * 60000 + secs * 1000);
+    }
+
+    function formatEventForDay(evt, day){
+      const eventStartDay = startOfDay(evt.start);
+      const eventEndDay = startOfDay(evt.allDay ? addDays(evt.end, -1) : evt.end);
+      const sameDayEvent = isSameDay(evt.start, evt.end);
+      if (evt.allDay){
+        if (isSameDay(eventStartDay, eventEndDay)) return 'All day';
+        if (isSameDay(day, eventStartDay)) return 'Starts';
+        if (isSameDay(day, eventEndDay)) return 'Ends';
+        return 'All day';
+      }
+      if (sameDayEvent) return formatTime(evt.start) + ' – ' + formatTime(evt.end);
+      if (isSameDay(day, evt.start)) return 'From ' + formatTime(evt.start);
+      if (isSameDay(day, evt.end)) return 'Until ' + formatTime(evt.end);
+      return 'Continues';
+    }
+
+    function formatTime(date){ return date.toLocaleTimeString([], { hour:'numeric', minute:'2-digit' }); }
+    function formatClockRange(start, end){ return start.toLocaleTimeString([], { hour:'numeric', minute:'2-digit' }) + ' – ' + end.toLocaleTimeString([], { hour:'numeric', minute:'2-digit' }); }
+    function formatCountdown(ms){
+      const sec = Math.max(0, Math.floor(ms / 1000));
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      const s = sec % 60;
+      return h > 0 ? h + 'h ' + String(m).padStart(2,'0') + 'm' : m + ':' + String(s).padStart(2,'0');
+    }
+    function formatRangeLabel(start, end){ return start.toLocaleDateString([], { day:'numeric', month:'short' }) + ' – ' + end.toLocaleDateString([], { day:'numeric', month:'short', year:'numeric' }); }
+    function formatTimestamp(ts){ if (!ts) return 'unknown time'; try{ return new Date(ts).toLocaleString([], { year:'numeric', month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }); }catch(_){ return 'unknown time'; } }
+    function sourceTypeLabel(type){ return ({ url:'Feed URL', text:'Imported ICS', fileHandle:'Mirror file', folderFile:'Folder ICS' })[type] || 'Calendar source'; }
+
+    async function fetchCalendarUrl(url){
+      const normalized = normalizeFeedUrl(url);
+      const candidates = buildCalendarUrlCandidates(normalized);
+      let lastError = null;
+
+      for (const candidate of candidates){
+        try{
+          const response = await fetch(candidate.url, { cache:'no-store', mode:'cors' });
+          if (!response.ok) throw new Error('HTTP ' + response.status);
+          const text = normalizeCalendarText(await response.text());
+          if (!looksLikeCalendarText(text)) throw new Error('Response was fetched, but it was not usable calendar text');
+          return { text, via:candidate.label };
+        }catch(err){
+          lastError = err;
+        }
+      }
+
+      throw buildCalendarFetchError(normalized, lastError);
+    }
+
+    function buildCalendarUrlCandidates(url){
+      const candidates = [];
+      const seen = new Set();
+
+      const googleCid = extractGoogleCalendarCid(url);
+      if (googleCid){
+        pushCandidate(candidates, seen, 'https://calendar.google.com/calendar/ical/' + encodeURIComponent(googleCid) + '/public/basic.ics', 'google public iCal');
+      }
+
+      const githubRawUrl = convertGitHubCalendarUrl(url);
+      if (githubRawUrl && githubRawUrl !== url){
+        pushCandidate(candidates, seen, githubRawUrl, 'github raw');
+      }
+
+      pushCandidate(candidates, seen, url, 'direct');
+      return candidates.map(candidate => ({ ...candidate, url:appendCacheBust(candidate.url) }));
+    }
+
+    function buildCalendarFetchError(url, err){
+      const message = err && err.message ? err.message : 'Could not fetch feed';
+      const onFilePage = location.protocol === 'file:';
+      const googleCid = extractGoogleCalendarCid(url);
+      const githubRawUrl = convertGitHubCalendarUrl(url);
+
+      if (onFilePage && /^https?:/i.test(url)){
+        if (googleCid){
+          return new Error('Live Google Calendar fetch is blocked from this file:// page. Use the calendar&#39;s public or secret iCal address on localhost, or mirror/download the .ics file locally.');
+        }
+        if (githubRawUrl && githubRawUrl !== url){
+          return new Error('Live GitHub calendar fetch is blocked from this file:// page. Open the board through localhost/web server, or mirror/download the .ics file locally.');
+        }
+        return new Error('Live feed fetch is blocked from this file:// page. Open the board through localhost/web server, or use a mirror/local .ics file.');
+      }
+
+      if (googleCid){
+        return new Error('That Google Calendar link is a viewer link, not a guaranteed live ICS feed. Use the calendar&#39;s public or secret iCal address, or mirror/download the .ics file.');
+      }
+
+      if (githubRawUrl && githubRawUrl !== url){
+        return new Error('That GitHub link is a blob viewer link. The board tried the matching raw file automatically, but the fetch still failed.');
+      }
+
+      return new Error(message);
+    }
+
+    function pushCandidate(list, seen, url, label){
+      if (!url || seen.has(url)) return;
+      seen.add(url);
+      list.push({ url, label });
+    }
+
+    function appendCacheBust(url){
+      const sep = url.includes('?') ? '&' : '?';
+      return url + sep + '_ts=' + Date.now();
+    }
+
+    function normalizeCalendarText(text){
+      return String(text || '').replace(/^\uFEFF/, '').trim();
+    }
+
+    function looksLikeCalendarText(text){
+      const sample = String(text || '').slice(0, 12000).toUpperCase();
+      return sample.includes('BEGIN:VCALENDAR');
+    }
+
+    function normalizeFeedUrl(url){
+      return String(url || '').trim().replace(/^webcal:/i, 'https:');
+    }
+
+    function convertGitHubCalendarUrl(url){
+      try{
+        const parsed = new URL(normalizeFeedUrl(url));
+        if (!/^github\.com$/i.test(parsed.hostname)) return '';
+        const parts = parsed.pathname.split('/').filter(Boolean);
+        if (parts.length < 5) return '';
+        const [owner, repo, section, branch, ...rest] = parts;
+        if (section !== 'blob' && section !== 'raw') return '';
+        if (!rest.length) return '';
+        return 'https://raw.githubusercontent.com/' + owner + '/' + repo + '/' + branch + '/' + rest.map(segment => encodeURIComponent(decodeURIComponent(segment))).join('/');
+      }catch(_){
+        return '';
+      }
+    }
+
+    function extractGoogleCalendarCid(url){
+      try{
+        const parsed = new URL(url);
+        if (!/calendar\.google\.com$/i.test(parsed.hostname)) return '';
+        const cid = parsed.searchParams.get('cid');
+        if (!cid) return '';
+        return decodeGoogleCid(cid);
+      }catch(_){
+        return '';
+      }
+    }
+
+    function decodeGoogleCid(cid){
+      const raw = String(cid || '').trim();
+      try{
+        const base64 = raw.replace(/-/g, '+').replace(/_/g, '/');
+        const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, '=');
+        return decodeURIComponent(escape(atob(padded)));
+      }catch(_){
+        try{ return decodeURIComponent(raw); }catch(__){ return raw; }
+      }
+    }
+
+    function prettyName(url){
+      try{
+        const googleCid = extractGoogleCalendarCid(url);
+        if (googleCid) return googleCid.replace(/@.*/, '');
+        const githubRawUrl = convertGitHubCalendarUrl(url);
+        if (githubRawUrl){
+          const parsed = new URL(githubRawUrl);
+          const pathParts = parsed.pathname.split('/').filter(Boolean);
+          return decodeURIComponent(pathParts[pathParts.length - 1] || 'Calendar feed').replace(/\.ics$/i, '');
+        }
+        return new URL(normalizeFeedUrl(url)).hostname.replace(/^www\./,'');
+      }catch(_){
+        return 'Calendar feed';
+      }
+    }
+
+    function normalizeTitle(text){ return String(text || '').trim().toLowerCase().replace(/\s+/g, ' '); }
+    function uid(){ return (crypto && crypto.randomUUID ? crypto.randomUUID() : 'id_' + Math.random().toString(36).slice(2,10)); }
+    function getFirstEntry(arr){ return Array.isArray(arr) && arr.length ? arr[0] : null; }
+    function getFirstValue(arr){ return Array.isArray(arr) && arr.length ? arr[0].value : ''; }
+    function decodeICalText(text){ return String(text || '').replace(/\\n/gi, '\n').replace(/\\,/g, ',').replace(/\\;/g, ';').replace(/\\\\/g, '\\').trim(); }
+    function trimText(text, len){ const t = String(text || '').replace(/\s+/g, ' ').trim(); return t.length > len ? t.slice(0, len - 1) + '…' : t; }
+    function clampInt(value, min, max, fallback){ const n = Number(value); return Number.isFinite(n) ? Math.max(min, Math.min(max, Math.round(n))) : fallback; }
+    function escapeHtml(text){
+  return String(text).replace(/[&<>"']/g, ch => ({
+    '&':'&amp;',
+    '<':'&lt;',
+    '>':'&gt;',
+    '"':'&quot;',
+    "'":'&#39;'
+  }[ch]));
+}
+[ch])); }
+    function startOfDay(date){ return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0,0,0,0); }
+    function addDays(date, days){ const d = new Date(date); d.setDate(d.getDate() + days); return d; }
+    function addMonths(date, months){ return new Date(date.getFullYear(), date.getMonth() + months, date.getDate(), date.getHours(), date.getMinutes(), date.getSeconds(), date.getMilliseconds()); }
+    function startOfWeek(date){ const d = startOfDay(date); const offset = (d.getDay() + 6) % 7; d.setDate(d.getDate() - offset); return d; }
+    function isSameDay(a,b){ return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate(); }
+    function isWeekend(date){ const day = date.getDay(); return day === 0 || day === 6; }
+    function timeOnDate(date, hhmm){ if (!hhmm || !/^\d{2}:\d{2}$/.test(hhmm)) return null; const [h,m] = hhmm.split(':').map(Number); return new Date(date.getFullYear(), date.getMonth(), date.getDate(), h, m, 0, 0); }
+    function overlapsRange(evt, start, end){ return evt.end > start && evt.start < end; }
+    function overlapsDay(evt, day){ return evt.end > startOfDay(day) && evt.start < addDays(startOfDay(day), 1); }
+    function nowBetween(start, end, now){ return now >= start && now < end; }
+    function cloneDateWithTime(date, template){ return new Date(date.getFullYear(), date.getMonth(), date.getDate(), template.getHours(), template.getMinutes(), template.getSeconds(), template.getMilliseconds()); }
+    function weekdayCode(date){ return ['SU','MO','TU','WE','TH','FR','SA'][date.getDay()]; }
+    function dayCodeToIndex(code){ return ({ MO:0, TU:1, WE:2, TH:3, FR:4, SA:5, SU:6 })[code] ?? 0; }
+  
+
+// --- Local events + backup/download ---
+function ensureLocalSource(){
+  const existing = state.sources.find(s => s.id === LOCAL_SOURCE_ID);
+  if (existing){
+    existing.type = 'local';
+    if (!Array.isArray(existing.localEvents)) existing.localEvents = [];
+    return;
+  }
+  state.sources.push({
+    id: LOCAL_SOURCE_ID,
+    type:'local',
+    name:'My added events',
+    value:'',
+    enabled:true,
+    status:'',
+    cachedText:'',
+    cachedAt:0,
+    lastLoadedVia:'local events',
+    localEvents:[]
+  });
+  saveState();
+}
+function getLocalSource(){
+  return state.sources.find(s => s.id === LOCAL_SOURCE_ID && s.type === 'local');
+}
+function toYmd(date){
+  const y = date.getFullYear();
+  const m = String(date.getMonth()+1).padStart(2,'0');
+  const d = String(date.getDate()).padStart(2,'0');
+  return `${y}-${m}-${d}`;
+}
+function toHm(date){
+  const h = String(date.getHours()).padStart(2,'0');
+  const m = String(date.getMinutes()).padStart(2,'0');
+  return `${h}:${m}`;
+}
+function setDefaultEventForm(){
+  if (!els.newEventStartDate) return;
+  const now = new Date();
+  const rounded = new Date(now);
+  rounded.setMinutes(Math.ceil(now.getMinutes()/15)*15, 0, 0);
+  const end = new Date(rounded.getTime() + 60*60000);
+  els.newEventTitle.value = '';
+  els.newEventStartDate.value = toYmd(now);
+  els.newEventEndDate.value = toYmd(now);
+  els.newEventStartTime.value = toHm(rounded);
+  els.newEventEndTime.value = toHm(end);
+  els.newEventAllDay.checked = false;
+  els.newEventLocation.value = '';
+  els.newEventCategories.value = '';
+  els.newEventDescription.value = '';
+  syncAllDayUI();
+  renderMyEvents();
+}
+function clearEventForm(){
+  setDefaultEventForm();
+  registerActivity();
+}
+function syncAllDayUI(){
+  const allDay = !!els.newEventAllDay.checked;
+  els.newEventStartTime.disabled = allDay;
+  els.newEventEndTime.disabled = allDay;
+  els.newEventStartTime.style.opacity = allDay ? 0.5 : 1;
+  els.newEventEndTime.style.opacity = allDay ? 0.5 : 1;
+}
+function syncEventDatesFromStart(){
+  if (!els.newEventStartDate.value) return;
+  if (!els.newEventEndDate.value) els.newEventEndDate.value = els.newEventStartDate.value;
+  if (els.newEventEndDate.value < els.newEventStartDate.value) els.newEventEndDate.value = els.newEventStartDate.value;
+}
+function syncEventTimesFromStart(){
+  if (!els.newEventStartTime.value) return;
+  if (!els.newEventEndTime.value){
+    const [h,m] = els.newEventStartTime.value.split(':').map(Number);
+    const dt = new Date();
+    dt.setHours(h,m,0,0);
+    dt.setTime(dt.getTime() + 60*60000);
+    els.newEventEndTime.value = toHm(dt);
+  }
+}
+function parseYmd(ymd){
+  const [y,m,d] = String(ymd||'').split('-').map(Number);
+  if (!y || !m || !d) return null;
+  return new Date(y, m-1, d, 0,0,0,0);
+}
+function parseHm(hm){
+  const [h,m] = String(hm||'').split(':').map(Number);
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return null;
+  return { h, m };
+}
+function addEventFromForm(){
+  const title = String(els.newEventTitle.value||'').trim();
+  if (!title){
+    alert('Please enter an event title.');
+    return;
+  }
+  const startDate = parseYmd(els.newEventStartDate.value);
+  const endDate = parseYmd(els.newEventEndDate.value || els.newEventStartDate.value);
+  if (!startDate || !endDate){
+    alert('Please choose a start and end date.');
+    return;
+  }
+  const allDay = !!els.newEventAllDay.checked;
+  let start, end;
+  if (allDay){
+    start = startDate;
+    end = addDays(endDate, 1); // DTEND exclusive
+    if (end <= start){
+      alert('End date must be the same as or after the start date.');
+      return;
+    }
+  }else{
+    const st = parseHm(els.newEventStartTime.value);
+    const et = parseHm(els.newEventEndTime.value);
+    if (!st || !et){
+      alert('Please enter start and end times (or tick All-day).');
+      return;
+    }
+    start = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), st.h, st.m, 0, 0);
+    end = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate(), et.h, et.m, 0, 0);
+    if (end <= start){
+      alert('End time must be after the start time.');
+      return;
+    }
+  }
+
+  const evt = {
+    uid: uid(),
+    title,
+    description: String(els.newEventDescription.value||'').trim(),
+    location: String(els.newEventLocation.value||'').trim(),
+    categories: String(els.newEventCategories.value||'').trim(),
+    start: start.toISOString(),
+    end: end.toISOString(),
+    allDay
+  };
+
+  const source = getLocalSource();
+  if (!source){
+    alert('Local event source is missing. Try Reload all.');
+    return;
+  }
+  source.localEvents = Array.isArray(source.localEvents) ? source.localEvents : [];
+  source.localEvents.push(evt);
+  saveState();
+  clearEventForm();
+  reloadSources();
+}
+function handleMyEventsClick(event){
+  const btn = event.target.closest('button[data-action="removeLocal"][data-uid]');
+  if (!btn) return;
+  const uidVal = btn.getAttribute('data-uid');
+  if (!uidVal) return;
+  if (!confirm('Remove this local event?')) return;
+  const source = getLocalSource();
+  if (!source) return;
+  source.localEvents = (source.localEvents||[]).filter(e => e.uid !== uidVal);
+  saveState();
+  reloadSources();
+}
+function renderMyEvents(){
+  if (!els.myEventsList) return;
+  const source = getLocalSource();
+  const events = (source && Array.isArray(source.localEvents)) ? source.localEvents.slice() : [];
+  if (!events.length){
+    els.myEventsList.innerHTML = '<div class="empty">No local events yet. Add one above.</div>';
+    return;
+  }
+  const rows = events
+    .map(e => ({...e, startD:new Date(e.start), endD:new Date(e.end)}))
+    .sort((a,b) => a.startD - b.startD);
+  els.myEventsList.innerHTML = rows.map(e => {
+    const day = e.startD.toLocaleDateString([], { weekday:'short', day:'numeric', month:'short', year:'numeric' });
+    const time = e.allDay ? 'All day' : (formatTime(e.startD) + ' – ' + formatTime(e.endD));
+    const metaBits = [];
+    if (e.location) metaBits.push(escapeHtml(e.location));
+    if (e.categories) metaBits.push(escapeHtml(e.categories));
+    if (e.description) metaBits.push(escapeHtml(trimText(e.description, 90)));
+    return '<div class="source">'
+      + '<div class="eventMini">'
+      +   '<div>'
+      +     '<div class="eventMiniTitle">' + escapeHtml(e.title) + '</div>'
+      +     '<div class="eventMiniMeta">' + escapeHtml(day) + ' · ' + escapeHtml(time) + (metaBits.length ? ' · ' + metaBits.join(' · ') : '') + '</div>'
+      +   '</div>'
+      +   '<div class="source-actions">'
+      +     '<button type="button" class="danger" data-action="removeLocal" data-uid="' + escapeHtml(e.uid) + '">Remove</button>'
+      +   '</div>'
+      + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+function icsEscape(value){
+  return String(value||'')
+    .replace(/\/g, '\\')
+    .replace(/
+/g, '\n')
+    .replace(//g, '')
+    .replace(/,/g, '\,')
+    .replace(/;/g, '\;');
+}
+function foldIcsLine(line){
+  const limit = 73;
+  if (line.length <= limit) return [line];
+  const out = [];
+  let s = line;
+  while (s.length > limit){
+    out.push(s.slice(0, limit));
+    s = ' ' + s.slice(limit);
+  }
+  out.push(s);
+  return out;
+}
+function fmtUtcStamp(date){
+  const y = date.getUTCFullYear();
+  const m = String(date.getUTCMonth()+1).padStart(2,'0');
+  const d = String(date.getUTCDate()).padStart(2,'0');
+  const hh = String(date.getUTCHours()).padStart(2,'0');
+  const mm = String(date.getUTCMinutes()).padStart(2,'0');
+  const ss = String(date.getUTCSeconds()).padStart(2,'0');
+  return `${y}${m}${d}T${hh}${mm}${ss}Z`;
+}
+function fmtLocalDateTime(date){
+  const y = date.getFullYear();
+  const m = String(date.getMonth()+1).padStart(2,'0');
+  const d = String(date.getDate()).padStart(2,'0');
+  const hh = String(date.getHours()).padStart(2,'0');
+  const mm = String(date.getMinutes()).padStart(2,'0');
+  const ss = String(date.getSeconds()).padStart(2,'0');
+  return `${y}${m}${d}T${hh}${mm}${ss}`;
+}
+function fmtDate(date){
+  const y = date.getFullYear();
+  const m = String(date.getMonth()+1).padStart(2,'0');
+  const d = String(date.getDate()).padStart(2,'0');
+  return `${y}${m}${d}`;
+}
+function buildICSFromOccurrences(events, calName){
+  const lines = [];
+  lines.push('BEGIN:VCALENDAR');
+  lines.push('VERSION:2.0');
+  lines.push('PRODID:-//PHS Calendar Whiteboard//EN');
+  lines.push('CALSCALE:GREGORIAN');
+  lines.push('METHOD:PUBLISH');
+  lines.push('X-WR-CALNAME:' + icsEscape(calName || 'Calendar'));
+  const stamp = fmtUtcStamp(new Date());
+  for (const evt of events){
+    const start = evt.start instanceof Date ? evt.start : new Date(evt.start);
+    const end = evt.end instanceof Date ? evt.end : new Date(evt.end);
+    const uidVal = evt.id || evt.uid || uid();
+    lines.push('BEGIN:VEVENT');
+    lines.push('UID:' + icsEscape(uidVal));
+    lines.push('DTSTAMP:' + stamp);
+    if (evt.allDay){
+      lines.push('DTSTART;VALUE=DATE:' + fmtDate(start));
+      lines.push('DTEND;VALUE=DATE:' + fmtDate(end));
+    }else{
+      lines.push('DTSTART:' + fmtLocalDateTime(start));
+      lines.push('DTEND:' + fmtLocalDateTime(end));
+    }
+    lines.push('SUMMARY:' + icsEscape(evt.title || 'Untitled event'));
+    if (evt.location) lines.push('LOCATION:' + icsEscape(evt.location));
+    if (evt.categories) lines.push('CATEGORIES:' + icsEscape(evt.categories));
+    if (evt.description) lines.push('DESCRIPTION:' + icsEscape(evt.description));
+    lines.push('END:VEVENT');
+  }
+  lines.push('END:VCALENDAR');
+  const folded = [];
+  for (const line of lines) folded.push(...foldIcsLine(line));
+  return folded.join('
+') + '
+';
+}
+function buildICSFromLocalEvents(localEvents, calName){
+  const events = (localEvents||[]).map(e => ({
+    uid: e.uid,
+    title: e.title,
+    description: e.description,
+    location: e.location,
+    categories: e.categories,
+    start: new Date(e.start),
+    end: new Date(e.end),
+    allDay: !!e.allDay
+  }));
+  return buildICSFromOccurrences(events, calName || 'My events');
+}
+function downloadTextFile(filename, text, mime){
+  const blob = new Blob([text], { type: mime || 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function downloadMyEvents(){
+  const source = getLocalSource();
+  const text = buildICSFromLocalEvents((source && source.localEvents)||[], source ? source.name : 'My events');
+  downloadTextFile('my-events.ics', text, 'text/calendar');
+  registerActivity();
+}
+function downloadVisibleIcs(){
+  const range = getVisibleRange();
+  const events = loadedEvents
+    .filter(evt => !isWeekdayPlaceholder(evt))
+    .filter(evt => overlapsRange(evt, range.start, addDays(range.end, 1)));
+  const text = buildICSFromOccurrences(events, 'Visible 14 days');
+  downloadTextFile('calendar-visible-14-days.ics', text, 'text/calendar');
+  registerActivity();
+}
+function downloadMergedIcs(){
+  const events = loadedEvents.filter(evt => !isWeekdayPlaceholder(evt));
+  const text = buildICSFromOccurrences(events, 'Loaded calendar');
+  downloadTextFile('calendar-loaded.ics', text, 'text/calendar');
+  registerActivity();
+}
+function buildBackupPayload(){
+  const payload = structuredClone(state);
+  (payload.sources||[]).forEach(src => {
+    delete src.status;
+    delete src.cachedAt;
+    delete src.cachedText;
+    delete src.lastLoadedVia;
+  });
+  return {
+    app: 'PHS Calendar Whiteboard',
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    state: payload
+  };
+}
+function downloadBackupJson(){
+  const payload = buildBackupPayload();
+  downloadTextFile('phs-calendar-backup.json', JSON.stringify(payload, null, 2), 'application/json');
+  registerActivity();
+}
+async function restoreBackupJson(){
+  const file = (els.restoreJsonInput.files||[])[0];
+  if (!file){
+    alert('Choose a .json backup file first.');
+    return;
+  }
+  try{
+    const raw = await file.text();
+    const parsed = JSON.parse(raw);
+    const next = parsed && parsed.state ? parsed.state : parsed;
+    if (!next || typeof next !== 'object') throw new Error('Backup did not contain state');
+    const merged = { ...structuredClone(DEFAULT_STATE), ...next };
+    merged.sources = Array.isArray(next.sources) ? next.sources : [];
+    Object.keys(state).forEach(k => delete state[k]);
+    Object.assign(state, merged);
+    ensureDefaultSource();
+    ensureLocalSource();
+    saveState();
+    clearRuntimeSourceEvents();
+    errors = [];
+    render();
+    reloadSources();
+    els.restoreJsonInput.value = '';
+    alert('Backup restored.');
+  }catch(err){
+    alert('Could not restore backup: ' + (err && err.message ? err.message : 'unknown error'));
+  }
+}
+
+</script>
+</body>
+</html>
