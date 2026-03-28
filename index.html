@@ -47,6 +47,8 @@
       --nzqa-bg:#eef2ff;
       --trip:#0f766e;
       --trip-bg:#f0fdfa;
+      --report:#ca8a04;
+      --report-bg:#fffbeb;
       --generic:#64748b;
       --generic-bg:#f8fafc;
     }
@@ -113,6 +115,7 @@
     .event.exam{border-left-color:var(--exam);background:var(--exam-bg)}
     .event.nzqa{border-left-color:var(--nzqa);background:var(--nzqa-bg)}
     .event.trip{border-left-color:var(--trip);background:var(--trip-bg)}
+    .event.report{border-left-color:var(--report);background:var(--report-bg)}
     .event.now{box-shadow:inset 0 0 0 1px rgba(17,24,39,.18), 0 2px 8px rgba(15,23,42,.05)}
     .eventHead{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
     .eventTitleWrap{display:grid;gap:5px;min-width:0}
@@ -263,23 +266,23 @@
       </div>
     </details>
 
-    <div class="footer">Weekday placeholders such as Monday and Tuesday are filtered out automatically. Timed events stay first, all-day events move to the bottom, and a chosen folder can auto-load every .ics file it contains.</div>
+    <div class="footer">Tip: Use <b>Subscribe</b> to open the calendar in Outlook/Apple Calendar (webcal://). If that is blocked, use <b>Copy subscribe link</b> and paste into Outlook: Add calendar → From Internet. If the board can’t fetch a feed (CORS), use <b>Download .ics</b> then <b>Import file(s)</b>.</div>
   </div>
 
   <script>
-    const DEFAULT_FEED = 'https://github.com/pukekohetech/phscal/blob/main/PHS%20Calendar.ics';
+    // Default feed uses RAW ICS (GitHub raw is much more reliable than a blob viewer URL)
+    const DEFAULT_FEED = 'https://raw.githubusercontent.com/pukekohetech/phscal/main/PHS%20Calendar.ics';
     const STORE_KEY = 'phs_calendar_whiteboard_v2';
     const DEFAULT_PERIODS = [
       { name:'MEETING', start:'08:30', end:'09:00' },
       { name:'PERIOD 1', start:'09:00', end:'09:55' },
       { name:'PERIOD 2', start:'10:00', end:'10:55' },
-       { name:'TE MAAHURI', start:'10:55', end:'11:25' },
+      { name:'TE MAAHURI', start:'10:55', end:'11:25' },
       { name:'BREAK 1', start:'11:25', end:'12:00' },
       { name:'PERIOD 3', start:'12:00', end:'12:55' },
       { name:'BPERIOD 4', start:'13:00', end:'13:55' },
       { name:'BREAK 2', start:'13:55', end:'14:20' },
       { name:'PERIOD 5', start:'14:20', end:'15:15' }
-
     ];
     const DEFAULT_STATE = {
       anchor:'',
@@ -304,6 +307,10 @@
     let busy = false;
     let deferredInstallPrompt = null;
 
+    // transient message (not persisted)
+    let tempNotice = '';
+    let tempNoticeTimer = null;
+
     init();
 
     function mapEls(){
@@ -319,6 +326,13 @@
       }catch(_){ return structuredClone(DEFAULT_STATE); }
     }
     function saveState(){ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+
+    function setTempNotice(message){
+      tempNotice = String(message || '').trim();
+      if (tempNoticeTimer) clearTimeout(tempNoticeTimer);
+      tempNoticeTimer = setTimeout(() => { tempNotice = ''; renderMessages(); }, 9000);
+      renderMessages();
+    }
 
     async function init(){
       if (!state.anchor) state.anchor = startOfDay(new Date()).toISOString();
@@ -345,7 +359,8 @@
         enabled:true,
         status:'',
         cachedText:'',
-        cachedAt:0
+        cachedAt:0,
+        lastLoadedVia:''
       }];
       saveState();
     }
@@ -411,6 +426,10 @@
       registerActivity();
       if (action === 'toggle') toggleSource(id);
       if (action === 'remove') removeSource(id);
+      if (action === 'subscribe') subscribeSource(id);
+      if (action === 'copy') copySubscribeLink(id);
+      if (action === 'downloadUrl') downloadSourceFromUrl(id);
+      if (action === 'download') downloadSourceIcs(id);
     }
 
     function registerActivity(){ armInactivity(); }
@@ -784,7 +803,8 @@
 
     function renderMessages(){
       const notes = [];
-      if (location.protocol === 'file:' && state.sources.some(s => s.type === 'url')) notes.push('Live URL refresh from a file:// page is often blocked by the browser. Install and serve this PWA from localhost or HTTPS for reliable live feeds, or use a mirror .ics file / folder mode for local updates.');
+      if (tempNotice) notes.push(tempNotice);
+      if (location.protocol === 'file:' && state.sources.some(s => s.type === 'url')) notes.push('Tip: If you are opening this as a file (file://), some browsers block live calendar fetching. For best results, run it via http://localhost or host it on HTTPS, or use a mirror .ics file / folder mode for local updates.');
       if (state.sources.some(s => s.type === 'fileHandle')) notes.push('Mirror file handles only last for this browser session. Re-open the file next time you open the whiteboard.');
       if (folderHandle) notes.push('Folder mode is active. All .ics files in the linked folder are scanned automatically.');
       els.noticeBox.hidden = notes.length === 0;
@@ -861,7 +881,15 @@
       els.sourceList.innerHTML = state.sources.map(source => {
         const toggleLabel = source.enabled ? 'Disable' : 'Enable';
         const removeButton = source.type === 'folderFile' ? '' : '<button type="button" class="danger" data-action="remove" data-id="' + escapeHtml(source.id) + '">Remove</button>';
-        return '<div class="source"><div class="sourceName">' + escapeHtml(source.name) + '</div><div class="sourceStatus">' + escapeHtml(sourceTypeLabel(source.type)) + ' · ' + escapeHtml(source.status || 'Not loaded yet') + '</div><div class="source-actions" style="margin-top:8px"><button type="button" data-action="toggle" data-id="' + escapeHtml(source.id) + '">' + toggleLabel + '</button>' + removeButton + '</div></div>';
+        const subscribeButtons = source.type === 'url'
+          ? '<button type="button" data-action="subscribe" data-id="' + escapeHtml(source.id) + '">Subscribe</button>'
+            + '<button type="button" data-action="copy" data-id="' + escapeHtml(source.id) + '">Copy subscribe link</button>'
+            + '<button type="button" data-action="downloadUrl" data-id="' + escapeHtml(source.id) + '">Download .ics</button>'
+          : '';
+        const downloadCached = (source.cachedText || source.type === 'text')
+          ? '<button type="button" data-action="download" data-id="' + escapeHtml(source.id) + '">Download cached .ics</button>'
+          : '';
+        return '<div class="source"><div class="sourceName">' + escapeHtml(source.name) + '</div><div class="sourceStatus">' + escapeHtml(sourceTypeLabel(source.type)) + ' · ' + escapeHtml(source.status || 'Not loaded yet') + '</div><div class="source-actions" style="margin-top:8px">' + subscribeButtons + downloadCached + '<button type="button" data-action="toggle" data-id="' + escapeHtml(source.id) + '">' + toggleLabel + '</button>' + removeButton + '</div></div>';
       }).join('');
     }
 
@@ -880,6 +908,117 @@
       saveState();
       render();
       reloadSources();
+    }
+
+    // -------- Subscribe / Copy / Download helpers --------
+
+    function subscribeSource(id){
+      const source = state.sources.find(s => s.id === id);
+      if (!source || source.type !== 'url') return;
+      const httpsUrl = getBestIcsUrl(source.value);
+      const webcalUrl = toWebcalUrl(httpsUrl);
+      try{ window.location.assign(webcalUrl); }catch(_){ try{ window.open(webcalUrl, '_self'); }catch(__){} }
+      copyTextToClipboard(httpsUrl).then(ok => {
+        setTempNotice(ok
+          ? 'Subscribe launched. Subscribe link copied too (paste into Outlook: Add calendar → From Internet).'
+          : 'Subscribe launched. If it did not open, use “Copy subscribe link” and paste into Outlook: Add calendar → From Internet.'
+        );
+      });
+    }
+
+    function copySubscribeLink(id){
+      const source = state.sources.find(s => s.id === id);
+      if (!source || source.type !== 'url') return;
+      const httpsUrl = getBestIcsUrl(source.value);
+      copyTextToClipboard(httpsUrl).then(ok => {
+        setTempNotice(ok ? 'Copied subscribe link.' : 'Could not auto-copy. Here is the link: ' + httpsUrl);
+      });
+    }
+
+    // Force-download attempt for URL feeds (works for many hosts; some may still open a tab depending on browser)
+    function downloadSourceFromUrl(id){
+      const source = state.sources.find(s => s.id === id);
+      if (!source || source.type !== 'url') return;
+      const httpsUrl = getBestIcsUrl(source.value);
+      try{
+        const a = document.createElement('a');
+        a.href = httpsUrl;
+        a.download = (source.name || 'calendar') + '.ics';
+        a.rel = 'noopener noreferrer';
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTempNotice('Attempting download… If nothing downloads, your browser may open it in a tab instead. Save the .ics file, then use “Import file(s)” to add it to the board.');
+      }catch(_){
+        try{ window.open(httpsUrl, '_blank', 'noopener,noreferrer'); }catch(__){}
+        setTempNotice('Opened in a new tab. Save the .ics file, then use “Import file(s)” to add it to the board.');
+      }
+    }
+
+    // Download the cached ICS text (works even offline)
+    function downloadSourceIcs(id){
+      const source = state.sources.find(s => s.id === id);
+      if (!source) return;
+      const text = source.cachedText || (source.type === 'text' ? source.value : '') || '';
+      if (!text.trim()){
+        setTempNotice('Nothing cached yet. Click Refresh first, or use “Download .ics” for the direct feed download.');
+        return;
+      }
+      const blob = new Blob([text], { type:'text/calendar;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = (source.name || 'calendar') + '.ics';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
+      setTempNotice('Downloading cached ' + (source.name || 'calendar') + '.ics');
+    }
+
+    function getBestIcsUrl(inputUrl){
+      const normalized = normalizeFeedUrl(inputUrl);
+      const googleCid = extractGoogleCalendarCid(normalized);
+      if (googleCid){
+        return 'https://calendar.google.com/calendar/ical/' + encodeURIComponent(googleCid) + '/public/basic.ics';
+      }
+      const githubRawUrl = convertGitHubCalendarUrl(normalized);
+      if (githubRawUrl) return githubRawUrl;
+      return normalized;
+    }
+
+    function toWebcalUrl(url){
+      const raw = String(url || '').trim();
+      if (/^webcal:/i.test(raw)) return raw;
+      if (/^https:\/\//i.test(raw)) return raw.replace(/^https:\/\//i, 'webcal://');
+      if (/^http:\/\//i.test(raw)) return raw.replace(/^http:\/\//i, 'webcal://');
+      return 'webcal://' + raw.replace(/^\/+/, '');
+    }
+
+    async function copyTextToClipboard(text){
+      const value = String(text || '').trim();
+      if (!value) return false;
+      try{
+        if (navigator.clipboard && navigator.clipboard.writeText){
+          await navigator.clipboard.writeText(value);
+          return true;
+        }
+      }catch(_){ }
+      try{
+        const el = document.createElement('textarea');
+        el.value = value;
+        el.setAttribute('readonly', '');
+        el.style.position = 'fixed';
+        el.style.left = '-9999px';
+        document.body.appendChild(el);
+        el.select();
+        const ok = document.execCommand('copy');
+        el.remove();
+        return !!ok;
+      }catch(_){
+        return false;
+      }
     }
 
     function clearSourceRuntimeState(id){
@@ -965,6 +1104,7 @@
       const categories = normalizeTitle(evt.categories);
       const haystack = [title, description, location, categories].join(' ');
       if (haystack.includes('pou taahuu')) return { className:'pou', label:'Pou Taahuu' };
+      if (haystack.includes('report')) return { className:'report', label:'Report' };
       if (haystack.includes('holiday') || haystack.includes('holidays')) return { className:'holiday', label:'Holiday' };
       if (haystack.includes('nzqa')) return { className:'nzqa', label:'NZQA' };
       if (haystack.includes('exam') || haystack.includes('exams')) return { className:'exam', label:'Exam' };
@@ -986,7 +1126,6 @@
       }catch(_){ }
       return rows.map(row => ({ ...row, start:timeOnDate(date, row.start), end:timeOnDate(date, row.end) })).filter(row => row.start && row.end).sort((a,b) => a.start - b.start);
     }
-
 
     function wirePWA(){
       if ('serviceWorker' in navigator && location.protocol !== 'file:') {
@@ -1321,6 +1460,7 @@
     function formatTimestamp(ts){ if (!ts) return 'unknown time'; try{ return new Date(ts).toLocaleString([], { year:'numeric', month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }); }catch(_){ return 'unknown time'; } }
     function sourceTypeLabel(type){ return ({ url:'Feed URL', text:'Imported ICS', fileHandle:'Mirror file', folderFile:'Folder ICS' })[type] || 'Calendar source'; }
 
+    // ---- Fetching feeds for the board ----
     async function fetchCalendarUrl(url){
       const normalized = normalizeFeedUrl(url);
       const candidates = buildCalendarUrlCandidates(normalized);
@@ -1328,7 +1468,7 @@
 
       for (const candidate of candidates){
         try{
-          const response = await fetch(candidate.url, { cache:'no-store', mode:'cors' });
+          const response = await fetch(candidate.url, { cache:'no-store', mode:'cors', credentials:'omit', redirect:'follow' });
           if (!response.ok) throw new Error('HTTP ' + response.status);
           const text = normalizeCalendarText(await response.text());
           if (!looksLikeCalendarText(text)) throw new Error('Response was fetched, but it was not usable calendar text');
@@ -1367,16 +1507,16 @@
 
       if (onFilePage && /^https?:/i.test(url)){
         if (googleCid){
-          return new Error('Live Google Calendar fetch is blocked from this file:// page. Use the calendar&#39;s public or secret iCal address on localhost, or mirror/download the .ics file locally.');
+          return new Error('Live Google Calendar fetch is often blocked from a file:// page. Use the calendar\'s public or secret iCal address on localhost/HTTPS, or mirror/download the .ics file locally.');
         }
         if (githubRawUrl && githubRawUrl !== url){
-          return new Error('Live GitHub calendar fetch is blocked from this file:// page. Open the board through localhost/web server, or mirror/download the .ics file locally.');
+          return new Error('Live GitHub calendar fetch is often blocked from a file:// page. Open the board through localhost/web server, or mirror/download the .ics file locally.');
         }
         return new Error('Live feed fetch is blocked from this file:// page. Open the board through localhost/web server, or use a mirror/local .ics file.');
       }
 
       if (googleCid){
-        return new Error('That Google Calendar link is a viewer link, not a guaranteed live ICS feed. Use the calendar&#39;s public or secret iCal address, or mirror/download the .ics file.');
+        return new Error('That Google Calendar link is a viewer link, not a guaranteed live ICS feed. Use the calendar\'s public or secret iCal address, or mirror/download the .ics file.');
       }
 
       if (githubRawUrl && githubRawUrl !== url){
