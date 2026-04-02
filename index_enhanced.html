@@ -403,6 +403,7 @@
  setDefaultEventForm();
       tickClock();
       setInterval(tickClock, 1000);
+      armMidnightRoll();
       armRefresh();
       armInactivity();
       render();
@@ -503,6 +504,31 @@
     }
 
     function registerActivity(){ armInactivity(); }
+
+        let midnightTimer = null;
+
+    function resetToToday(){
+      state.anchor = startOfDay(new Date()).toISOString();
+      saveState();
+      render();
+    }
+
+    function armMidnightRoll(){
+      if (midnightTimer) clearTimeout(midnightTimer);
+
+      const now = new Date();
+      const nextMidnight = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() + 1,
+        0, 0, 1, 0
+      );
+
+      midnightTimer = setTimeout(() => {
+        resetToToday();
+        armMidnightRoll();
+      }, nextMidnight - now);
+    }
 
     function armRefresh(){
       if (refreshTimer) clearInterval(refreshTimer);
@@ -1787,7 +1813,8 @@ function icsEscape(value){
     .replace(/\/g, '\\')
     .replace(/
 /g, '\n')
-    .replace(//g, '')
+    .replace(/
+/g, '')
     .replace(/,/g, '\,')
     .replace(/;/g, '\;');
 }
