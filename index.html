@@ -335,12 +335,13 @@
     }
 
     async function init(){
-      if (!state.anchor) state.anchor = startOfDay(new Date()).toISOString();
+     state.anchor = startOfDay(new Date()).toISOString();
       ensureDefaultSource();
       syncControls();
       bindEvents();
       tickClock();
       setInterval(tickClock, 1000);
+      armMidnightRoll();
       armRefresh();
       armInactivity();
       render();
@@ -908,6 +909,31 @@
       saveState();
       render();
       reloadSources();
+    }
+
+        let midnightTimer = null;
+
+    function resetToToday(){
+      state.anchor = startOfDay(new Date()).toISOString();
+      saveState();
+      render();
+    }
+
+    function armMidnightRoll(){
+      if (midnightTimer) clearTimeout(midnightTimer);
+
+      const now = new Date();
+      const nextMidnight = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() + 1,
+        0, 0, 1, 0
+      );
+
+      midnightTimer = setTimeout(() => {
+        resetToToday();
+        armMidnightRoll();
+      }, nextMidnight - now);
     }
 
     // -------- Subscribe / Copy / Download helpers --------
