@@ -280,7 +280,7 @@
       { name:'TE MAAHURI', start:'10:55', end:'11:25' },
       { name:'BREAK 1', start:'11:25', end:'12:00' },
       { name:'PERIOD 3', start:'12:00', end:'12:55' },
-      { name:'BPERIOD 4', start:'13:00', end:'13:55' },
+      { name:'PERIOD 4', start:'13:00', end:'13:55' },
       { name:'BREAK 2', start:'13:55', end:'14:20' },
       { name:'PERIOD 5', start:'14:20', end:'15:15' }
     ];
@@ -303,6 +303,10 @@
     let folderHandle = null;
     let refreshTimer = null;
     let inactivityTimer = null;
+    let clockTimer = null;
+    let midnightTimer = null;
+    let lastDateKey = '';
+    let lastMinuteKey = '';
     let errors = [];
     let busy = false;
     let deferredInstallPrompt = null;
@@ -340,7 +344,7 @@
       syncControls();
       bindEvents();
       tickClock();
-      setInterval(tickClock, 1000);
+      clockTimer = setInterval(tickClock, 1000);
       armMidnightRoll();
       armRefresh();
       armInactivity();
@@ -379,10 +383,8 @@
       els.prevBtn.addEventListener('click', () => shiftRange(-1));
       els.nextBtn.addEventListener('click', () => shiftRange(1));
       els.todayBtn.addEventListener('click', () => {
-        state.anchor = startOfDay(new Date()).toISOString();
-        saveState();
+        resetToToday({ reload:false });
         registerActivity();
-        render();
       });
       els.refreshBtn.addEventListener('click', reloadSources);
       els.reloadAllBtn.addEventListener('click', reloadSources);
@@ -414,7 +416,8 @@
         saveState();
         render();
       });
-      window.addEventListener('focus', reloadSources);
+      window.addEventListener('focus', () => { catchUpToNow('focus'); reloadSources(); });
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) catchUpToNow('visible'); });
       ['click','keydown','mousemove','touchstart','scroll'].forEach(evt => window.addEventListener(evt, registerActivity, { passive:true }));
     }
 
@@ -443,9 +446,7 @@
     function armInactivity(){
       if (inactivityTimer) clearTimeout(inactivityTimer);
       inactivityTimer = setTimeout(() => {
-        state.anchor = startOfDay(new Date()).toISOString();
-        saveState();
-        render();
+        resetToToday({ reload:false });
       }, clampInt(state.returnMinutes, 1, 180, 5) * 60000);
     }
 
@@ -651,78 +652,83 @@
     async function reloadSources(){
       if (busy) return;
       busy = true;
-      errors = [];
-      await syncFolderSources(false);
-      const range = getExpansionRange();
-      const all = [];
-      for (const source of state.sources){
-        if (!source.enabled) continue;
-        let parsed = null;
-        try{
-          let text = '';
-          let usedCacheText = false;
-          let via = source.lastLoadedVia || '';
+      try{
+        errors = [];
+        await syncFolderSources(false);
+        const range = getExpansionRange();
+        const all = [];
+        for (const source of state.sources){
+          if (!source.enabled) continue;
+          let parsed = null;
+          try{
+            let text = '';
+            let usedCacheText = false;
+            let via = source.lastLoadedVia || '';
+            const previousCachedAt = source.cachedAt || 0;
 
-          if (source.type === 'url'){
-            try{
-              const fetched = await fetchCalendarUrl(source.value);
-              text = fetched.text;
-              via = fetched.via;
-            }catch(err){
-              if (source.cachedText){
-                text = source.cachedText;
-                usedCacheText = true;
-                via = 'cached copy';
-              }else{
-                throw err;
+            if (source.type === 'url'){
+              try{
+                const fetched = await fetchCalendarUrl(source.value);
+                text = fetched.text;
+                via = fetched.via;
+              }catch(err){
+                if (source.cachedText){
+                  text = source.cachedText;
+                  usedCacheText = true;
+                  via = 'cached copy';
+                }else{
+                  throw err;
+                }
               }
+            }else if (source.type === 'fileHandle'){
+              const handle = fileHandles[source.id];
+              if (!handle) throw new Error('Mirror file needs to be re-opened for this session');
+              const file = await handle.getFile();
+              text = await file.text();
+              via = 'mirror file';
+            }else if (source.type === 'folderFile'){
+              if (!folderHandle) throw new Error('Folder needs to be linked again');
+              const handle = await folderHandle.getFileHandle(source.value);
+              const file = await handle.getFile();
+              text = await file.text();
+              via = 'folder file';
+            }else{
+              text = source.value || '';
+              via = source.lastLoadedVia || 'imported ICS';
             }
-          }else if (source.type === 'fileHandle'){
-            const handle = fileHandles[source.id];
-            if (!handle) throw new Error('Mirror file needs to be re-opened for this session');
-            const file = await handle.getFile();
-            text = await file.text();
-            via = 'mirror file';
-          }else if (source.type === 'folderFile'){
-            if (!folderHandle) throw new Error('Folder needs to be linked again');
-            const handle = await folderHandle.getFileHandle(source.value);
-            const file = await handle.getFile();
-            text = await file.text();
-            via = 'folder file';
-          }else{
-            text = source.value || '';
-            via = source.lastLoadedVia || 'imported ICS';
-          }
 
-          parsed = dedupeEvents(parseICS(text, source.name, range.start, range.end));
-          runtimeSourceEvents[source.id] = parsed;
-          source.cachedText = text;
-          source.cachedAt = Date.now();
-          source.lastLoadedVia = via;
+            parsed = dedupeEvents(parseICS(text, source.name, range.start, range.end));
+            runtimeSourceEvents[source.id] = parsed;
+            source.cachedText = text;
+            if (!usedCacheText) source.cachedAt = Date.now();
+            else source.cachedAt = previousCachedAt || source.cachedAt || Date.now();
+            source.lastLoadedVia = via;
 
-          if (usedCacheText){
-            source.status = 'Using cached copy from ' + formatTimestamp(source.cachedAt) + ' · ' + parsed.length + ' events';
-          }else if (source.type === 'url' && via && via !== 'direct'){
-            source.status = 'Loaded ' + parsed.length + ' events via ' + via;
-          }else{
-            source.status = 'Loaded ' + parsed.length + ' events';
+            if (usedCacheText){
+              source.status = 'Using cached copy from ' + formatTimestamp(source.cachedAt) + ' · ' + parsed.length + ' events';
+            }else if (source.type === 'url' && via && via !== 'direct'){
+              source.status = 'Loaded ' + parsed.length + ' events via ' + via + ' · ' + formatTimestamp(source.cachedAt);
+            }else{
+              source.status = 'Loaded ' + parsed.length + ' events · ' + formatTimestamp(source.cachedAt);
+            }
+          }catch(err){
+            if (runtimeSourceEvents[source.id] && runtimeSourceEvents[source.id].length){
+              parsed = runtimeSourceEvents[source.id];
+              source.status = 'Using last good data · ' + parsed.length + ' events';
+              errors.push(source.name + ': ' + (err && err.message ? err.message : 'Could not refresh') + ' · showing last good data');
+            }else{
+              source.status = 'Error: ' + (err && err.message ? err.message : 'Could not load');
+              errors.push(source.name + ': ' + source.status);
+            }
           }
-        }catch(err){
-          if (runtimeSourceEvents[source.id] && runtimeSourceEvents[source.id].length){
-            parsed = runtimeSourceEvents[source.id];
-            source.status = 'Using last good data · ' + parsed.length + ' events';
-            errors.push(source.name + ': ' + (err && err.message ? err.message : 'Could not refresh') + ' · showing last good data');
-          }else{
-            source.status = 'Error: ' + (err && err.message ? err.message : 'Could not load');
-            errors.push(source.name + ': ' + source.status);
-          }
+          if (parsed) all.push(...parsed);
         }
-        if (parsed) all.push(...parsed);
+        loadedEvents = dedupeEvents(all).sort((a,b) => Number(a.allDay) - Number(b.allDay) || a.start - b.start || a.end - b.end || a.title.localeCompare(b.title));
+        saveState();
+        render();
+      }finally{
+        busy = false;
       }
-      loadedEvents = dedupeEvents(all).sort((a,b) => Number(a.allDay) - Number(b.allDay) || a.start - b.start || a.end - b.end || a.title.localeCompare(b.title));
-      saveState();
-      render();
-      busy = false;
     }
 
     function render(){
@@ -911,12 +917,31 @@
       reloadSources();
     }
 
-        let midnightTimer = null;
-
-    function resetToToday(){
-      state.anchor = startOfDay(new Date()).toISOString();
+    function resetToToday(options = {}){
+      const todayIso = startOfDay(new Date()).toISOString();
+      const changed = state.anchor !== todayIso;
+      state.anchor = todayIso;
       saveState();
       render();
+      if (options.reload && changed) reloadSources();
+    }
+
+    function catchUpToNow(reason = ''){
+      const now = new Date();
+      const currentDateKey = dateKey(now);
+      const dateChanged = !!lastDateKey && currentDateKey !== lastDateKey;
+      lastDateKey = currentDateKey;
+      lastMinuteKey = minuteKey(now);
+      updateClockText(now);
+
+      if (dateChanged){
+        resetToToday({ reload:true });
+        armMidnightRoll();
+        return;
+      }
+
+      renderPeriodStrip();
+      if (visibleRangeContainsToday()) renderDays();
     }
 
     function armMidnightRoll(){
@@ -927,13 +952,15 @@
         now.getFullYear(),
         now.getMonth(),
         now.getDate() + 1,
-        0, 0, 1, 0
+        0, 0, 3, 0
       );
 
       midnightTimer = setTimeout(() => {
-        resetToToday();
+        lastDateKey = dateKey(new Date());
+        lastMinuteKey = minuteKey(new Date());
+        resetToToday({ reload:true });
         armMidnightRoll();
-      }, nextMidnight - now);
+      }, Math.max(1000, nextMidnight - now));
     }
 
     // -------- Subscribe / Copy / Download helpers --------
@@ -1209,9 +1236,34 @@
 
     function tickClock(){
       const now = new Date();
+      const currentDateKey = dateKey(now);
+      const currentMinuteKey = minuteKey(now);
+      const dateChanged = !!lastDateKey && currentDateKey !== lastDateKey;
+      const minuteChanged = !!lastMinuteKey && currentMinuteKey !== lastMinuteKey;
+
+      lastDateKey = currentDateKey;
+      lastMinuteKey = currentMinuteKey;
+      updateClockText(now);
+
+      if (dateChanged){
+        resetToToday({ reload:true });
+        armMidnightRoll();
+        return;
+      }
+
+      renderPeriodStrip();
+      if (minuteChanged && visibleRangeContainsToday()) renderDays();
+    }
+
+    function updateClockText(now){
       els.clockTime.textContent = now.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
       els.clockDate.textContent = now.toLocaleDateString([], { weekday:'long', day:'numeric', month:'long', year:'numeric' });
-      renderPeriodStrip();
+    }
+
+    function visibleRangeContainsToday(){
+      const range = getVisibleRange();
+      const today = startOfDay(new Date());
+      return today >= range.start && today <= range.end;
     }
 
     function getAnchorDate(){
@@ -1639,6 +1691,8 @@
     function clampInt(value, min, max, fallback){ const n = Number(value); return Number.isFinite(n) ? Math.max(min, Math.min(max, Math.round(n))) : fallback; }
     function escapeHtml(text){ return String(text).replace(/[&<>"']/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[ch])); }
     function startOfDay(date){ return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0,0,0,0); }
+    function dateKey(date){ return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0'); }
+    function minuteKey(date){ return dateKey(date) + 'T' + String(date.getHours()).padStart(2, '0') + ':' + String(date.getMinutes()).padStart(2, '0'); }
     function addDays(date, days){ const d = new Date(date); d.setDate(d.getDate() + days); return d; }
     function addMonths(date, months){ return new Date(date.getFullYear(), date.getMonth() + months, date.getDate(), date.getHours(), date.getMinutes(), date.getSeconds(), date.getMilliseconds()); }
     function startOfWeek(date){ const d = startOfDay(date); const offset = (d.getDay() + 6) % 7; d.setDate(d.getDate() - offset); return d; }
