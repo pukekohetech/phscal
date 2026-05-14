@@ -1,4 +1,4 @@
-const CACHE = 'phs-calendar-pwa-v3';
+const CACHE = 'phs-calendar-pwa-v4';
 const APP_SHELL = [
   './',
   './index.html',
