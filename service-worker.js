@@ -1,4 +1,4 @@
-const CACHE = 'phs-calendar-pwa-v7-simple-settings';
+const CACHE = 'phs-calendar-pwa-v9-reliability';
 const APP_SHELL = [
   './',
   './index.html',
@@ -9,11 +9,11 @@ const APP_SHELL = [
 ];
 
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE)
-      .then(cache => cache.addAll(APP_SHELL))
-      .then(() => self.skipWaiting())
-  );
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE);
+    await Promise.allSettled(APP_SHELL.map(url => cache.add(url)));
+    await self.skipWaiting();
+  })());
 });
 
 self.addEventListener('activate', event => {

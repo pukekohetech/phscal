@@ -73,6 +73,7 @@
     .meta,.toolbar,.source-actions,.actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
     .meta{gap:6px}
     .chip{display:inline-flex;align-items:center;padding:4px 8px;border:1px solid var(--line);border-radius:999px;background:var(--soft);font-size:10px;font-weight:900;color:var(--muted)}
+    .chip.updateChip{background:#fff;border-color:var(--line-strong);color:#475569}
     .periodStrip{display:grid;gap:6px;border:1px solid var(--line);border-radius:14px;background:#fff;padding:8px 10px;min-width:0}
     .periodTop{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
     .periodLabel{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:900}
@@ -112,12 +113,14 @@
     .eyebrow{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:900}
     .dayTitle{font-size:18px;line-height:1.1;font-weight:950;letter-spacing:-.28px}
     .count{font-size:10px;font-weight:900;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:4px 8px;background:#fff;white-space:nowrap}
-    .weatherChip{display:grid;grid-template-columns:auto auto;gap:1px 6px;align-items:center;border:1px solid rgba(3,105,161,.2);border-radius:999px;padding:4px 8px;background:var(--weather-bg);color:var(--weather);font-weight:950;line-height:1;white-space:nowrap;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+    .weatherChip{display:flex;gap:6px;align-items:center;border:1px solid rgba(3,105,161,.2);border-radius:999px;padding:5px 9px;background:var(--weather-bg);color:var(--weather);font-weight:950;line-height:1;white-space:nowrap;box-shadow:0 1px 2px rgba(15,23,42,.04);max-width:190px}
     .weatherChip.rain{background:var(--weather-rain-bg);color:var(--weather-rain);border-color:rgba(29,78,216,.22)}
+    .weatherChip.warn{background:#fff7ed;color:#c2410c;border-color:#fed7aa}
     .weatherChip.muted{background:var(--weather-muted-bg);color:var(--weather-muted);border-color:var(--line)}
-    .weatherIcon{grid-row:span 2;font-size:15px;line-height:1}
-    .weatherTemp{font-size:11px;letter-spacing:-.1px}
-    .weatherMeta{font-size:9px;color:inherit;opacity:.76;font-weight:900}
+    .weatherIcon{font-size:15px;line-height:1;flex:0 0 auto}
+    .weatherText{display:grid;gap:2px;min-width:0}
+    .weatherLabel{font-size:11px;letter-spacing:-.08px;overflow:hidden;text-overflow:ellipsis}
+    .weatherMeta{font-size:9px;color:inherit;opacity:.76;font-weight:900;overflow:hidden;text-overflow:ellipsis}
     .eventList{display:grid;gap:6px}
     .event{border:1px solid var(--line);border-left:6px solid var(--generic);border-radius:13px;padding:8px 10px;background:#fff}
     .event.meeting{border-left-color:var(--meeting);background:var(--meeting-bg)}
@@ -158,6 +161,13 @@
     .compactTextarea{min-height:84px}
     .check{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:800;color:var(--text)}
     .settingRow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    .periodTableWrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:#fff}
+    .periodEditor{width:100%;border-collapse:collapse;min-width:520px}
+    .periodEditor th,.periodEditor td{border-bottom:1px solid var(--line);padding:8px;text-align:left;vertical-align:middle}
+    .periodEditor th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:950;background:var(--soft)}
+    .periodEditor tr:last-child td{border-bottom:0}
+    .periodEditor input[type="text"],.periodEditor input[type="time"]{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:#fff;font-weight:800}
+    .periodEditor .smallAction{padding:7px 9px;border-radius:10px}
     .choiceGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
     .choiceCard{border:1px solid var(--line);border-radius:16px;padding:12px;background:var(--soft);display:grid;gap:10px;align-content:start}
     .choiceCard.recommended{background:#f8fafc;border-color:var(--line-strong)}
@@ -204,7 +214,8 @@
         <div class="meta">
           <div class="chip" id="statusChip">No calendars</div>
           <div class="chip" id="rangeChip">Next 14 days</div>
-          <div class="chip" id="sourceChip">0 src</div>
+          <div class="chip" id="sourceChip">0 calendars</div>
+          <div class="chip updateChip" id="lastUpdatedChip">Not updated yet</div>
         </div>
       </div>
 
@@ -239,8 +250,8 @@
 
     <section class="panel main">
       <div class="messages" id="messagesWrap">
-        <div class="notice" id="noticeBox" hidden></div>
-        <div id="errorBox"></div>
+        <div class="notice" id="noticeBox" hidden aria-live="polite"></div>
+        <div id="errorBox" aria-live="assertive"></div>
       </div>
       <div class="searchRow">
         <div class="searchBox">
@@ -258,9 +269,9 @@
         <div class="card highlight">
           <div>
             <div class="sectionTitle">Daily weather</div>
-            <p class="helper">Shows a small forecast chip beside each day. Default location is Pukekohe, New Zealand.</p>
+            <p class="helper">Shows a short forecast beside each day. Default location is Pukekohe, New Zealand.</p>
           </div>
-          <label class="check"><input id="showWeather" type="checkbox"> Show weather on day cards</label>
+          <label class="check"><input id="showWeather" type="checkbox"> Show weather beside each day</label>
           <div class="field">
             <label for="weatherLocation">Weather location</label>
             <input id="weatherLocation" type="text" placeholder="Pukekohe, New Zealand">
@@ -292,28 +303,49 @@
           <label class="check"><input id="includeAllDay" type="checkbox"> Show all-day events</label>
           <div class="actions">
             <button type="button" id="saveSettingsBtn" class="primary">Save display settings</button>
-            <button type="button" id="reloadAllBtn">Reload calendars</button>
+            <button type="button" id="reloadAllBtn">Refresh board</button>
           </div>
+        </div>
+
+        <div class="card">
+          <div>
+            <div class="sectionTitle">School timetable</div>
+            <p class="helper">Edit the bell times used by the current-period strip at the top of the board.</p>
+          </div>
+          <div class="periodTableWrap">
+            <table class="periodEditor" aria-label="School timetable periods">
+              <thead>
+                <tr><th>Period</th><th>Start</th><th>End</th><th></th></tr>
+              </thead>
+              <tbody id="periodRows"></tbody>
+            </table>
+          </div>
+          <div class="actions">
+            <button type="button" id="addPeriodBtn">Add period</button>
+            <button type="button" id="savePeriodsBtn" class="primary">Save timetable</button>
+            <button type="button" id="resetPeriodsBtn">Reset timetable</button>
+          </div>
+          <p class="helper">Use 24-hour time, for example 09:00 and 15:15.</p>
         </div>
 
         <div class="card wide">
           <div>
             <div class="sectionTitle">School calendar</div>
-            <p class="helper">Most users only need one option: use the live school calendar. If you opened this by double-clicking the file and the live feed is blocked, import the .ics file instead.</p>
+            <p class="helper">Most users only need one option: use the online school calendar. If you opened this by double-clicking the file and the online calendar is blocked, import the calendar file instead.</p>
           </div>
 
           <div class="choiceGrid">
             <div class="choiceCard recommended">
-              <div class="choiceTitle">Recommended: live school calendar</div>
+              <div class="choiceTitle">Recommended: online school calendar</div>
               <p class="helper">Best when the board is hosted online or opened through localhost.</p>
               <div class="actions">
-                <button type="button" id="exampleBtn" class="primary">Use school live calendar</button>
+                <button type="button" id="exampleBtn" class="primary">Use online school calendar</button>
                 <button type="button" id="calendarRefreshBtn">Refresh now</button>
               </div>
             </div>
             <div class="choiceCard">
-              <div class="choiceTitle">Backup: import an .ics file</div>
-              <p class="helper">Use this when a live feed is blocked. Select the file, then click import.</p>
+              <div class="choiceTitle">Backup: import a calendar file</div>
+              <p class="helper">Use this when the online calendar is blocked. Select the file, then click import.</p>
               <div class="field fileField">
                 <label for="icsFileInput">Choose calendar file</label>
                 <input id="icsFileInput" type="file" accept=".ics,text/calendar" multiple>
@@ -330,55 +362,54 @@
             <summary>More calendar options</summary>
             <div class="advancedBody">
               <div class="optionBlock">
-                <div class="choiceTitle">Add another live feed</div>
+                <div class="choiceTitle">Add another online calendar</div>
                 <div class="settingRow">
                   <div class="field">
-                    <label for="feedUrl">ICS feed URL</label>
+                    <label for="feedUrl">Online calendar link</label>
                     <input id="feedUrl" type="url" placeholder="https://example.com/calendar.ics or webcal://...">
                   </div>
                   <div class="field">
-                    <label for="feedName">Feed name</label>
+                    <label for="feedName">Calendar name</label>
                     <input id="feedName" type="text" placeholder="Optional label">
                   </div>
                 </div>
-                <button type="button" id="addFeedBtn">Add another feed</button>
+                <button type="button" id="addFeedBtn">Add calendar</button>
               </div>
 
               <div class="optionBlock">
-                <div class="choiceTitle">Local folder or mirror file</div>
-                <p class="helper">Only use this for a shared/local calendar folder that you update outside the app.</p>
+                <div class="choiceTitle">Advanced local file link</div>
+                <p class="helper">Only use this for a shared/local calendar file or folder that you update outside the app.</p>
                 <div class="actions">
-                  <button type="button" id="mirrorFileBtn">Open mirror file</button>
-                  <button type="button" id="chooseFolderBtn">Choose folder</button>
-                  <button type="button" id="scanFolderBtn">Scan folder</button>
+                  <button type="button" id="mirrorFileBtn">Link calendar file</button>
+                  <button type="button" id="chooseFolderBtn">Link folder</button>
+                  <button type="button" id="scanFolderBtn">Check folder</button>
                 </div>
                 <div class="empty compact" id="folderStatusBox">No folder linked.</div>
               </div>
 
               <div class="optionBlock">
-                <div class="choiceTitle">Paste raw ICS text</div>
+                <div class="choiceTitle">Paste copied calendar text</div>
                 <p class="helper">Only use this if someone has copied the full calendar text for you.</p>
                 <div class="field">
-                  <label for="pasteName">Pasted calendar name</label>
+                  <label for="pasteName">Calendar name</label>
                   <input id="pasteName" type="text" placeholder="Optional label">
                 </div>
                 <div class="field">
-                  <label for="pasteText">Paste raw ICS text</label>
-                  <textarea id="pasteText" class="compactTextarea" placeholder="Paste raw ICS here"></textarea>
+                  <label for="pasteText">Calendar text</label>
+                  <textarea id="pasteText" class="compactTextarea" placeholder="Paste the full calendar text here"></textarea>
                 </div>
                 <button type="button" id="importPasteBtn">Import pasted calendar</button>
               </div>
 
               <details class="advancedOptions nested">
-                <summary>Period timetable settings</summary>
+                <summary>Advanced troubleshooting</summary>
                 <div class="advancedBody">
-                  <p class="helper">Only change this if the school bell times change.</p>
+                  <p class="helper">Only use these options if something has gone wrong or you have been asked for the backup timetable data.</p>
                   <div class="field">
-                    <label for="periodsText">Period timetable JSON</label>
-                    <textarea id="periodsText" class="compactTextarea"></textarea>
+                    <label for="periodsText">Backup timetable data</label>
+                    <textarea id="periodsText" class="compactTextarea" spellcheck="false"></textarea>
                   </div>
                   <div class="actions">
-                    <button type="button" id="resetPeriodsBtn">Reset periods</button>
                     <button type="button" id="clearAllBtn" class="danger">Remove all calendars</button>
                   </div>
                 </div>
@@ -389,7 +420,7 @@
       </div>
     </details>
 
-    <div class="footer">For most users: Settings → School calendar → Use school live calendar. If the board is opened as a local file and the live feed is blocked, import the included .ics file instead.</div>
+    <div class="footer">For most users: Settings → School calendar → Use online school calendar. If the board is opened as a local file and the online calendar is blocked, import the included calendar file instead.</div>
   </div>
 
   <script>
@@ -397,6 +428,8 @@
     const DEFAULT_FEED = 'https://raw.githubusercontent.com/pukekohetech/phscal/main/PHS%20Calendar.ics';
     const DEFAULT_WEATHER = { name:'Pukekohe, New Zealand', latitude:-37.2008, longitude:174.9010 };
     const WEATHER_CACHE_MS = 45 * 60 * 1000;
+    const FETCH_TIMEOUT_MS = 10000;
+    const APP_TIMEZONE = 'Pacific/Auckland';
     const STORE_KEY = 'phs_calendar_whiteboard_v2';
     const DEFAULT_PERIODS = [
       { name:'MEETING', start:'08:30', end:'09:00' },
@@ -451,7 +484,7 @@
     init();
 
     function mapEls(){
-      const ids = ['statusChip','rangeChip','sourceChip','periodLabel','periodTitle','periodMeta','periodProgress','periodCountdown','periodCountdownNote','clockTime','clockDate','prevBtn','todayBtn','nextBtn','refreshBtn','fullscreenBtn','installBtn','noticeBox','errorBox','searchInput','clearSearchBtn','searchInfo','daysList','feedUrl','feedName','addFeedBtn','exampleBtn','icsFileInput','importFilesBtn','mirrorFileBtn','chooseFolderBtn','scanFolderBtn','pasteName','pasteText','importPasteBtn','refreshMinutes','returnMinutes','showWeekends','includeAllDay','showWeather','weatherLocation','saveWeatherBtn','detectWeatherBtn','refreshWeatherBtn','weatherStatusBox','periodsText','saveSettingsBtn','resetPeriodsBtn','reloadAllBtn','calendarRefreshBtn','clearAllBtn','sourceList','folderStatusBox'];
+      const ids = ['statusChip','rangeChip','sourceChip','lastUpdatedChip','periodLabel','periodTitle','periodMeta','periodProgress','periodCountdown','periodCountdownNote','clockTime','clockDate','prevBtn','todayBtn','nextBtn','refreshBtn','fullscreenBtn','installBtn','noticeBox','errorBox','searchInput','clearSearchBtn','searchInfo','daysList','feedUrl','feedName','addFeedBtn','exampleBtn','icsFileInput','importFilesBtn','mirrorFileBtn','chooseFolderBtn','scanFolderBtn','pasteName','pasteText','importPasteBtn','refreshMinutes','returnMinutes','showWeekends','includeAllDay','showWeather','weatherLocation','saveWeatherBtn','detectWeatherBtn','refreshWeatherBtn','weatherStatusBox','periodRows','addPeriodBtn','savePeriodsBtn','periodsText','saveSettingsBtn','resetPeriodsBtn','reloadAllBtn','calendarRefreshBtn','clearAllBtn','sourceList','folderStatusBox'];
       return Object.fromEntries(ids.map(id => [id, document.getElementById(id)]));
     }
 
@@ -462,7 +495,18 @@
         return { ...structuredClone(DEFAULT_STATE), ...parsed, sources:Array.isArray(parsed.sources) ? parsed.sources : [], weatherCache:parsed.weatherCache || null };
       }catch(_){ return structuredClone(DEFAULT_STATE); }
     }
-    function saveState(){ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+    function saveState(){
+      try{
+        localStorage.setItem(STORE_KEY, JSON.stringify(state));
+        return true;
+      }catch(err){
+        console.warn('Could not save settings', err);
+        try{
+          if (typeof setTempNotice === 'function') setTempNotice('Settings could not be saved in this browser. Remove unused calendars or clear old backups, then try again.');
+        }catch(_){ }
+        return false;
+      }
+    }
 
     function setTempNotice(message){
       tempNotice = String(message || '').trim();
@@ -519,7 +563,7 @@
       cleanupDuplicateSources();
       saveState();
       syncControls();
-      setTempNotice('School live calendar is selected. Refreshing now.');
+      setTempNotice('Online school calendar is selected. Refreshing now.');
       render();
       reloadSources();
     }
@@ -575,7 +619,8 @@
       if (els.showWeather) els.showWeather.checked = !!state.weatherEnabled;
       if (els.weatherLocation) els.weatherLocation.value = state.weatherLocation || DEFAULT_WEATHER.name;
       els.searchInput.value = state.searchTerm || '';
-      els.periodsText.value = state.periodsText || JSON.stringify(DEFAULT_PERIODS, null, 2);
+      if (els.periodsText) els.periodsText.value = state.periodsText || JSON.stringify(DEFAULT_PERIODS, null, 2);
+      renderPeriodEditor();
     }
 
     function bindEvents(){
@@ -607,7 +652,10 @@
       if (els.detectWeatherBtn) els.detectWeatherBtn.addEventListener('click', resolveWeatherLocationFromInput);
       if (els.refreshWeatherBtn) els.refreshWeatherBtn.addEventListener('click', () => reloadWeather({ force:true }));
       els.saveSettingsBtn.addEventListener('click', saveSettingsAction);
-      els.resetPeriodsBtn.addEventListener('click', () => { els.periodsText.value = JSON.stringify(DEFAULT_PERIODS, null, 2); });
+      if (els.periodRows) els.periodRows.addEventListener('click', handlePeriodRowsClick);
+      if (els.addPeriodBtn) els.addPeriodBtn.addEventListener('click', () => addPeriodRow({ name:'New period', start:'', end:'' }));
+      if (els.savePeriodsBtn) els.savePeriodsBtn.addEventListener('click', savePeriodRowsAction);
+      if (els.resetPeriodsBtn) els.resetPeriodsBtn.addEventListener('click', resetPeriodRowsAction);
       els.clearAllBtn.addEventListener('click', () => {
         if (!confirm('Remove all saved calendars from this browser?')) return;
         state.sources = [];
@@ -666,12 +714,115 @@
       state.returnMinutes = clampInt(els.returnMinutes.value, 1, 180, 5);
       state.showWeekends = !!els.showWeekends.checked;
       state.includeAllDay = !!els.includeAllDay.checked;
-      state.periodsText = els.periodsText.value || JSON.stringify(DEFAULT_PERIODS, null, 2);
       saveState();
       armRefresh();
       armInactivity();
       render();
       setTempNotice('Display settings saved.');
+    }
+
+    function getStoredPeriods(){
+      let rows = DEFAULT_PERIODS;
+      try{
+        const parsed = JSON.parse(state.periodsText || '[]');
+        if (Array.isArray(parsed) && parsed.length) rows = parsed;
+      }catch(_){ }
+      const cleaned = rows.map(normalizePeriodRow).filter(row => row.name && row.start && row.end);
+      return cleaned.length ? cleaned : DEFAULT_PERIODS.map(normalizePeriodRow);
+    }
+
+    function normalizePeriodRow(row){
+      return {
+        name:String(row && row.name || '').trim(),
+        start:normalizeTimeValue(row && row.start),
+        end:normalizeTimeValue(row && row.end)
+      };
+    }
+
+    function normalizeTimeValue(value){
+      const match = String(value || '').trim().match(/^(\d{1,2}):(\d{2})/);
+      if (!match) return '';
+      const hour = clampInt(match[1], 0, 23, 0);
+      const minute = clampInt(match[2], 0, 59, 0);
+      return String(hour).padStart(2, '0') + ':' + String(minute).padStart(2, '0');
+    }
+
+    function renderPeriodEditor(){
+      if (!els.periodRows) return;
+      const rows = getStoredPeriods();
+      els.periodRows.innerHTML = rows.map((row, index) => periodRowHtml(row, index)).join('');
+      if (els.periodsText) els.periodsText.value = JSON.stringify(rows, null, 2);
+    }
+
+    function periodRowHtml(row, index){
+      return '<tr data-index="' + index + '">'
+        + '<td><input type="text" data-field="name" value="' + escapeHtml(row.name) + '" aria-label="Period name"></td>'
+        + '<td><input type="time" data-field="start" value="' + escapeHtml(row.start) + '" aria-label="Start time"></td>'
+        + '<td><input type="time" data-field="end" value="' + escapeHtml(row.end) + '" aria-label="End time"></td>'
+        + '<td><button type="button" class="smallAction danger" data-period-action="remove" aria-label="Remove period">Remove</button></td>'
+        + '</tr>';
+    }
+
+    function addPeriodRow(row){
+      if (!els.periodRows) return;
+      els.periodRows.insertAdjacentHTML('beforeend', periodRowHtml(normalizePeriodRow(row), els.periodRows.children.length));
+    }
+
+    function handlePeriodRowsClick(event){
+      const button = event.target.closest('button[data-period-action]');
+      if (!button || button.getAttribute('data-period-action') !== 'remove') return;
+      const row = button.closest('tr');
+      if (row) row.remove();
+      if (els.periodRows && !els.periodRows.children.length) addPeriodRow({ name:'New period', start:'', end:'' });
+    }
+
+    function collectPeriodRows(){
+      if (!els.periodRows) return null;
+      const rows = [...els.periodRows.querySelectorAll('tr')].map(row => {
+        const get = field => (row.querySelector('[data-field="' + field + '"]') || {}).value || '';
+        return normalizePeriodRow({ name:get('name'), start:get('start'), end:get('end') });
+      }).filter(row => row.name || row.start || row.end);
+
+      if (!rows.length){
+        alert('Add at least one timetable row.');
+        return null;
+      }
+      for (const row of rows){
+        if (!row.name || !row.start || !row.end){
+          alert('Each timetable row needs a period name, start time, and end time.');
+          return null;
+        }
+        if (timeToMinutes(row.start) >= timeToMinutes(row.end)){
+          alert(row.name + ' needs an end time later than its start time.');
+          return null;
+        }
+      }
+      return rows.sort((a,b) => timeToMinutes(a.start) - timeToMinutes(b.start));
+    }
+
+    function timeToMinutes(value){
+      const match = String(value || '').match(/^(\d{1,2}):(\d{2})$/);
+      if (!match) return 0;
+      return Number(match[1]) * 60 + Number(match[2]);
+    }
+
+    function savePeriodRowsAction(){
+      const rows = collectPeriodRows();
+      if (!rows) return;
+      state.periodsText = JSON.stringify(rows, null, 2);
+      saveState();
+      renderPeriodEditor();
+      renderPeriodStrip();
+      setTempNotice('School timetable saved.');
+    }
+
+    function resetPeriodRowsAction(){
+      if (!confirm('Reset the school timetable to the default PHS times?')) return;
+      state.periodsText = JSON.stringify(DEFAULT_PERIODS, null, 2);
+      saveState();
+      renderPeriodEditor();
+      renderPeriodStrip();
+      setTempNotice('School timetable reset.');
     }
 
     async function saveWeatherSettings(){
@@ -681,7 +832,7 @@
         saveState();
         weatherForecast = { daily:{}, loading:false, status:'Weather hidden', error:'', updatedAt:0, locationName:state.weatherResolvedName || state.weatherLocation || DEFAULT_WEATHER.name };
         render();
-        setTempNotice('Weather hidden from day cards.');
+        setTempNotice('Weather hidden beside each day.');
         return;
       }
       await resolveWeatherLocationFromInput();
@@ -714,6 +865,19 @@
       await reloadWeather({ force:true });
     }
 
+    async function fetchWithTimeout(url, options = {}, ms = FETCH_TIMEOUT_MS){
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), ms);
+      try{
+        return await fetch(url, { ...options, signal:controller.signal });
+      }catch(err){
+        if (err && err.name === 'AbortError') throw new Error('Request timed out after ' + Math.round(ms / 1000) + ' seconds');
+        throw err;
+      }finally{
+        clearTimeout(timer);
+      }
+    }
+
     async function geocodeWeatherLocation(query){
       const clean = String(query || '').trim();
       if (!clean) return { name:DEFAULT_WEATHER.name, latitude:DEFAULT_WEATHER.latitude, longitude:DEFAULT_WEATHER.longitude };
@@ -721,7 +885,7 @@
         return { name:DEFAULT_WEATHER.name, latitude:DEFAULT_WEATHER.latitude, longitude:DEFAULT_WEATHER.longitude };
       }
       const url = 'https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(clean) + '&count=1&language=en&format=json';
-      const response = await fetch(url, { cache:'no-store', mode:'cors', credentials:'omit' });
+      const response = await fetchWithTimeout(url, { cache:'no-store', mode:'cors', credentials:'omit' }, FETCH_TIMEOUT_MS);
       if (!response.ok) throw new Error('HTTP ' + response.status);
       const data = await response.json();
       const result = data && Array.isArray(data.results) ? data.results[0] : null;
@@ -751,7 +915,7 @@
       renderDays();
       try{
         const url = buildWeatherUrl(state.weatherLatitude || DEFAULT_WEATHER.latitude, state.weatherLongitude || DEFAULT_WEATHER.longitude);
-        const response = await fetch(url, { cache:'no-store', mode:'cors', credentials:'omit' });
+        const response = await fetchWithTimeout(url, { cache:'no-store', mode:'cors', credentials:'omit' }, FETCH_TIMEOUT_MS);
         if (!response.ok) throw new Error('HTTP ' + response.status);
         const data = await response.json();
         const daily = parseWeatherDaily(data);
@@ -835,7 +999,7 @@
       for (const file of files){
         const text = await file.text();
         const id = uid();
-        state.sources.push({ id, type:'text', name:file.name.replace(/\.ics$/i,''), value:text, enabled:true, status:'Imported file', cachedText:text, cachedAt:Date.now(), lastLoadedVia:'imported file' });
+        state.sources.push({ id, type:'text', name:file.name.replace(/\.ics$/i,''), value:text, enabled:true, status:'Imported calendar file', cachedText:text, cachedAt:Date.now(), lastLoadedVia:'imported file' });
         runtimeSourceEvents[id] = dedupeEvents(parseICS(text, file.name.replace(/\.ics$/i,''), getExpansionRange().start, getExpansionRange().end));
       }
       els.icsFileInput.value = '';
@@ -849,7 +1013,7 @@
       if (!text) return;
       const id = uid();
       const name = (els.pasteName.value || 'Pasted calendar').trim();
-      state.sources.push({ id, type:'text', name, value:text, enabled:true, status:'Imported paste', cachedText:text, cachedAt:Date.now(), lastLoadedVia:'pasted ICS' });
+      state.sources.push({ id, type:'text', name, value:text, enabled:true, status:'Imported pasted calendar', cachedText:text, cachedAt:Date.now(), lastLoadedVia:'pasted calendar' });
       runtimeSourceEvents[id] = dedupeEvents(parseICS(text, name, getExpansionRange().start, getExpansionRange().end));
       els.pasteText.value = '';
       els.pasteName.value = '';
@@ -860,7 +1024,7 @@
 
     async function openMirrorFile(){
       if (!window.showOpenFilePicker){
-        alert('This browser does not support opening a mirror file directly. Use Import file(s) instead.');
+        alert('This browser does not support opening a linked calendar file directly. Use Import file(s) instead.');
         return;
       }
       try{
@@ -872,7 +1036,7 @@
         const text = await file.text();
         const id = uid();
         fileHandles[id] = handle;
-        state.sources.push({ id, type:'fileHandle', name:file.name.replace(/\.ics$/i,''), value:file.name, enabled:true, status:'Mirror file linked for this session', cachedText:text, cachedAt:Date.now(), lastLoadedVia:'mirror file' });
+        state.sources.push({ id, type:'fileHandle', name:file.name.replace(/\.ics$/i,''), value:file.name, enabled:true, status:'Linked calendar file for this session', cachedText:text, cachedAt:Date.now(), lastLoadedVia:'linked calendar file' });
         runtimeSourceEvents[id] = dedupeEvents(parseICS(text, file.name.replace(/\.ics$/i,''), getExpansionRange().start, getExpansionRange().end));
         saveState();
         render();
@@ -922,7 +1086,7 @@
             existing.value = name;
             existing.type = 'folderFile';
           }else{
-            state.sources.push({ id, type:'folderFile', name:name.replace(/\.ics$/i,''), value:name, enabled:true, status:'Folder file discovered', cachedText:'', cachedAt:0, lastLoadedVia:'folder file' });
+            state.sources.push({ id, type:'folderFile', name:name.replace(/\.ics$/i,''), value:name, enabled:true, status:'Folder calendar found', cachedText:'', cachedAt:0, lastLoadedVia:'folder calendar' });
           }
         }
         const removedFolderIds = state.sources.filter(source => source.type === 'folderFile' && !seen.has(String(source.value || '').toLowerCase())).map(source => source.id);
@@ -1024,26 +1188,26 @@
                 if (source.cachedText){
                   text = source.cachedText;
                   usedCacheText = true;
-                  via = 'cached copy';
+                  via = 'saved backup';
                 }else{
                   throw err;
                 }
               }
             }else if (source.type === 'fileHandle'){
               const handle = fileHandles[source.id];
-              if (!handle) throw new Error('Mirror file needs to be re-opened for this session');
+              if (!handle) throw new Error('Linked calendar file needs to be opened again for this session');
               const file = await handle.getFile();
               text = await file.text();
-              via = 'mirror file';
+              via = 'linked calendar file';
             }else if (source.type === 'folderFile'){
-              if (!folderHandle) throw new Error('Folder needs to be linked again');
+              if (!folderHandle) throw new Error('Linked folder needs to be selected again');
               const handle = await folderHandle.getFileHandle(source.value);
               const file = await handle.getFile();
               text = await file.text();
-              via = 'folder file';
+              via = 'folder calendar';
             }else{
               text = source.value || '';
-              via = source.lastLoadedVia || 'imported ICS';
+              via = source.lastLoadedVia || 'imported calendar';
             }
 
             parsed = dedupeEvents(parseICS(text, source.name, range.start, range.end));
@@ -1054,7 +1218,7 @@
             source.lastLoadedVia = via;
 
             if (usedCacheText){
-              source.status = 'Using cached copy from ' + formatTimestamp(source.cachedAt) + ' · ' + parsed.length + ' events';
+              source.status = 'Using saved backup from ' + formatTimestamp(source.cachedAt) + ' · ' + parsed.length + ' events';
             }else if (source.type === 'url' && via && via !== 'direct'){
               source.status = 'Loaded ' + parsed.length + ' events via ' + via + ' · ' + formatTimestamp(source.cachedAt);
             }else{
@@ -1094,10 +1258,27 @@
       const range = getVisibleRange();
       const enabled = state.sources.filter(s => s.enabled).length;
       els.rangeChip.textContent = formatRangeLabel(range.start, range.end);
-      els.sourceChip.textContent = state.sources.length + ' source' + (state.sources.length === 1 ? '' : 's');
+      els.sourceChip.textContent = state.sources.length + ' calendar' + (state.sources.length === 1 ? '' : 's');
       if (!enabled) els.statusChip.textContent = 'No calendars';
       else if (errors.length) els.statusChip.textContent = enabled + ' live · errors';
       else els.statusChip.textContent = enabled + ' live';
+      if (els.lastUpdatedChip) els.lastUpdatedChip.textContent = getLastUpdatedSummary();
+    }
+
+    function getLastUpdatedSummary(){
+      const calendarTimes = state.sources.map(source => Number(source.cachedAt || 0)).filter(Boolean);
+      const latestCalendar = calendarTimes.length ? Math.max(...calendarTimes) : 0;
+      const weatherAt = Number((weatherForecast && weatherForecast.updatedAt) || (state.weatherCache && state.weatherCache.fetchedAt) || 0);
+      const parts = [];
+      if (latestCalendar) parts.push('Calendar ' + formatShortTime(latestCalendar));
+      if (state.weatherEnabled && weatherAt) parts.push('Weather ' + formatShortTime(weatherAt));
+      const usingBackup = state.sources.some(source => source.enabled && /saved backup|last good|cached/i.test(String(source.status || ''))) || (weatherForecast && weatherForecast.status === 'cached');
+      if (!parts.length) return 'Not updated yet';
+      return parts.join(' · ') + (usingBackup ? ' · Backup' : '');
+    }
+
+    function formatShortTime(ts){
+      try{ return new Date(ts).toLocaleTimeString([], { hour:'numeric', minute:'2-digit' }); }catch(_){ return 'unknown'; }
     }
 
     function renderSearch(){
@@ -1161,9 +1342,9 @@
     function renderMessages(){
       const notes = [];
       if (tempNotice) notes.push(tempNotice);
-      if (location.protocol === 'file:' && state.sources.some(s => s.type === 'url')) notes.push('You are opening the board as a local file. If the live calendar will not load, use Settings → School calendar → Import selected file.');
-      if (state.sources.some(s => s.type === 'fileHandle')) notes.push('Mirror file handles only last for this browser session. Re-open the file next time you open the whiteboard.');
-      if (folderHandle) notes.push('Folder mode is active. All .ics files in the linked folder are scanned automatically.');
+      if (location.protocol === 'file:' && state.sources.some(s => s.type === 'url')) notes.push('You are opening the board as a local file. If the online calendar will not load, use Settings → School calendar → Import selected file.');
+      if (state.sources.some(s => s.type === 'fileHandle')) notes.push('Linked calendar files only stay connected for this browser session. Open the linked file again next time you use the whiteboard.');
+      if (folderHandle) notes.push('Linked folder is active. Calendar files in that folder are checked automatically.');
       els.noticeBox.hidden = notes.length === 0;
       els.noticeBox.textContent = notes.join(' ');
       els.errorBox.innerHTML = errors.map(err => '<div class="error">' + escapeHtml(friendlyError(err)) + '</div>').join('');
@@ -1173,8 +1354,9 @@
       const text = String(message || '');
       if (text.includes('file://') || text.toLowerCase().includes('blocked from a local file')){
         const name = text.split(':')[0] || 'Calendar';
-        return name + ': live calendar is blocked because the board is opened as a local file. Import an .ics file instead, or open the board through localhost/HTTPS.';
+        return name + ': online calendar is blocked because the board is opened as a local file. Import a calendar file instead, or open the board through localhost/HTTPS.';
       }
+      if (text.toLowerCase().includes('timed out')) return text.replace(/^([^:]+): Error:\s*/i, '$1: ') + '. Check the school Wi-Fi or try Refresh again.';
       return text.replace(/^([^:]+): Error:\s*/i, '$1: ');
     }
 
@@ -1233,18 +1415,53 @@
       const key = dateKey(day);
       const data = weatherForecast.daily && weatherForecast.daily[key];
       if (data){
-        const rainy = Number(data.precipitationProbability) >= 40 || Number(data.precipitation) >= 2;
-        const label = weatherCodeLabel(data.weatherCode);
-        const title = label + ' · High ' + formatTemp(data.tempMax) + ', low ' + formatTemp(data.tempMin) + ', rain ' + formatPercent(data.precipitationProbability);
-        return '<div class="weatherChip' + (rainy ? ' rain' : '') + '" title="' + escapeHtml(title) + '"><span class="weatherIcon">' + escapeHtml(weatherCodeIcon(data.weatherCode)) + '</span><span class="weatherTemp">' + escapeHtml(formatTemp(data.tempMax)) + ' / ' + escapeHtml(formatTemp(data.tempMin)) + '</span><span class="weatherMeta">' + escapeHtml(shortWeatherLabel(label)) + ' · ' + escapeHtml(formatPercent(data.precipitationProbability)) + '</span></div>';
+        const summary = weatherChipSummary(data);
+        const titleParts = [
+          weatherCodeLabel(data.weatherCode),
+          'High ' + formatTemp(data.tempMax),
+          'low ' + formatTemp(data.tempMin),
+          'rain chance ' + formatPercent(data.precipitationProbability)
+        ];
+        if (Number(data.windMax)) titleParts.push('wind up to ' + Math.round(Number(data.windMax)) + ' km/h');
+        return '<div class="weatherChip' + summary.className + '" title="' + escapeHtml(titleParts.join(' · ')) + '"><span class="weatherIcon">' + escapeHtml(summary.icon) + '</span><span class="weatherText"><span class="weatherLabel">' + escapeHtml(summary.label) + '</span><span class="weatherMeta">' + escapeHtml(summary.detail) + '</span></span></div>';
       }
       if (weatherForecast.loading){
-        return '<div class="weatherChip muted"><span class="weatherIcon">↻</span><span class="weatherTemp">Weather</span><span class="weatherMeta">Loading</span></div>';
+        return '<div class="weatherChip muted"><span class="weatherIcon">↻</span><span class="weatherText"><span class="weatherLabel">Weather</span><span class="weatherMeta">Loading</span></span></div>';
       }
-      return '<div class="weatherChip muted" title="Forecast only covers the next 16 days"><span class="weatherIcon">—</span><span class="weatherTemp">Weather</span><span class="weatherMeta">N/A</span></div>';
+      return '';
+    }
+
+    function weatherChipSummary(data){
+      const code = Number(data.weatherCode);
+      const rainChance = Number(data.precipitationProbability || 0);
+      const rainMm = Number(data.precipitation || 0);
+      const wind = Number(data.windMax || 0);
+      const max = Number(data.tempMax);
+      const min = Number(data.tempMin);
+      const icon = weatherCodeIcon(code);
+      let label = weatherCodeLabel(code);
+      let className = '';
+
+      if ([95,96,99].includes(code)){ label = 'Storm risk'; className = ' warn'; }
+      else if ([71,73,75,77,85,86].includes(code)){ label = 'Snow'; className = ' warn'; }
+      else if (rainChance >= 70 || rainMm >= 4){ label = 'Rain likely'; className = ' rain'; }
+      else if ([51,53,55,56,57,61,63,65,66,67,80,81,82].includes(code)){ label = rainChance >= 35 ? 'Showers likely' : 'Showers'; className = ' rain'; }
+      else if (rainChance >= 40){ label = 'Showers possible'; className = ' rain'; }
+      else if (wind >= 35){ label = 'Windy'; className = ' warn'; }
+      else if (Number.isFinite(max) && max <= 12){ label = 'Cold'; }
+      else if ([0,1].includes(code)){ label = 'Fine'; }
+      else if (code === 2){ label = 'Partly cloudy'; }
+      else if (code === 3){ label = 'Cloudy'; }
+
+      const tempText = Number.isFinite(max) ? formatTemp(max) + ' high' : 'Forecast';
+      const detail = (className.includes('rain') || rainChance >= 30)
+        ? tempText + ' · ' + formatPercent(rainChance) + ' rain'
+        : tempText + (Number.isFinite(min) ? ' · ' + formatTemp(min) + ' low' : '');
+      return { icon, label, detail, className };
     }
 
     function renderWeatherStatus(){
+      if (els.lastUpdatedChip) els.lastUpdatedChip.textContent = getLastUpdatedSummary();
       if (!els.weatherStatusBox) return;
       if (!state.weatherEnabled){
         els.weatherStatusBox.textContent = 'Weather is hidden. Turn it on above to show weather beside each day.';
@@ -1274,24 +1491,24 @@
     }
 
     function renderSources(){
-      const folderText = folderHandle ? 'Folder linked. Any .ics files in that folder can be used.' : 'No folder linked. This is only needed for advanced local-folder setups.';
+      const folderText = folderHandle ? 'Folder linked. Calendar files in that folder can be used.' : 'No folder linked. This is only needed for advanced local folder setups.';
       if (els.folderStatusBox) els.folderStatusBox.textContent = folderText;
       cleanupDuplicateSources();
       if (!state.sources.length){
-        els.sourceList.innerHTML = '<div class="empty">No calendar is selected yet. Use the school live calendar, or import an .ics file.</div>';
+        els.sourceList.innerHTML = '<div class="empty">No calendar is selected yet. Use the online school calendar, or import a calendar file.</div>';
         return;
       }
       const sortedSources = [...state.sources].sort((a,b) => Number(!a.enabled) - Number(!b.enabled) || sourceQualityScore(b) - sourceQualityScore(a));
       els.sourceList.innerHTML = sortedSources.map(source => {
-        const toggleLabel = source.enabled ? 'Pause' : 'Use this calendar';
+        const toggleLabel = source.enabled ? 'Hide' : 'Show';
         const removeButton = source.type === 'folderFile' ? '' : '<button type="button" class="danger" data-action="remove" data-id="' + escapeHtml(source.id) + '">Remove</button>';
         const subscribeButtons = source.type === 'url'
           ? '<button type="button" data-action="subscribe" data-id="' + escapeHtml(source.id) + '">Subscribe</button>'
             + '<button type="button" data-action="copy" data-id="' + escapeHtml(source.id) + '">Copy link</button>'
-            + '<button type="button" data-action="downloadUrl" data-id="' + escapeHtml(source.id) + '">Download .ics</button>'
+            + '<button type="button" data-action="downloadUrl" data-id="' + escapeHtml(source.id) + '">Download calendar file</button>'
           : '';
         const downloadCached = (source.cachedText || source.type === 'text')
-          ? '<button type="button" data-action="download" data-id="' + escapeHtml(source.id) + '">Download copy</button>'
+          ? '<button type="button" data-action="download" data-id="' + escapeHtml(source.id) + '">Download backup</button>'
           : '';
         const advancedButtons = subscribeButtons + downloadCached;
         const friendly = friendlySourceInfo(source);
@@ -1308,24 +1525,24 @@
       const lower = status.toLowerCase();
       const eventMatch = status.match(/(\d+) events?/i);
       const countText = eventMatch ? eventMatch[1] + ' events' : '';
-      if (!source.enabled) return { badge:'Off', badgeClass:'off', text:'Not shown on the board right now.' };
+      if (!source.enabled) return { badge:'Hidden', badgeClass:'off', text:'Not shown on the board right now.' };
       if (lower.includes('error')){
         if (location.protocol === 'file:' && source.type === 'url'){
-          return { badge:'Needs import', badgeClass:'warn', text:'Live feed is blocked because the board is opened as a local file. Import an .ics file instead, or host the board through localhost/HTTPS.' };
+          return { badge:'Needs import', badgeClass:'warn', text:'The online calendar is blocked because the board is opened as a local file. Import a calendar file instead, or open the board through localhost/HTTPS.' };
         }
         return { badge:'Check', badgeClass:'warn', text:plainStatus(status) };
       }
-      if (lower.includes('cached') || lower.includes('last good')) return { badge:'Cached', badgeClass:'warn', text:(countText ? countText + ' · ' : '') + 'Showing the last saved copy.' };
+      if (lower.includes('cached') || lower.includes('last good') || lower.includes('saved backup')) return { badge:'Backup', badgeClass:'warn', text:(countText ? countText + ' · ' : '') + 'Showing the saved backup copy.' };
       if (lower.includes('loaded')) return { badge:'On', badgeClass:'good', text:(countText ? countText + ' · ' : '') + simpleSourceType(source.type) + ' is working.' };
       return { badge:'On', badgeClass:'off', text:simpleSourceType(source.type) + ' is selected. Click Refresh now to load it.' };
     }
 
     function plainStatus(status){
-      return String(status || 'Not loaded yet').replace(/^Error:\s*/i, '').replace(/Live feed fetch is blocked from this file:\/\/ page\./i, 'Live feed is blocked because this board is opened as a local file.');
+      return String(status || 'Not loaded yet').replace(/^Error:\s*/i, '').replace(/Live feed fetch is blocked from this file:\/\/ page\./i, 'The online calendar is blocked because this board is opened as a local file.');
     }
 
     function simpleSourceType(type){
-      return ({ url:'Live calendar', text:'Imported file', fileHandle:'Mirror file', folderFile:'Folder file' })[type] || 'Calendar';
+      return ({ url:'Online calendar', text:'Imported calendar file', fileHandle:'Linked calendar file', folderFile:'Folder calendar' })[type] || 'Calendar';
     }
 
     function toggleSource(id){
@@ -1443,7 +1660,7 @@
       if (!source) return;
       const text = source.cachedText || (source.type === 'text' ? source.value : '') || '';
       if (!text.trim()){
-        setTempNotice('Nothing cached yet. Click Refresh first, or use “Download .ics” for the direct feed download.');
+        setTempNotice('Nothing cached yet. Click Refresh first, or use “Download calendar file” for the direct feed download.');
         return;
       }
       const blob = new Blob([text], { type:'text/calendar;charset=utf-8' });
@@ -1455,7 +1672,7 @@
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 1500);
-      setTempNotice('Downloading cached ' + (source.name || 'calendar') + '.ics');
+      setTempNotice('Downloading saved ' + (source.name || 'calendar') + '.ics');
     }
 
     function getBestIcsUrl(inputUrl){
@@ -1600,18 +1817,14 @@
     }
 
     function getPeriodsForDate(date){
-      let rows = DEFAULT_PERIODS;
-      try{
-        const parsed = JSON.parse(state.periodsText || '[]');
-        if (Array.isArray(parsed) && parsed.length) rows = parsed;
-      }catch(_){ }
-      return rows.map(row => ({ ...row, start:timeOnDate(date, row.start), end:timeOnDate(date, row.end) })).filter(row => row.start && row.end).sort((a,b) => a.start - b.start);
+      return getStoredPeriods().map(row => ({ ...row, start:timeOnDate(date, row.start), end:timeOnDate(date, row.end) })).filter(row => row.start && row.end).sort((a,b) => a.start - b.start);
     }
 
     function wirePWA(){
       if ('serviceWorker' in navigator && location.protocol !== 'file:') {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./service-worker.js').catch(() => {});
+          navigator.serviceWorker.register('./service-worker.js')
+            .catch(err => setTempNotice('Offline install failed: ' + ((err && err.message) ? err.message : 'service worker could not register')));
         }, { once:true });
       }
       window.addEventListener('beforeinstallprompt', event => {
@@ -1913,6 +2126,10 @@
     function parseICalDate(value, params){
       if (!value) return null;
       const raw = String(value).trim();
+      const tzid = String((params && params.TZID) || '').replace(/^\"|\"$/g, '');
+      // The PHS feed uses TZID=Pacific/Auckland. Store these as school wall-clock times
+      // so the board still displays the intended bell/event time if a device timezone is changed.
+      const isSchoolTimezone = normalizeTitle(tzid) === normalizeTitle(APP_TIMEZONE);
       const isDate = String((params && params.VALUE) || '').toUpperCase() === 'DATE' || /^\d{8}$/.test(raw);
       if (/^\d{8}$/.test(raw)) return { date:new Date(Number(raw.slice(0,4)), Number(raw.slice(4,6)) - 1, Number(raw.slice(6,8)), 0,0,0,0), isDate:true };
       if (/^\d{8}T\d{6}Z$/.test(raw)) return { date:new Date(raw.slice(0,4) + '-' + raw.slice(4,6) + '-' + raw.slice(6,8) + 'T' + raw.slice(9,11) + ':' + raw.slice(11,13) + ':' + raw.slice(13,15) + 'Z'), isDate:false };
@@ -1924,7 +2141,9 @@
         const hh = Number(raw.slice(9,11));
         const mm = Number(raw.slice(11,13));
         const ss = raw.length >= 15 ? Number(raw.slice(13,15)) : 0;
-        return { date:new Date(y,m,d,hh,mm,ss,0), isDate:false };
+        const date = new Date(y,m,d,hh,mm,ss,0);
+        if (isSchoolTimezone) return { date, isDate:false };
+        return { date, isDate:false };
       }
       const parsed = new Date(raw);
       return Number.isNaN(parsed.getTime()) ? null : { date:parsed, isDate };
@@ -1998,7 +2217,7 @@
       if ([95,96,99].includes(n)) return 'Thunderstorm';
       return 'Weather';
     }
-    function sourceTypeLabel(type){ return ({ url:'Feed URL', text:'Imported ICS', fileHandle:'Mirror file', folderFile:'Folder ICS' })[type] || 'Calendar source'; }
+    function sourceTypeLabel(type){ return ({ url:'Online calendar', text:'Imported calendar file', fileHandle:'Linked calendar file', folderFile:'Folder calendar' })[type] || 'Calendar'; }
 
     // ---- Fetching feeds for the board ----
     async function fetchCalendarUrl(url){
@@ -2008,7 +2227,7 @@
 
       for (const candidate of candidates){
         try{
-          const response = await fetch(candidate.url, { cache:'no-store', mode:'cors', credentials:'omit', redirect:'follow' });
+          const response = await fetchWithTimeout(candidate.url, { cache:'no-store', mode:'cors', credentials:'omit', redirect:'follow' }, FETCH_TIMEOUT_MS);
           if (!response.ok) throw new Error('HTTP ' + response.status);
           const text = normalizeCalendarText(await response.text());
           if (!looksLikeCalendarText(text)) throw new Error('Response was fetched, but it was not usable calendar text');
@@ -2040,19 +2259,19 @@
     }
 
     function buildCalendarFetchError(url, err){
-      const message = err && err.message ? err.message : 'Could not fetch feed';
+      const message = err && err.message ? err.message : 'Could not load online calendar';
       const onFilePage = location.protocol === 'file:';
       const googleCid = extractGoogleCalendarCid(url);
       const githubRawUrl = convertGitHubCalendarUrl(url);
 
       if (onFilePage && /^https?:/i.test(url)){
         if (googleCid){
-          return new Error('Live Google Calendar is blocked from a local file. Import an .ics file instead, or open the board through localhost/HTTPS.');
+          return new Error('The online Google Calendar is blocked from a local file. Import a calendar file instead, or open the board through localhost/HTTPS.');
         }
         if (githubRawUrl && githubRawUrl !== url){
-          return new Error('Live calendar is blocked from a local file. Import an .ics file instead, or open the board through localhost/HTTPS.');
+          return new Error('The online calendar is blocked from a local file. Import a calendar file instead, or open the board through localhost/HTTPS.');
         }
-        return new Error('Live feed is blocked from a local file. Import an .ics file instead, or open the board through localhost/HTTPS.');
+        return new Error('The online calendar is blocked from a local file. Import a calendar file instead, or open the board through localhost/HTTPS.');
       }
 
       if (googleCid){
@@ -2136,11 +2355,11 @@
         if (githubRawUrl){
           const parsed = new URL(githubRawUrl);
           const pathParts = parsed.pathname.split('/').filter(Boolean);
-          return decodeURIComponent(pathParts[pathParts.length - 1] || 'Calendar feed').replace(/\.ics$/i, '');
+          return decodeURIComponent(pathParts[pathParts.length - 1] || 'Calendar').replace(/\.ics$/i, '');
         }
         return new URL(normalizeFeedUrl(url)).hostname.replace(/^www\./,'');
       }catch(_){
-        return 'Calendar feed';
+        return 'Calendar';
       }
     }
 
