@@ -1,15 +1,19 @@
-PHS Calendar PWA
+PHS Calendar Whiteboard - simplified settings revision
 
 Files:
-- index.html
-- manifest.webmanifest
-- service-worker.js
-- icons/
+- index.html: updated calendar app with daily weather chips and a simpler settings layout.
+- service-worker.js: updated cache name and offline shell caching.
+- manifest.webmanifest: installable PWA manifest.
+- PHS Calendar.ics: copy of the supplied calendar file for local import if needed.
 
-Run it from localhost or any HTTPS web server.
-Examples:
-- python -m http.server 8080
-- npx serve .
+Simple use:
+1. Open index.html through a local server or HTTPS for live calendar/weather fetching.
+2. Open Settings -> School calendar.
+3. Click Use school live calendar for the normal setup.
+4. If the live calendar is blocked because the app is opened as a local file, choose PHS Calendar.ics and click Import selected file.
+5. Use Settings -> Daily weather to show/hide weather or change the location.
 
-Then open http://localhost:8080/phs_calendar_pwa/
-(or serve the contents of this folder directly and open that URL).
+Notes:
+- Default weather location is Pukekohe, New Zealand.
+- Weather uses the Open-Meteo forecast/geocoding APIs in the browser.
+- Advanced calendar options are hidden under More calendar options.

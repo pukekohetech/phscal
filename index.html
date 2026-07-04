@@ -51,6 +51,12 @@
       --report-bg:#fffbeb;
       --generic:#64748b;
       --generic-bg:#f8fafc;
+      --weather:#0369a1;
+      --weather-bg:#e0f2fe;
+      --weather-rain:#1d4ed8;
+      --weather-rain-bg:#dbeafe;
+      --weather-muted:#64748b;
+      --weather-muted-bg:#f1f5f9;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -85,7 +91,10 @@
     button{border:1px solid var(--line);border-radius:12px;padding:9px 12px;background:#fff;color:var(--text);font-weight:900;cursor:pointer}
     button:hover{background:var(--soft)}
     button:active{transform:translateY(1px)}
+    button.primary{background:#111827;color:#fff;border-color:#111827}
+    button.primary:hover{background:#1f2937}
     button.danger{background:#fff5f5;border-color:#f1c5bf;color:#9a2c1e}
+    button.subtle{background:var(--soft)}
     .main{padding:10px}
     .messages{display:grid;gap:8px;margin-bottom:10px}
     .searchRow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;margin-bottom:10px}
@@ -96,12 +105,19 @@
     .notice{background:var(--notice-bg);color:var(--notice);border:1px solid #d7e2ee}
     .error{background:var(--error-bg);color:var(--error);border:1px solid #efc6c1}
     .days{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-content:start}
-    .day{border:1px solid var(--line);border-radius:15px;padding:10px;background:#fff;display:grid;gap:8px;min-height:110px;align-content:start}
+    .day{border:1px solid var(--line);border-radius:16px;padding:10px;background:#fff;display:grid;gap:8px;min-height:110px;align-content:start}
     .day.today{background:var(--today);border-color:var(--line-strong)}
     .dayHead{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+    .dayTools{display:flex;gap:6px;align-items:flex-start;justify-content:flex-end;flex-wrap:wrap;max-width:56%}
     .eyebrow{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:900}
     .dayTitle{font-size:18px;line-height:1.1;font-weight:950;letter-spacing:-.28px}
-    .count{font-size:10px;font-weight:900;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:4px 8px;background:#fff}
+    .count{font-size:10px;font-weight:900;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:4px 8px;background:#fff;white-space:nowrap}
+    .weatherChip{display:grid;grid-template-columns:auto auto;gap:1px 6px;align-items:center;border:1px solid rgba(3,105,161,.2);border-radius:999px;padding:4px 8px;background:var(--weather-bg);color:var(--weather);font-weight:950;line-height:1;white-space:nowrap;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+    .weatherChip.rain{background:var(--weather-rain-bg);color:var(--weather-rain);border-color:rgba(29,78,216,.22)}
+    .weatherChip.muted{background:var(--weather-muted-bg);color:var(--weather-muted);border-color:var(--line)}
+    .weatherIcon{grid-row:span 2;font-size:15px;line-height:1}
+    .weatherTemp{font-size:11px;letter-spacing:-.1px}
+    .weatherMeta{font-size:9px;color:inherit;opacity:.76;font-weight:900}
     .eventList{display:grid;gap:6px}
     .event{border:1px solid var(--line);border-left:6px solid var(--generic);border-radius:13px;padding:8px 10px;background:#fff}
     .event.meeting{border-left-color:var(--meeting);background:var(--meeting-bg)}
@@ -125,24 +141,58 @@
     .eventMeta{margin-top:5px;font-size:12px;color:var(--muted);line-height:1.35}
     .empty{border:1px dashed var(--line);border-radius:14px;padding:12px;color:var(--muted);font-size:14px;font-weight:700;background:#fcfcfb}
     details.settings{overflow:hidden}
-    details.settings summary{list-style:none;cursor:pointer;padding:14px 16px;font-weight:900}
+    details.settings summary{list-style:none;cursor:pointer;padding:14px 16px;font-weight:950;display:flex;justify-content:space-between;gap:14px;align-items:center}
     details.settings summary::-webkit-details-marker{display:none}
-    .settingsBody{padding:0 16px 16px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .summaryHint{font-size:12px;color:var(--muted);font-weight:800}
+    .settingsBody{padding:0 16px 16px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
     .card{border:1px solid var(--line);border-radius:16px;background:#fff;padding:14px;display:grid;gap:12px}
+    .card.highlight{border-color:#cbd5e1;background:linear-gradient(180deg,#fff,#f8fafc)}
+    .card.wide{grid-column:1 / -1}
+    .sectionTitle{font-size:15px;font-weight:950;letter-spacing:-.2px}
+    .helper{margin:0;color:var(--muted);font-size:13px;line-height:1.45;font-weight:700}
     .field{display:grid;gap:6px}
     .field label{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:900}
     input[type="text"],input[type="url"],input[type="number"],textarea{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--text)}
+    input[type="file"]{max-width:100%;font-size:13px;font-weight:700;color:var(--muted)}
     textarea{min-height:110px;resize:vertical;line-height:1.45}
+    .compactTextarea{min-height:84px}
     .check{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:800;color:var(--text)}
+    .settingRow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    .choiceGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    .choiceCard{border:1px solid var(--line);border-radius:16px;padding:12px;background:var(--soft);display:grid;gap:10px;align-content:start}
+    .choiceCard.recommended{background:#f8fafc;border-color:var(--line-strong)}
+    .choiceTitle{font-size:14px;font-weight:950;letter-spacing:-.15px}
+    .fileField{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px}
+    .advancedOptions{border:1px solid var(--line);border-radius:14px;background:#fff;overflow:hidden}
+    .advancedOptions summary{list-style:none;cursor:pointer;padding:11px 12px;font-weight:950;color:var(--notice);background:var(--soft);display:flex;justify-content:space-between;gap:10px;align-items:center}
+    .advancedOptions summary::-webkit-details-marker{display:none}
+    .advancedOptions summary::after{content:'Show';font-size:11px;color:var(--muted);font-weight:950;text-transform:uppercase;letter-spacing:.06em}
+    .advancedOptions[open] summary::after{content:'Hide'}
+    .advancedOptions.nested{margin-top:2px;background:#fff}
+    .advancedBody{padding:12px;display:grid;gap:12px}
+    .optionBlock{border:1px solid var(--line);border-radius:14px;padding:12px;background:#fff;display:grid;gap:10px}
     .sources{display:grid;gap:10px}
-    .source{border:1px solid var(--line);border-radius:14px;padding:10px;background:#fff}
-    .sourceName{font-size:15px;font-weight:900}
-    .sourceStatus{margin-top:4px;font-size:13px;color:var(--muted);line-height:1.4}
+    .source{border:1px solid var(--line);border-radius:14px;padding:12px;background:#fff;display:grid;gap:9px}
+    .source.disabled{opacity:.78;background:#fafafa}
+    .sourceTop{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+    .sourceName{font-size:15px;font-weight:950;letter-spacing:-.15px}
+    .sourceStatus{margin-top:4px;font-size:13px;color:var(--muted);line-height:1.4;font-weight:700}
+    .sourceBadge{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px;padding:4px 8px;background:var(--soft);font-size:10px;color:var(--muted);font-weight:950;white-space:nowrap}
+    .sourceBadge.good{background:#ecfdf5;color:#047857;border-color:#b7ead7}
+    .sourceBadge.warn{background:#fff7ed;color:#c2410c;border-color:#fed7aa}
+    .sourceBadge.off{background:#f1f5f9;color:#64748b}
+    .sourceMore{border-top:1px solid var(--line);padding-top:8px}
+    .sourceMore summary{cursor:pointer;font-size:12px;color:var(--muted);font-weight:900;list-style:none}
+    .sourceMore summary::-webkit-details-marker{display:none}
+    .sourceMore summary::after{content:' ›'}
+    .sourceMore[open] summary::after{content:' ↓'}
+    .empty.compact{padding:9px 11px;font-size:12px}
     .footer{padding:0 6px 2px;text-align:center;font-size:11px;color:var(--muted);font-weight:700}
     @media (min-width:1500px){.days{grid-template-columns:repeat(3,minmax(0,1fr));}}
     @media (max-width:1180px){.header{grid-template-columns:1fr}.headerRight{justify-items:start}.date,.countdownNote{text-align:left}.settingsBody,.days{grid-template-columns:1fr}}
     @media (max-width:1180px){.searchRow{grid-template-columns:1fr}}
-    @media (max-width:640px){.shell{padding:8px}.header,.main{padding:10px}.dayTitle{font-size:17px}.toolbar{justify-content:flex-start}.searchBox{flex-wrap:wrap}}
+    @media (max-width:760px){.settingRow,.choiceGrid{grid-template-columns:1fr}.dayHead{display:grid}.dayTools{justify-content:flex-start;max-width:100%}}
+    @media (max-width:640px){.shell{padding:8px}.header,.main{padding:10px}.dayTitle{font-size:17px}.toolbar{justify-content:flex-start}.searchBox{flex-wrap:wrap}.summaryHint{display:none}}
   </style>
 </head>
 <body>
@@ -202,76 +252,151 @@
       <div class="days" id="daysList"></div>
     </section>
 
-    <details class="panel settings">
-      <summary>Calendar sources and settings</summary>
+    <details class="panel settings" id="settingsPanel">
+      <summary><span>Settings</span><span class="summaryHint">Weather · display · school calendar</span></summary>
       <div class="settingsBody">
-        <div class="card">
-          <div class="field">
-            <label for="feedUrl">ICS feed URL</label>
-            <input id="feedUrl" type="url" placeholder="https://example.com/calendar.ics or webcal://...">
+        <div class="card highlight">
+          <div>
+            <div class="sectionTitle">Daily weather</div>
+            <p class="helper">Shows a small forecast chip beside each day. Default location is Pukekohe, New Zealand.</p>
           </div>
+          <label class="check"><input id="showWeather" type="checkbox"> Show weather on day cards</label>
           <div class="field">
-            <label for="feedName">Feed name</label>
-            <input id="feedName" type="text" placeholder="Optional label">
+            <label for="weatherLocation">Weather location</label>
+            <input id="weatherLocation" type="text" placeholder="Pukekohe, New Zealand">
           </div>
           <div class="actions">
-            <button type="button" id="addFeedBtn">Add feed</button>
-            <button type="button" id="exampleBtn">Use Pukekohe feed</button>
+            <button type="button" id="saveWeatherBtn" class="primary">Save weather</button>
+            <button type="button" id="detectWeatherBtn">Find location</button>
+            <button type="button" id="refreshWeatherBtn">Refresh weather</button>
           </div>
-          <div class="field">
-            <label for="icsFileInput">Import .ics file</label>
-            <input id="icsFileInput" type="file" accept=".ics,text/calendar" multiple>
-          </div>
-          <div class="actions">
-            <button type="button" id="importFilesBtn">Import file(s)</button>
-            <button type="button" id="mirrorFileBtn">Open mirror file</button>
-            <button type="button" id="chooseFolderBtn">Choose folder</button>
-            <button type="button" id="scanFolderBtn">Scan folder</button>
-          </div>
-          <div class="field">
-            <label for="pasteName">Pasted calendar name</label>
-            <input id="pasteName" type="text" placeholder="Optional label">
-          </div>
-          <div class="field">
-            <label for="pasteText">Paste raw ICS text</label>
-            <textarea id="pasteText" placeholder="Paste raw ICS here"></textarea>
-          </div>
-          <button type="button" id="importPasteBtn">Import pasted calendar</button>
+          <div class="empty compact" id="weatherStatusBox">Weather not loaded yet.</div>
         </div>
 
         <div class="card">
-          <div class="field">
-            <label for="refreshMinutes">Refresh every (minutes)</label>
-            <input id="refreshMinutes" type="number" min="1" max="180" step="1">
+          <div>
+            <div class="sectionTitle">Display</div>
+            <p class="helper">Controls what appears on the whiteboard and how often it updates.</p>
           </div>
-          <div class="field">
-            <label for="returnMinutes">Return to current 14 days after inactivity (minutes)</label>
-            <input id="returnMinutes" type="number" min="1" max="180" step="1">
+          <div class="settingRow">
+            <div class="field">
+              <label for="refreshMinutes">Refresh every</label>
+              <input id="refreshMinutes" type="number" min="1" max="180" step="1">
+            </div>
+            <div class="field">
+              <label for="returnMinutes">Return after inactivity</label>
+              <input id="returnMinutes" type="number" min="1" max="180" step="1">
+            </div>
           </div>
           <label class="check"><input id="showWeekends" type="checkbox"> Show weekends</label>
           <label class="check"><input id="includeAllDay" type="checkbox"> Show all-day events</label>
-          <div class="field">
-            <label for="periodsText">Period timetable (JSON)</label>
-            <textarea id="periodsText"></textarea>
-          </div>
           <div class="actions">
-            <button type="button" id="saveSettingsBtn">Save settings</button>
-            <button type="button" id="resetPeriodsBtn">Reset periods</button>
-            <button type="button" id="reloadAllBtn">Reload all</button>
-            <button type="button" id="clearAllBtn" class="danger">Remove all calendars</button>
+            <button type="button" id="saveSettingsBtn" class="primary">Save display settings</button>
+            <button type="button" id="reloadAllBtn">Reload calendars</button>
           </div>
-          <div class="empty" id="folderStatusBox">No folder linked.</div>
+        </div>
+
+        <div class="card wide">
+          <div>
+            <div class="sectionTitle">School calendar</div>
+            <p class="helper">Most users only need one option: use the live school calendar. If you opened this by double-clicking the file and the live feed is blocked, import the .ics file instead.</p>
+          </div>
+
+          <div class="choiceGrid">
+            <div class="choiceCard recommended">
+              <div class="choiceTitle">Recommended: live school calendar</div>
+              <p class="helper">Best when the board is hosted online or opened through localhost.</p>
+              <div class="actions">
+                <button type="button" id="exampleBtn" class="primary">Use school live calendar</button>
+                <button type="button" id="calendarRefreshBtn">Refresh now</button>
+              </div>
+            </div>
+            <div class="choiceCard">
+              <div class="choiceTitle">Backup: import an .ics file</div>
+              <p class="helper">Use this when a live feed is blocked. Select the file, then click import.</p>
+              <div class="field fileField">
+                <label for="icsFileInput">Choose calendar file</label>
+                <input id="icsFileInput" type="file" accept=".ics,text/calendar" multiple>
+              </div>
+              <div class="actions">
+                <button type="button" id="importFilesBtn" class="primary">Import selected file</button>
+              </div>
+            </div>
+          </div>
+
           <div class="sources" id="sourceList"></div>
+
+          <details class="advancedOptions">
+            <summary>More calendar options</summary>
+            <div class="advancedBody">
+              <div class="optionBlock">
+                <div class="choiceTitle">Add another live feed</div>
+                <div class="settingRow">
+                  <div class="field">
+                    <label for="feedUrl">ICS feed URL</label>
+                    <input id="feedUrl" type="url" placeholder="https://example.com/calendar.ics or webcal://...">
+                  </div>
+                  <div class="field">
+                    <label for="feedName">Feed name</label>
+                    <input id="feedName" type="text" placeholder="Optional label">
+                  </div>
+                </div>
+                <button type="button" id="addFeedBtn">Add another feed</button>
+              </div>
+
+              <div class="optionBlock">
+                <div class="choiceTitle">Local folder or mirror file</div>
+                <p class="helper">Only use this for a shared/local calendar folder that you update outside the app.</p>
+                <div class="actions">
+                  <button type="button" id="mirrorFileBtn">Open mirror file</button>
+                  <button type="button" id="chooseFolderBtn">Choose folder</button>
+                  <button type="button" id="scanFolderBtn">Scan folder</button>
+                </div>
+                <div class="empty compact" id="folderStatusBox">No folder linked.</div>
+              </div>
+
+              <div class="optionBlock">
+                <div class="choiceTitle">Paste raw ICS text</div>
+                <p class="helper">Only use this if someone has copied the full calendar text for you.</p>
+                <div class="field">
+                  <label for="pasteName">Pasted calendar name</label>
+                  <input id="pasteName" type="text" placeholder="Optional label">
+                </div>
+                <div class="field">
+                  <label for="pasteText">Paste raw ICS text</label>
+                  <textarea id="pasteText" class="compactTextarea" placeholder="Paste raw ICS here"></textarea>
+                </div>
+                <button type="button" id="importPasteBtn">Import pasted calendar</button>
+              </div>
+
+              <details class="advancedOptions nested">
+                <summary>Period timetable settings</summary>
+                <div class="advancedBody">
+                  <p class="helper">Only change this if the school bell times change.</p>
+                  <div class="field">
+                    <label for="periodsText">Period timetable JSON</label>
+                    <textarea id="periodsText" class="compactTextarea"></textarea>
+                  </div>
+                  <div class="actions">
+                    <button type="button" id="resetPeriodsBtn">Reset periods</button>
+                    <button type="button" id="clearAllBtn" class="danger">Remove all calendars</button>
+                  </div>
+                </div>
+              </details>
+            </div>
+          </details>
         </div>
       </div>
     </details>
 
-    <div class="footer">Tip: Use <b>Subscribe</b> to open the calendar in Outlook/Apple Calendar (webcal://). If that is blocked, use <b>Copy subscribe link</b> and paste into Outlook: Add calendar → From Internet. If the board can’t fetch a feed (CORS), use <b>Download .ics</b> then <b>Import file(s)</b>.</div>
+    <div class="footer">For most users: Settings → School calendar → Use school live calendar. If the board is opened as a local file and the live feed is blocked, import the included .ics file instead.</div>
   </div>
 
   <script>
     // Default feed uses RAW ICS (GitHub raw is much more reliable than a blob viewer URL)
     const DEFAULT_FEED = 'https://raw.githubusercontent.com/pukekohetech/phscal/main/PHS%20Calendar.ics';
+    const DEFAULT_WEATHER = { name:'Pukekohe, New Zealand', latitude:-37.2008, longitude:174.9010 };
+    const WEATHER_CACHE_MS = 45 * 60 * 1000;
     const STORE_KEY = 'phs_calendar_whiteboard_v2';
     const DEFAULT_PERIODS = [
       { name:'MEETING', start:'08:30', end:'09:00' },
@@ -290,6 +415,12 @@
       returnMinutes:5,
       showWeekends:true,
       includeAllDay:true,
+      weatherEnabled:true,
+      weatherLocation:DEFAULT_WEATHER.name,
+      weatherLatitude:DEFAULT_WEATHER.latitude,
+      weatherLongitude:DEFAULT_WEATHER.longitude,
+      weatherResolvedName:DEFAULT_WEATHER.name,
+      weatherCache:null,
       searchTerm:'',
       periodsText: JSON.stringify(DEFAULT_PERIODS, null, 2),
       sources:[]
@@ -300,6 +431,8 @@
     const runtimeSourceEvents = Object.create(null);
     const els = mapEls();
     let loadedEvents = [];
+    let weatherForecast = { daily:{}, loading:false, status:'', error:'', updatedAt:0, locationName:DEFAULT_WEATHER.name };
+    let weatherBusy = false;
     let folderHandle = null;
     let refreshTimer = null;
     let inactivityTimer = null;
@@ -318,7 +451,7 @@
     init();
 
     function mapEls(){
-      const ids = ['statusChip','rangeChip','sourceChip','periodLabel','periodTitle','periodMeta','periodProgress','periodCountdown','periodCountdownNote','clockTime','clockDate','prevBtn','todayBtn','nextBtn','refreshBtn','fullscreenBtn','installBtn','noticeBox','errorBox','searchInput','clearSearchBtn','searchInfo','daysList','feedUrl','feedName','addFeedBtn','exampleBtn','icsFileInput','importFilesBtn','mirrorFileBtn','chooseFolderBtn','scanFolderBtn','pasteName','pasteText','importPasteBtn','refreshMinutes','returnMinutes','showWeekends','includeAllDay','periodsText','saveSettingsBtn','resetPeriodsBtn','reloadAllBtn','clearAllBtn','sourceList','folderStatusBox'];
+      const ids = ['statusChip','rangeChip','sourceChip','periodLabel','periodTitle','periodMeta','periodProgress','periodCountdown','periodCountdownNote','clockTime','clockDate','prevBtn','todayBtn','nextBtn','refreshBtn','fullscreenBtn','installBtn','noticeBox','errorBox','searchInput','clearSearchBtn','searchInfo','daysList','feedUrl','feedName','addFeedBtn','exampleBtn','icsFileInput','importFilesBtn','mirrorFileBtn','chooseFolderBtn','scanFolderBtn','pasteName','pasteText','importPasteBtn','refreshMinutes','returnMinutes','showWeekends','includeAllDay','showWeather','weatherLocation','saveWeatherBtn','detectWeatherBtn','refreshWeatherBtn','weatherStatusBox','periodsText','saveSettingsBtn','resetPeriodsBtn','reloadAllBtn','calendarRefreshBtn','clearAllBtn','sourceList','folderStatusBox'];
       return Object.fromEntries(ids.map(id => [id, document.getElementById(id)]));
     }
 
@@ -326,7 +459,7 @@
     function loadState(){
       try{
         const parsed = JSON.parse(localStorage.getItem(STORE_KEY) || '{}');
-        return { ...structuredClone(DEFAULT_STATE), ...parsed, sources:Array.isArray(parsed.sources) ? parsed.sources : [] };
+        return { ...structuredClone(DEFAULT_STATE), ...parsed, sources:Array.isArray(parsed.sources) ? parsed.sources : [], weatherCache:parsed.weatherCache || null };
       }catch(_){ return structuredClone(DEFAULT_STATE); }
     }
     function saveState(){ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
@@ -341,6 +474,7 @@
     async function init(){
      state.anchor = startOfDay(new Date()).toISOString();
       ensureDefaultSource();
+      cleanupDuplicateSources();
       syncControls();
       bindEvents();
       tickClock();
@@ -352,6 +486,8 @@
       wirePWA();
       await restoreSavedFolderHandle();
       if (state.sources.length) reloadSources();
+      if (state.weatherEnabled) reloadWeather({ force:false });
+      else renderWeatherStatus();
     }
 
     function ensureDefaultSource(){
@@ -370,11 +506,74 @@
       saveState();
     }
 
+    function useDefaultFeed(){
+      const key = canonicalFeedKey(DEFAULT_FEED);
+      let source = state.sources.find(s => s.type === 'url' && canonicalFeedKey(s.value) === key);
+      if (!source){
+        source = { id:uid(), type:'url', name:'Pukekohe High School', value:DEFAULT_FEED, enabled:true, status:'', cachedText:'', cachedAt:0, lastLoadedVia:'' };
+        state.sources.push(source);
+      }
+      source.name = source.name || 'Pukekohe High School';
+      source.value = DEFAULT_FEED;
+      source.enabled = true;
+      cleanupDuplicateSources();
+      saveState();
+      syncControls();
+      setTempNotice('School live calendar is selected. Refreshing now.');
+      render();
+      reloadSources();
+    }
+
+    function cleanupDuplicateSources(){
+      if (!Array.isArray(state.sources) || state.sources.length < 2) return;
+      const output = [];
+      const seen = new Map();
+      let changed = false;
+      for (const source of state.sources){
+        const key = source.type === 'url' ? canonicalFeedKey(source.value) : '';
+        if (!key){
+          output.push(source);
+          continue;
+        }
+        const existingIndex = seen.get(key);
+        if (existingIndex === undefined){
+          seen.set(key, output.length);
+          output.push(source);
+          continue;
+        }
+        changed = true;
+        const existing = output[existingIndex];
+        if (sourceQualityScore(source) > sourceQualityScore(existing)) output[existingIndex] = source;
+      }
+      if (changed){
+        state.sources = output;
+        saveState();
+      }
+    }
+
+    function sourceQualityScore(source){
+      const status = String(source.status || '').toLowerCase();
+      return (source.enabled ? 100 : 0)
+        + (source.cachedText ? 30 : 0)
+        + (status.includes('loaded') ? 20 : 0)
+        + (String(source.name || '').toLowerCase().includes('high school') ? 5 : 0)
+        - (status.includes('error') ? 40 : 0);
+    }
+
+    function canonicalFeedKey(value){
+      const normalized = normalizeFeedUrl(value || '');
+      const githubRaw = convertGitHubCalendarUrl(normalized);
+      const canonical = githubRaw || normalized;
+      return canonical.replace(/[?&]_ts=\d+.*$/, '').replace(/\/$/, '').toLowerCase();
+    }
+
     function syncControls(){
       els.refreshMinutes.value = state.refreshMinutes;
       els.returnMinutes.value = state.returnMinutes;
       els.showWeekends.checked = !!state.showWeekends;
       els.includeAllDay.checked = !!state.includeAllDay;
+      if (els.showWeather) els.showWeather.checked = !!state.weatherEnabled;
+      if (els.weatherLocation) els.weatherLocation.value = state.weatherLocation || DEFAULT_WEATHER.name;
       els.searchInput.value = state.searchTerm || '';
       els.periodsText.value = state.periodsText || JSON.stringify(DEFAULT_PERIODS, null, 2);
     }
@@ -386,8 +585,9 @@
         resetToToday({ reload:false });
         registerActivity();
       });
-      els.refreshBtn.addEventListener('click', reloadSources);
-      els.reloadAllBtn.addEventListener('click', reloadSources);
+      els.refreshBtn.addEventListener('click', () => { reloadSources(); reloadWeather({ force:true }); });
+      els.reloadAllBtn.addEventListener('click', () => { reloadSources(); reloadWeather({ force:true }); });
+      if (els.calendarRefreshBtn) els.calendarRefreshBtn.addEventListener('click', () => { reloadSources(); reloadWeather({ force:true }); });
       els.searchInput.addEventListener('input', event => setSearchTerm(event.target.value));
       els.clearSearchBtn.addEventListener('click', () => {
         setSearchTerm('');
@@ -396,13 +596,16 @@
       if (els.fullscreenBtn) els.fullscreenBtn.addEventListener('click', toggleFullscreen);
       if (els.installBtn) els.installBtn.addEventListener('click', installApp);
       els.addFeedBtn.addEventListener('click', addFeed);
-      els.exampleBtn.addEventListener('click', () => { els.feedUrl.value = DEFAULT_FEED; els.feedName.value = 'Pukekohe High School'; });
+      els.exampleBtn.addEventListener('click', useDefaultFeed);
       els.importFilesBtn.addEventListener('click', importFiles);
       els.importPasteBtn.addEventListener('click', importPasted);
       els.mirrorFileBtn.addEventListener('click', openMirrorFile);
       els.chooseFolderBtn.addEventListener('click', chooseFolder);
       els.scanFolderBtn.addEventListener('click', () => syncFolderSources(true));
       els.sourceList.addEventListener('click', handleSourceListClick);
+      if (els.saveWeatherBtn) els.saveWeatherBtn.addEventListener('click', saveWeatherSettings);
+      if (els.detectWeatherBtn) els.detectWeatherBtn.addEventListener('click', resolveWeatherLocationFromInput);
+      if (els.refreshWeatherBtn) els.refreshWeatherBtn.addEventListener('click', () => reloadWeather({ force:true }));
       els.saveSettingsBtn.addEventListener('click', saveSettingsAction);
       els.resetPeriodsBtn.addEventListener('click', () => { els.periodsText.value = JSON.stringify(DEFAULT_PERIODS, null, 2); });
       els.clearAllBtn.addEventListener('click', () => {
@@ -416,7 +619,7 @@
         saveState();
         render();
       });
-      window.addEventListener('focus', () => { catchUpToNow('focus'); reloadSources(); });
+      window.addEventListener('focus', () => { catchUpToNow('focus'); reloadSources(); reloadWeather({ force:false }); });
       document.addEventListener('visibilitychange', () => { if (!document.hidden) catchUpToNow('visible'); });
       ['click','keydown','mousemove','touchstart','scroll'].forEach(evt => window.addEventListener(evt, registerActivity, { passive:true }));
     }
@@ -440,7 +643,7 @@
 
     function armRefresh(){
       if (refreshTimer) clearInterval(refreshTimer);
-      refreshTimer = setInterval(reloadSources, clampInt(state.refreshMinutes, 1, 180, 15) * 60000);
+      refreshTimer = setInterval(() => { reloadSources(); reloadWeather({ force:true }); }, clampInt(state.refreshMinutes, 1, 180, 15) * 60000);
     }
 
     function armInactivity(){
@@ -468,7 +671,153 @@
       armRefresh();
       armInactivity();
       render();
+      setTempNotice('Display settings saved.');
     }
+
+    async function saveWeatherSettings(){
+      state.weatherEnabled = !!els.showWeather.checked;
+      state.weatherLocation = (els.weatherLocation.value || DEFAULT_WEATHER.name).trim();
+      if (!state.weatherEnabled){
+        saveState();
+        weatherForecast = { daily:{}, loading:false, status:'Weather hidden', error:'', updatedAt:0, locationName:state.weatherResolvedName || state.weatherLocation || DEFAULT_WEATHER.name };
+        render();
+        setTempNotice('Weather hidden from day cards.');
+        return;
+      }
+      await resolveWeatherLocationFromInput();
+    }
+
+    async function resolveWeatherLocationFromInput(){
+      const query = (els.weatherLocation.value || DEFAULT_WEATHER.name).trim();
+      state.weatherEnabled = !!els.showWeather.checked;
+      state.weatherLocation = query;
+      if (!state.weatherEnabled){
+        saveState();
+        render();
+        return;
+      }
+      try{
+        const result = await geocodeWeatherLocation(query);
+        if (result){
+          state.weatherLatitude = result.latitude;
+          state.weatherLongitude = result.longitude;
+          state.weatherResolvedName = result.name;
+          state.weatherCache = null;
+          saveState();
+          setTempNotice('Weather location set to ' + result.name + '.');
+        }else{
+          setTempNotice('Could not find that weather location. Keeping the previous location.');
+        }
+      }catch(err){
+        setTempNotice('Could not look up that location. Keeping the previous location.');
+      }
+      await reloadWeather({ force:true });
+    }
+
+    async function geocodeWeatherLocation(query){
+      const clean = String(query || '').trim();
+      if (!clean) return { name:DEFAULT_WEATHER.name, latitude:DEFAULT_WEATHER.latitude, longitude:DEFAULT_WEATHER.longitude };
+      if (normalizeTitle(clean) === normalizeTitle(DEFAULT_WEATHER.name) || normalizeTitle(clean) === 'pukekohe'){
+        return { name:DEFAULT_WEATHER.name, latitude:DEFAULT_WEATHER.latitude, longitude:DEFAULT_WEATHER.longitude };
+      }
+      const url = 'https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(clean) + '&count=1&language=en&format=json';
+      const response = await fetch(url, { cache:'no-store', mode:'cors', credentials:'omit' });
+      if (!response.ok) throw new Error('HTTP ' + response.status);
+      const data = await response.json();
+      const result = data && Array.isArray(data.results) ? data.results[0] : null;
+      if (!result || !Number.isFinite(Number(result.latitude)) || !Number.isFinite(Number(result.longitude))) return null;
+      const parts = [result.name, result.admin1, result.country].filter(Boolean);
+      const deduped = parts.filter((part, idx) => parts.findIndex(p => normalizeTitle(p) === normalizeTitle(part)) === idx);
+      return { name:deduped.join(', '), latitude:Number(result.latitude), longitude:Number(result.longitude) };
+    }
+
+    async function reloadWeather(options = {}){
+      if (!state.weatherEnabled){
+        weatherForecast = { daily:{}, loading:false, status:'Weather hidden', error:'', updatedAt:0, locationName:state.weatherResolvedName || state.weatherLocation || DEFAULT_WEATHER.name };
+        renderWeatherStatus();
+        renderDays();
+        return;
+      }
+      if (weatherBusy) return;
+      const cached = getUsableWeatherCache(options.force);
+      if (cached){
+        weatherForecast = { daily:cached.daily || {}, loading:false, status:'cached', error:'', updatedAt:cached.fetchedAt || 0, locationName:cached.locationName || state.weatherResolvedName || state.weatherLocation };
+        render();
+        return;
+      }
+      weatherBusy = true;
+      weatherForecast = { ...weatherForecast, loading:true, error:'' };
+      renderWeatherStatus();
+      renderDays();
+      try{
+        const url = buildWeatherUrl(state.weatherLatitude || DEFAULT_WEATHER.latitude, state.weatherLongitude || DEFAULT_WEATHER.longitude);
+        const response = await fetch(url, { cache:'no-store', mode:'cors', credentials:'omit' });
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        const data = await response.json();
+        const daily = parseWeatherDaily(data);
+        const cache = {
+          fetchedAt:Date.now(),
+          locationName:state.weatherResolvedName || state.weatherLocation || DEFAULT_WEATHER.name,
+          latitude:Number(state.weatherLatitude || DEFAULT_WEATHER.latitude),
+          longitude:Number(state.weatherLongitude || DEFAULT_WEATHER.longitude),
+          daily
+        };
+        state.weatherCache = cache;
+        saveState();
+        weatherForecast = { daily, loading:false, status:'live', error:'', updatedAt:cache.fetchedAt, locationName:cache.locationName };
+      }catch(err){
+        const fallback = state.weatherCache && state.weatherCache.daily ? state.weatherCache : null;
+        weatherForecast = fallback
+          ? { daily:fallback.daily || {}, loading:false, status:'cached', error:'Using last saved weather because the live forecast could not load.', updatedAt:fallback.fetchedAt || 0, locationName:fallback.locationName || state.weatherResolvedName || state.weatherLocation }
+          : { daily:{}, loading:false, status:'error', error:(err && err.message) ? err.message : 'Could not load weather', updatedAt:0, locationName:state.weatherResolvedName || state.weatherLocation };
+      }finally{
+        weatherBusy = false;
+        render();
+      }
+    }
+
+    function getUsableWeatherCache(force){
+      const cache = state.weatherCache;
+      if (force || !cache || !cache.daily || !cache.fetchedAt) return null;
+      const sameLocation = Math.abs(Number(cache.latitude) - Number(state.weatherLatitude || DEFAULT_WEATHER.latitude)) < 0.01 && Math.abs(Number(cache.longitude) - Number(state.weatherLongitude || DEFAULT_WEATHER.longitude)) < 0.01;
+      if (!sameLocation) return null;
+      if (Date.now() - Number(cache.fetchedAt) > WEATHER_CACHE_MS) return null;
+      return cache;
+    }
+
+    function buildWeatherUrl(latitude, longitude){
+      const params = new URLSearchParams({
+        latitude:String(Number(latitude).toFixed(4)),
+        longitude:String(Number(longitude).toFixed(4)),
+        daily:'weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max',
+        timezone:'Pacific/Auckland',
+        forecast_days:'16',
+        temperature_unit:'celsius',
+        wind_speed_unit:'kmh',
+        precipitation_unit:'mm'
+      });
+      return 'https://api.open-meteo.com/v1/forecast?' + params.toString();
+    }
+
+    function parseWeatherDaily(data){
+      const daily = data && data.daily ? data.daily : {};
+      const out = {};
+      const times = Array.isArray(daily.time) ? daily.time : [];
+      times.forEach((date, index) => {
+        out[String(date)] = {
+          date:String(date),
+          weatherCode:valueAt(daily.weather_code, index),
+          tempMax:valueAt(daily.temperature_2m_max, index),
+          tempMin:valueAt(daily.temperature_2m_min, index),
+          precipitation:valueAt(daily.precipitation_sum, index),
+          precipitationProbability:valueAt(daily.precipitation_probability_max, index),
+          windMax:valueAt(daily.wind_speed_10m_max, index)
+        };
+      });
+      return out;
+    }
+
+    function valueAt(arr, index){ return Array.isArray(arr) && arr[index] != null ? Number(arr[index]) : null; }
 
     async function addFeed(){
       const raw = (els.feedUrl.value || '').trim();
@@ -738,6 +1087,7 @@
       renderPeriodStrip();
       renderDays();
       renderSources();
+      renderWeatherStatus();
     }
 
     function renderTop(){
@@ -811,12 +1161,21 @@
     function renderMessages(){
       const notes = [];
       if (tempNotice) notes.push(tempNotice);
-      if (location.protocol === 'file:' && state.sources.some(s => s.type === 'url')) notes.push('Tip: If you are opening this as a file (file://), some browsers block live calendar fetching. For best results, run it via http://localhost or host it on HTTPS, or use a mirror .ics file / folder mode for local updates.');
+      if (location.protocol === 'file:' && state.sources.some(s => s.type === 'url')) notes.push('You are opening the board as a local file. If the live calendar will not load, use Settings → School calendar → Import selected file.');
       if (state.sources.some(s => s.type === 'fileHandle')) notes.push('Mirror file handles only last for this browser session. Re-open the file next time you open the whiteboard.');
       if (folderHandle) notes.push('Folder mode is active. All .ics files in the linked folder are scanned automatically.');
       els.noticeBox.hidden = notes.length === 0;
       els.noticeBox.textContent = notes.join(' ');
-      els.errorBox.innerHTML = errors.map(err => '<div class="error">' + escapeHtml(err) + '</div>').join('');
+      els.errorBox.innerHTML = errors.map(err => '<div class="error">' + escapeHtml(friendlyError(err)) + '</div>').join('');
+    }
+
+    function friendlyError(message){
+      const text = String(message || '');
+      if (text.includes('file://') || text.toLowerCase().includes('blocked from a local file')){
+        const name = text.split(':')[0] || 'Calendar';
+        return name + ': live calendar is blocked because the board is opened as a local file. Import an .ics file instead, or open the board through localhost/HTTPS.';
+      }
+      return text.replace(/^([^:]+): Error:\s*/i, '$1: ');
     }
 
     function renderDays(){
@@ -865,7 +1224,43 @@
       const title = today ? 'Today' : day.toLocaleDateString([], { weekday:'long' });
       const sub = day.toLocaleDateString([], { day:'numeric', month:'long', year:'numeric' });
       const items = group.events.length ? group.events.map(evt => renderEvent(evt, day)).join('') : '<div class="empty">No events.</div>';
-      return '<section class="day' + (today ? ' today' : '') + '"><div class="dayHead"><div><div class="eyebrow">' + escapeHtml(title) + '</div><div class="dayTitle">' + escapeHtml(sub) + '</div></div><div class="count">' + group.events.length + ' item' + (group.events.length === 1 ? '' : 's') + '</div></div><div class="eventList">' + items + '</div></section>';
+      const weather = renderWeatherChip(day);
+      return '<section class="day' + (today ? ' today' : '') + '"><div class="dayHead"><div><div class="eyebrow">' + escapeHtml(title) + '</div><div class="dayTitle">' + escapeHtml(sub) + '</div></div><div class="dayTools">' + weather + '<div class="count">' + group.events.length + ' item' + (group.events.length === 1 ? '' : 's') + '</div></div></div><div class="eventList">' + items + '</div></section>';
+    }
+
+    function renderWeatherChip(day){
+      if (!state.weatherEnabled) return '';
+      const key = dateKey(day);
+      const data = weatherForecast.daily && weatherForecast.daily[key];
+      if (data){
+        const rainy = Number(data.precipitationProbability) >= 40 || Number(data.precipitation) >= 2;
+        const label = weatherCodeLabel(data.weatherCode);
+        const title = label + ' · High ' + formatTemp(data.tempMax) + ', low ' + formatTemp(data.tempMin) + ', rain ' + formatPercent(data.precipitationProbability);
+        return '<div class="weatherChip' + (rainy ? ' rain' : '') + '" title="' + escapeHtml(title) + '"><span class="weatherIcon">' + escapeHtml(weatherCodeIcon(data.weatherCode)) + '</span><span class="weatherTemp">' + escapeHtml(formatTemp(data.tempMax)) + ' / ' + escapeHtml(formatTemp(data.tempMin)) + '</span><span class="weatherMeta">' + escapeHtml(shortWeatherLabel(label)) + ' · ' + escapeHtml(formatPercent(data.precipitationProbability)) + '</span></div>';
+      }
+      if (weatherForecast.loading){
+        return '<div class="weatherChip muted"><span class="weatherIcon">↻</span><span class="weatherTemp">Weather</span><span class="weatherMeta">Loading</span></div>';
+      }
+      return '<div class="weatherChip muted" title="Forecast only covers the next 16 days"><span class="weatherIcon">—</span><span class="weatherTemp">Weather</span><span class="weatherMeta">N/A</span></div>';
+    }
+
+    function renderWeatherStatus(){
+      if (!els.weatherStatusBox) return;
+      if (!state.weatherEnabled){
+        els.weatherStatusBox.textContent = 'Weather is hidden. Turn it on above to show weather beside each day.';
+        return;
+      }
+      if (weatherForecast.loading){
+        els.weatherStatusBox.textContent = 'Loading weather for ' + (state.weatherLocation || DEFAULT_WEATHER.name) + '…';
+        return;
+      }
+      if (weatherForecast.error){
+        els.weatherStatusBox.textContent = 'Weather issue: ' + weatherForecast.error;
+        return;
+      }
+      const place = weatherForecast.locationName || state.weatherResolvedName || state.weatherLocation || DEFAULT_WEATHER.name;
+      const updated = weatherForecast.updatedAt ? ' · updated ' + formatTimestamp(weatherForecast.updatedAt) : '';
+      els.weatherStatusBox.textContent = 'Showing forecast for ' + place + updated + '.';
     }
 
     function renderEvent(evt, day){
@@ -879,25 +1274,58 @@
     }
 
     function renderSources(){
-      const folderText = folderHandle ? 'Linked folder · auto-loading .ics files' : 'No folder linked. Choose a folder once to auto-load every .ics file inside it.';
-      els.folderStatusBox.textContent = folderText;
+      const folderText = folderHandle ? 'Folder linked. Any .ics files in that folder can be used.' : 'No folder linked. This is only needed for advanced local-folder setups.';
+      if (els.folderStatusBox) els.folderStatusBox.textContent = folderText;
+      cleanupDuplicateSources();
       if (!state.sources.length){
-        els.sourceList.innerHTML = '<div class="empty">No saved calendar sources yet.</div>';
+        els.sourceList.innerHTML = '<div class="empty">No calendar is selected yet. Use the school live calendar, or import an .ics file.</div>';
         return;
       }
-      els.sourceList.innerHTML = state.sources.map(source => {
-        const toggleLabel = source.enabled ? 'Disable' : 'Enable';
+      const sortedSources = [...state.sources].sort((a,b) => Number(!a.enabled) - Number(!b.enabled) || sourceQualityScore(b) - sourceQualityScore(a));
+      els.sourceList.innerHTML = sortedSources.map(source => {
+        const toggleLabel = source.enabled ? 'Pause' : 'Use this calendar';
         const removeButton = source.type === 'folderFile' ? '' : '<button type="button" class="danger" data-action="remove" data-id="' + escapeHtml(source.id) + '">Remove</button>';
         const subscribeButtons = source.type === 'url'
           ? '<button type="button" data-action="subscribe" data-id="' + escapeHtml(source.id) + '">Subscribe</button>'
-            + '<button type="button" data-action="copy" data-id="' + escapeHtml(source.id) + '">Copy subscribe link</button>'
+            + '<button type="button" data-action="copy" data-id="' + escapeHtml(source.id) + '">Copy link</button>'
             + '<button type="button" data-action="downloadUrl" data-id="' + escapeHtml(source.id) + '">Download .ics</button>'
           : '';
         const downloadCached = (source.cachedText || source.type === 'text')
-          ? '<button type="button" data-action="download" data-id="' + escapeHtml(source.id) + '">Download cached .ics</button>'
+          ? '<button type="button" data-action="download" data-id="' + escapeHtml(source.id) + '">Download copy</button>'
           : '';
-        return '<div class="source"><div class="sourceName">' + escapeHtml(source.name) + '</div><div class="sourceStatus">' + escapeHtml(sourceTypeLabel(source.type)) + ' · ' + escapeHtml(source.status || 'Not loaded yet') + '</div><div class="source-actions" style="margin-top:8px">' + subscribeButtons + downloadCached + '<button type="button" data-action="toggle" data-id="' + escapeHtml(source.id) + '">' + toggleLabel + '</button>' + removeButton + '</div></div>';
+        const advancedButtons = subscribeButtons + downloadCached;
+        const friendly = friendlySourceInfo(source);
+        return '<div class="source ' + (source.enabled ? '' : 'disabled') + '">'
+          + '<div class="sourceTop"><div><div class="sourceName">' + escapeHtml(source.name || 'Calendar') + '</div><div class="sourceStatus">' + escapeHtml(friendly.text) + '</div></div><span class="sourceBadge ' + friendly.badgeClass + '">' + escapeHtml(friendly.badge) + '</span></div>'
+          + '<div class="source-actions"><button type="button" ' + (source.enabled ? '' : 'class="primary" ') + 'data-action="toggle" data-id="' + escapeHtml(source.id) + '">' + toggleLabel + '</button>' + removeButton + '</div>'
+          + (advancedButtons ? '<details class="sourceMore"><summary>More options</summary><div class="source-actions" style="margin-top:8px">' + advancedButtons + '</div></details>' : '')
+          + '</div>';
       }).join('');
+    }
+
+    function friendlySourceInfo(source){
+      const status = String(source.status || '');
+      const lower = status.toLowerCase();
+      const eventMatch = status.match(/(\d+) events?/i);
+      const countText = eventMatch ? eventMatch[1] + ' events' : '';
+      if (!source.enabled) return { badge:'Off', badgeClass:'off', text:'Not shown on the board right now.' };
+      if (lower.includes('error')){
+        if (location.protocol === 'file:' && source.type === 'url'){
+          return { badge:'Needs import', badgeClass:'warn', text:'Live feed is blocked because the board is opened as a local file. Import an .ics file instead, or host the board through localhost/HTTPS.' };
+        }
+        return { badge:'Check', badgeClass:'warn', text:plainStatus(status) };
+      }
+      if (lower.includes('cached') || lower.includes('last good')) return { badge:'Cached', badgeClass:'warn', text:(countText ? countText + ' · ' : '') + 'Showing the last saved copy.' };
+      if (lower.includes('loaded')) return { badge:'On', badgeClass:'good', text:(countText ? countText + ' · ' : '') + simpleSourceType(source.type) + ' is working.' };
+      return { badge:'On', badgeClass:'off', text:simpleSourceType(source.type) + ' is selected. Click Refresh now to load it.' };
+    }
+
+    function plainStatus(status){
+      return String(status || 'Not loaded yet').replace(/^Error:\s*/i, '').replace(/Live feed fetch is blocked from this file:\/\/ page\./i, 'Live feed is blocked because this board is opened as a local file.');
+    }
+
+    function simpleSourceType(type){
+      return ({ url:'Live calendar', text:'Imported file', fileHandle:'Mirror file', folderFile:'Folder file' })[type] || 'Calendar';
     }
 
     function toggleSource(id){
@@ -1536,6 +1964,40 @@
     }
     function formatRangeLabel(start, end){ return start.toLocaleDateString([], { day:'numeric', month:'short' }) + ' – ' + end.toLocaleDateString([], { day:'numeric', month:'short', year:'numeric' }); }
     function formatTimestamp(ts){ if (!ts) return 'unknown time'; try{ return new Date(ts).toLocaleString([], { year:'numeric', month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }); }catch(_){ return 'unknown time'; } }
+    function formatTemp(value){ return Number.isFinite(Number(value)) ? Math.round(Number(value)) + '°' : '—'; }
+    function formatPercent(value){ return Number.isFinite(Number(value)) ? Math.round(Number(value)) + '%' : '—'; }
+    function shortWeatherLabel(label){
+      const t = String(label || '').replace(/^Mainly /i, '').replace(/^Slight: /i, '').replace(/^Moderate: /i, '').replace(/^Violent: /i, '');
+      return t.length > 12 ? t.slice(0, 11) + '…' : t;
+    }
+    function weatherCodeIcon(code){
+      const n = Number(code);
+      if (n === 0) return '☀️';
+      if ([1,2].includes(n)) return '🌤️';
+      if (n === 3) return '☁️';
+      if ([45,48].includes(n)) return '🌫️';
+      if ([51,53,55,56,57,61,63,65,66,67,80,81,82].includes(n)) return '🌧️';
+      if ([71,73,75,77,85,86].includes(n)) return '🌨️';
+      if ([95,96,99].includes(n)) return '⛈️';
+      return '🌡️';
+    }
+    function weatherCodeLabel(code){
+      const n = Number(code);
+      if (n === 0) return 'Clear';
+      if (n === 1) return 'Mainly fine';
+      if (n === 2) return 'Partly cloudy';
+      if (n === 3) return 'Cloudy';
+      if (n === 45 || n === 48) return 'Fog';
+      if ([51,53,55].includes(n)) return 'Drizzle';
+      if ([56,57].includes(n)) return 'Freezing drizzle';
+      if ([61,63,65].includes(n)) return 'Rain';
+      if ([66,67].includes(n)) return 'Freezing rain';
+      if ([71,73,75,77].includes(n)) return 'Snow';
+      if ([80,81,82].includes(n)) return 'Showers';
+      if ([85,86].includes(n)) return 'Snow showers';
+      if ([95,96,99].includes(n)) return 'Thunderstorm';
+      return 'Weather';
+    }
     function sourceTypeLabel(type){ return ({ url:'Feed URL', text:'Imported ICS', fileHandle:'Mirror file', folderFile:'Folder ICS' })[type] || 'Calendar source'; }
 
     // ---- Fetching feeds for the board ----
@@ -1585,12 +2047,12 @@
 
       if (onFilePage && /^https?:/i.test(url)){
         if (googleCid){
-          return new Error('Live Google Calendar fetch is often blocked from a file:// page. Use the calendar\'s public or secret iCal address on localhost/HTTPS, or mirror/download the .ics file locally.');
+          return new Error('Live Google Calendar is blocked from a local file. Import an .ics file instead, or open the board through localhost/HTTPS.');
         }
         if (githubRawUrl && githubRawUrl !== url){
-          return new Error('Live GitHub calendar fetch is often blocked from a file:// page. Open the board through localhost/web server, or mirror/download the .ics file locally.');
+          return new Error('Live calendar is blocked from a local file. Import an .ics file instead, or open the board through localhost/HTTPS.');
         }
-        return new Error('Live feed fetch is blocked from this file:// page. Open the board through localhost/web server, or use a mirror/local .ics file.');
+        return new Error('Live feed is blocked from a local file. Import an .ics file instead, or open the board through localhost/HTTPS.');
       }
 
       if (googleCid){

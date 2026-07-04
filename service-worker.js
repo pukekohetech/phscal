@@ -1,4 +1,4 @@
-const CACHE = 'phs-calendar-pwa-v4';
+const CACHE = 'phs-calendar-pwa-v6-simple-settings';
 const APP_SHELL = [
   './',
   './index.html',
@@ -49,8 +49,8 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Cross-origin calendar requests: network first, cache last good copy.
-  // The app adds _ts cache-busting params, so cache using a normalized URL.
+  // Cross-origin calendar and weather requests: network first, cache last good copy.
+  // Calendar feeds add _ts cache-busting params, so cache using a normalized URL.
   const cacheKey = normalizedCalendarRequest(request);
   event.respondWith(
     fetch(request).then(response => {
