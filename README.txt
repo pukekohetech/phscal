@@ -1,4 +1,4 @@
-PHS Calendar Whiteboard - Weather + reliability updates v4
+PHS Calendar Whiteboard - PWA install + reliability updates v5
 
 Open index.html through a local web server or a hosted site for live calendar and live weather updates.
 
@@ -34,3 +34,16 @@ Future larger improvements to consider:
 - Split index.html into separate CSS and JS files.
 - Move large saved calendar backups from localStorage to IndexedDB.
 - Add full RECURRENCE-ID support with a dedicated iCalendar parser such as ical.js.
+
+PWA install fix (v5)
+- The Install button is now visible immediately instead of waiting for beforeinstallprompt.
+- If the browser cannot show a programmatic prompt yet, the app explains the correct install route.
+- iPhone/iPad users get Safari > Share > Add to Home Screen guidance.
+- Direct file:// opening now clearly explains that PWA install requires HTTPS or localhost.
+- Service-worker registration now requests fresh updates and the cache version has been bumped.
+- The web app manifest has explicit language, app id, install display mode, icon metadata, and prefer_related_applications=false.
+- Apple mobile web app metadata and touch icon are included.
+
+Important: for a real installed PWA that continues to launch normally, publish this folder on an HTTPS site (for example GitHub Pages). localhost is suitable for testing, but a locally installed app still needs that localhost server running.
+
+- index_enhanced.html syntax repairs: removed a stray escape helper fragment and repaired ICS escaping/line-ending code so the alternate page parses correctly.

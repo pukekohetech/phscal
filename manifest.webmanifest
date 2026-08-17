@@ -1,19 +1,20 @@
 {
-  "id": "./",
+  "id": "./index.html",
   "name": "PHS Calendar Whiteboard",
   "short_name": "PHS Calendar",
-  "description": "Installable fullscreen PWA for the Pukekohe High School calendar whiteboard.",
+  "description": "Installable fullscreen calendar whiteboard for Pukekohe High School.",
+  "lang": "en-NZ",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "display_override": [
-    "fullscreen",
-    "standalone",
-    "minimal-ui"
-  ],
   "orientation": "landscape",
   "background_color": "#f6f7f8",
   "theme_color": "#f6f7f8",
+  "prefer_related_applications": false,
+  "categories": [
+    "education",
+    "productivity"
+  ],
   "icons": [
     {
       "src": "./icons/icon-192.png",

@@ -1,4 +1,4 @@
-const CACHE = 'phs-calendar-pwa-v13-reliability';
+const CACHE = 'phs-calendar-pwa-v14-install-fix';
 const APP_SHELL = [
   './',
   './index.html',
@@ -11,17 +11,20 @@ const APP_SHELL = [
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE);
-    await Promise.allSettled(APP_SHELL.map(url => cache.add(url)));
+    await cache.addAll(APP_SHELL);
     await self.skipWaiting();
   })());
 });
 
 self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys()
-      .then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key))))
-      .then(() => self.clients.claim())
-  );
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)));
+    if (self.registration.navigationPreload) {
+      try { await self.registration.navigationPreload.enable(); } catch (_) { }
+    }
+    await self.clients.claim();
+  })());
 });
 
 function normalizedCalendarRequest(request){
@@ -35,17 +38,46 @@ self.addEventListener('fetch', event => {
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
 
-  // App shell: cache first, then network, then fall back to index.html.
+  // Navigations use network first so a deployed update is visible promptly,
+  // while the cached app shell remains available offline.
+  if (request.mode === 'navigate' && url.origin === self.location.origin) {
+    event.respondWith((async () => {
+      try {
+        const preload = await event.preloadResponse;
+        const response = preload || await fetch(request);
+        if (response && response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE).then(cache => cache.put('./index.html', copy)).catch(() => {});
+        }
+        return response;
+      } catch (_) {
+        return (await caches.match(request)) || (await caches.match('./index.html'));
+      }
+    })());
+    return;
+  }
+
+  // Same-origin static assets: cache first with a background refresh.
   if (url.origin === self.location.origin) {
-    event.respondWith(
-      caches.match(request).then(cached => cached || fetch(request).then(response => {
+    event.respondWith((async () => {
+      const cached = await caches.match(request);
+      const networkPromise = fetch(request).then(response => {
         if (response && response.ok) {
           const copy = response.clone();
           caches.open(CACHE).then(cache => cache.put(request, copy)).catch(() => {});
         }
         return response;
-      }).catch(() => caches.match('./index.html')))
-    );
+      });
+      if (cached) {
+        event.waitUntil(networkPromise.catch(() => {}));
+        return cached;
+      }
+      try {
+        return await networkPromise;
+      } catch (_) {
+        return caches.match('./index.html');
+      }
+    })());
     return;
   }
 

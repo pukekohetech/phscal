@@ -6,7 +6,12 @@
   <title>PHS Calendar Whiteboard</title>
   <meta name="theme-color" content="#f6f7f8">
   <meta name="application-name" content="PHS Calendar">
-  <link rel="manifest" href="./manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="PHS Calendar">
+  <link rel="manifest" href="./manifest.webmanifest?v=14">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
   <link rel="icon" href="./icons/icon-192.png" sizes="192x192" type="image/png">
   <link rel="icon" href="./icons/icon-512.png" sizes="512x512" type="image/png">
   <style>
@@ -243,7 +248,7 @@
           <button type="button" id="nextBtn">Next 14 days</button>
           <button type="button" id="refreshBtn">Refresh</button>
           <button type="button" id="fullscreenBtn">Full screen</button>
-          <button type="button" id="installBtn" hidden>Install app</button>
+          <button type="button" id="installBtn">Install / add to device</button>
         </div>
       </div>
     </section>
@@ -1820,36 +1825,96 @@
       return getStoredPeriods().map(row => ({ ...row, start:timeOnDate(date, row.start), end:timeOnDate(date, row.end) })).filter(row => row.start && row.end).sort((a,b) => a.start - b.start);
     }
 
-    function wirePWA(){
-      if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./service-worker.js')
-            .catch(err => setTempNotice('Offline install failed: ' + ((err && err.message) ? err.message : 'service worker could not register')));
-        }, { once:true });
+    function isStandaloneMode(){
+      return window.matchMedia('(display-mode: standalone)').matches ||
+        window.matchMedia('(display-mode: fullscreen)').matches ||
+        window.matchMedia('(display-mode: minimal-ui)').matches ||
+        navigator.standalone === true;
+    }
+
+    function isAppleMobile(){
+      const ua = navigator.userAgent || '';
+      return /iPad|iPhone|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    }
+
+    function updateInstallButton(){
+      if (!els.installBtn) return;
+      els.installBtn.hidden = isStandaloneMode();
+      els.installBtn.textContent = deferredInstallPrompt ? 'Install app' : 'Install / add to device';
+    }
+
+    function installHelpMessage(){
+      if (location.protocol === 'file:') {
+        return 'PWA install needs a secure web address. Open this app from HTTPS (recommended) or localhost; a double-clicked file:// page cannot be installed as a PWA.';
       }
+      if (!window.isSecureContext) {
+        return 'PWA install is blocked because this page is not on a secure origin. Use HTTPS, or localhost while testing.';
+      }
+      if (isAppleMobile()) {
+        return 'On iPhone or iPad, open this page in Safari, tap Share, then choose Add to Home Screen.';
+      }
+      return 'The browser install prompt is not ready yet. Keep this page open briefly and interact with it, then click this button again. You can also use the browser menu and choose Install app / Install page as app.';
+    }
+
+    async function registerPWAServiceWorker(){
+      if (!('serviceWorker' in navigator)) {
+        setTempNotice('This browser does not support service workers, so PWA installation is unavailable here.');
+        return;
+      }
+      if (!window.isSecureContext || location.protocol === 'file:') return;
+      try{
+        const registration = await navigator.serviceWorker.register('./service-worker.js', { scope:'./', updateViaCache:'none' });
+        registration.update().catch(() => {});
+      }catch(err){
+        setTempNotice('Offline/PWA setup failed: ' + ((err && err.message) ? err.message : 'service worker could not register'));
+      }
+    }
+
+    function wirePWA(){
+      // Keep the install affordance visible even before Chromium decides to fire
+      // beforeinstallprompt. Some browsers never fire that event at all.
+      updateInstallButton();
+      registerPWAServiceWorker();
+
       window.addEventListener('beforeinstallprompt', event => {
         event.preventDefault();
         deferredInstallPrompt = event;
-        if (els.installBtn) els.installBtn.hidden = false;
+        updateInstallButton();
       });
       window.addEventListener('appinstalled', () => {
         deferredInstallPrompt = null;
-        if (els.installBtn) els.installBtn.hidden = true;
+        updateInstallButton();
+        setTempNotice('PHS Calendar installed successfully.');
       });
       updateFullscreenButton();
       document.addEventListener('fullscreenchange', updateFullscreenButton);
-      window.addEventListener('resize', updateFullscreenButton);
+      window.addEventListener('resize', () => {
+        updateFullscreenButton();
+        updateInstallButton();
+      });
     }
 
     async function installApp(){
-      if (!deferredInstallPrompt) return;
+      if (isStandaloneMode()) {
+        updateInstallButton();
+        return;
+      }
+      if (!deferredInstallPrompt) {
+        setTempNotice(installHelpMessage());
+        return;
+      }
+      const promptEvent = deferredInstallPrompt;
+      deferredInstallPrompt = null;
       try{
-        await deferredInstallPrompt.prompt();
-        await deferredInstallPrompt.userChoice;
-      }catch(_){
+        await promptEvent.prompt();
+        const choice = await promptEvent.userChoice;
+        if (!choice || choice.outcome !== 'accepted') {
+          setTempNotice('Install was not completed. You can use the Install button again when the browser makes the prompt available.');
+        }
+      }catch(err){
+        setTempNotice('Could not open the install prompt. ' + installHelpMessage());
       }finally{
-        deferredInstallPrompt = null;
-        if (els.installBtn) els.installBtn.hidden = true;
+        updateInstallButton();
       }
     }
 
