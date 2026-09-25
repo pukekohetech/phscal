@@ -1,8 +1,9 @@
-const CACHE = 'phs-calendar-pwa-v16-minimal-live-calendar';
+const CACHE = 'phs-calendar-pwa-v17-same-origin-calendar';
 const APP_SHELL = [
   './',
   './index.html',
   './manifest.webmanifest',
+  './PHS Calendar.ics',
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/maskable-512.png'
@@ -52,6 +53,25 @@ self.addEventListener('fetch', event => {
         return response;
       } catch (_) {
         return (await caches.match(request)) || (await caches.match('./index.html'));
+      }
+    })());
+    return;
+  }
+
+  // Calendar files: network first, cache the last good copy under a stable URL.
+  // This avoids stale calendar data and still works offline.
+  if (url.origin === self.location.origin && /\.ics$/i.test(url.pathname)) {
+    const cacheKey = normalizedCalendarRequest(request);
+    event.respondWith((async () => {
+      try {
+        const response = await fetch(request, { cache:'no-store' });
+        if (response && response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE).then(cache => cache.put(cacheKey, copy)).catch(() => {});
+        }
+        return response;
+      } catch (_) {
+        return (await caches.match(cacheKey)) || new Response('Calendar unavailable', { status:503 });
       }
     })());
     return;
