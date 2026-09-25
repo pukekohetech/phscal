@@ -1,0 +1,76 @@
+name: Update PHS Calendar
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/15 * * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-phs-calendar
+  cancel-in-progress: false
+
+jobs:
+  update-calendar:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Download latest KAMAR calendar
+        env:
+          KAMAR_ICS_URL: ${{ secrets.KAMAR_ICS_URL }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${KAMAR_ICS_URL:-}" ]; then
+            echo "KAMAR_ICS_URL secret is not configured."
+            exit 1
+          fi
+
+          curl             --fail             --location             --silent             --show-error             --retry 3             --retry-delay 5             --connect-timeout 20             --max-time 90             "$KAMAR_ICS_URL"             --output /tmp/phs-calendar.ics
+
+          if ! grep -q "BEGIN:VCALENDAR" /tmp/phs-calendar.ics; then
+            echo "Downloaded file is not a valid iCalendar file."
+            exit 1
+          fi
+
+          if ! grep -q "END:VCALENDAR" /tmp/phs-calendar.ics; then
+            echo "Downloaded calendar appears incomplete."
+            exit 1
+          fi
+
+          size=$(wc -c < /tmp/phs-calendar.ics)
+          if [ "$size" -lt 5000 ]; then
+            echo "Downloaded calendar is unexpectedly small (${size} bytes)."
+            exit 1
+          fi
+
+      - name: Check for calendar changes
+        id: changes
+        run: |
+          set -euo pipefail
+
+          if [ -f "PHS Calendar.ics" ] && cmp -s /tmp/phs-calendar.ics "PHS Calendar.ics"; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Calendar has not changed."
+          else
+            cp /tmp/phs-calendar.ics "PHS Calendar.ics"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Calendar has changed."
+          fi
+
+      - name: Commit updated calendar
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add "PHS Calendar.ics"
+          git commit -m "Update PHS Calendar"
+          git push
