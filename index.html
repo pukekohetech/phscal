@@ -62,6 +62,9 @@
       --weather-rain-bg:#dbeafe;
       --weather-muted:#64748b;
       --weather-muted-bg:#f1f5f9;
+      --accent:#6f1738;
+      --accent-soft:#f7eef2;
+      --gold:#c89b3c;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -208,17 +211,49 @@
     @media (max-width:1180px){.searchRow{grid-template-columns:1fr}}
     @media (max-width:760px){.settingRow,.choiceGrid{grid-template-columns:1fr}.dayHead{display:grid}.dayTools{justify-content:flex-start;max-width:100%}}
     @media (max-width:640px){.shell{padding:8px}.header,.main{padding:10px}.dayTitle{font-size:17px}.toolbar{justify-content:flex-start}.searchBox{flex-wrap:wrap}.summaryHint{display:none}}
+    /* v6 minimal dashboard */
+    .iconSprite{position:absolute;width:0;height:0;overflow:hidden}
+    .icon{width:19px;height:19px;display:block;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+    .srOnly{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    body{background:#f7f7f5}
+    .shell{max-width:1920px;padding:12px;gap:12px}.panel{box-shadow:none}
+    .header{grid-template-columns:minmax(140px,.5fr) minmax(360px,1.55fr) auto;border:0;border-top:3px solid var(--accent);border-radius:14px;background:rgba(255,255,255,.96);padding:10px 12px}
+    .brand{gap:0}.title{display:flex;align-items:center;gap:9px;font-size:18px;letter-spacing:-.35px}.brandMark{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}.brand .meta{display:none}
+    .periodStrip{border:0;background:transparent;padding:3px 8px}.periodLabel{font-size:9px;color:#8b8f97}.periodTitle{font-size:clamp(19px,2.25vw,30px);font-weight:900}.countdown{font-size:clamp(20px,2.2vw,30px);font-variant-numeric:tabular-nums}.countdownNote{font-size:10px}.progress{height:4px;background:#ececef}.progressBar{background:var(--accent)}.pill{border:0;background:#f3f4f6;padding:4px 7px;font-size:9px}
+    .headerRight{gap:5px}.clock{font-size:clamp(25px,3vw,38px);font-variant-numeric:tabular-nums}.date{font-size:10px}.toolbar{gap:4px;flex-wrap:nowrap}
+    button.iconBtn,.moreMenu>summary.iconBtn{width:38px;height:38px;padding:0;border:0;border-radius:11px;display:grid;place-items:center;background:transparent;color:#4b5563;cursor:pointer}button.iconBtn:hover,.moreMenu>summary.iconBtn:hover{background:#f1f2f4;color:#111827}
+    .moreMenu{position:relative}.moreMenu>summary{list-style:none}.moreMenu>summary::-webkit-details-marker{display:none}.morePopover{position:absolute;right:0;top:44px;z-index:40;width:230px;padding:9px;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 16px 38px rgba(15,23,42,.14);display:grid;gap:8px}.viewSwitch{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}.viewSwitch button,.menuActions button{display:flex;align-items:center;justify-content:center;gap:6px;border:0;background:transparent;padding:8px;border-radius:10px;font-size:11px;color:#4b5563}.viewSwitch button{display:grid;justify-items:center;gap:4px}.viewSwitch button .icon{width:17px;height:17px}.viewSwitch button.active{background:var(--accent-soft);color:var(--accent)}.menuActions{display:grid;gap:3px;border-top:1px solid var(--line);padding-top:6px}.menuActions button{justify-content:flex-start}
+    .main{padding:0;border:0;background:transparent}.messages{margin:0 0 8px}.searchRow{display:none;margin:0 0 10px;padding:8px;background:#fff;border:1px solid var(--line);border-radius:14px}.searchRow.open{display:grid}#searchInput{border:0;background:#f5f5f4}
+    .days{gap:9px}.days[data-view="today"]{grid-template-columns:minmax(0,1fr)}.days[data-view="week"]{grid-template-columns:repeat(5,minmax(0,1fr))}.days[data-view="fortnight"]{grid-template-columns:repeat(3,minmax(0,1fr))}.day{border:1px solid #e8e8e6;border-radius:14px;padding:11px;background:#fff;min-height:170px;gap:9px}.day.today{background:#fff;border-color:#d7b6c4;box-shadow:inset 3px 0 0 var(--accent)}.eyebrow{font-size:10px}.dayTitle{font-size:17px}.count{border:0;background:#f3f4f6;padding:4px 7px}.weatherChip{border:0;background:transparent!important;box-shadow:none;padding:3px 4px;max-width:150px}.weatherMeta{display:none}
+    .eventList{gap:5px}.event{border-top:0;border-right:0;border-bottom:0;border-radius:7px;padding:7px 8px;background:#fff!important}.event.now{box-shadow:inset 0 0 0 1px #d6d8dd}.eventBadge{display:none}.eventTitleWrap{gap:2px}.eventTitle{font-size:13px;line-height:1.25}.eventTime{font-size:10px}.eventMeta{font-size:10px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}.empty{border:0;background:transparent;padding:8px 0;font-size:12px;color:#9ca3af}.footer{display:none}
+    details.settings{position:fixed;right:14px;bottom:14px;z-index:60;border:0!important;background:transparent!important;box-shadow:none!important;overflow:visible}details.settings>summary{width:42px;height:42px;padding:0;border:1px solid var(--line);border-radius:50%;background:#fff;box-shadow:0 8px 20px rgba(15,23,42,.09);display:grid;place-items:center}details.settings>summary .icon{width:18px;height:18px}details.settings[open]{inset:0;overflow:auto;padding:18px;background:rgba(15,23,42,.22)!important;backdrop-filter:blur(4px)}details.settings[open]>summary{position:fixed;right:22px;top:18px;z-index:62}details.settings[open] .settingsBody{max-width:1120px;margin:52px auto 24px;padding:14px;background:#f7f7f5;border-radius:18px;box-shadow:0 24px 70px rgba(15,23,42,.22)}
+    @media (max-width:1500px){.days[data-view="week"]{grid-template-columns:repeat(3,minmax(0,1fr))}.days[data-view="fortnight"]{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media (max-width:1180px){.header{grid-template-columns:1fr auto}.periodStrip{grid-column:1 / -1;grid-row:2}.days[data-view="week"],.days[data-view="fortnight"]{grid-template-columns:repeat(2,minmax(0,1fr))}.headerRight{justify-items:end}.date,.countdownNote{text-align:right}}
+    @media (max-width:720px){.shell{padding:7px}.header{grid-template-columns:1fr auto;padding:9px}.brand .title{font-size:16px}.clock{font-size:24px}.date{display:none}.periodTitle{font-size:22px}.days[data-view="week"],.days[data-view="fortnight"]{grid-template-columns:1fr}.morePopover{position:fixed;right:8px;top:auto;bottom:58px}.day{min-height:0}}
   </style>
 </head>
 <body>
+  <svg class="iconSprite" aria-hidden="true" focusable="false">
+    <symbol id="i-chevron-left" viewBox="0 0 24 24"><path d="M15 18 9 12l6-6"/></symbol>
+    <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><path d="M8 2v4M16 2v4M3 9h18M5 4h14a2 2 0 0 1 2 2v14H3V6a2 2 0 0 1 2-2Z"/><path d="m9 15 2 2 4-4"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.5" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></symbol>
+    <symbol id="i-maximize" viewBox="0 0 24 24"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h2M10 12h10M4 18h7M15 18h5"/><circle cx="16" cy="6" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="13" cy="18" r="2"/></symbol>
+    <symbol id="i-day" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 8h8M8 12h8"/></symbol>
+    <symbol id="i-week" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 5v14M16 5v14"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
+  </svg>
   <div class="shell">
     <section class="panel header">
       <div class="brand">
-        <div class="title">Pukekohe calendar 2026</div>
-        <div class="sub">SCHOOL NURSE 021 324 645   TRUANCY OFFICER 021 658 582  https://sites.google.com/view/phstech</div>
-        <div class="meta">
+        <div class="title"><span class="brandMark" aria-hidden="true"></span><span>PHS Calendar</span></div>
+        <div class="meta" aria-hidden="true">
           <div class="chip" id="statusChip">No calendars</div>
-          <div class="chip" id="rangeChip">Next 14 days</div>
+          <div class="chip" id="rangeChip">This week</div>
           <div class="chip" id="sourceChip">0 calendars</div>
           <div class="chip updateChip" id="lastUpdatedChip">Not updated yet</div>
         </div>
@@ -242,13 +277,26 @@
       <div class="headerRight">
         <div class="clock" id="clockTime">--:--</div>
         <div class="date" id="clockDate">—</div>
-        <div class="toolbar">
-          <button type="button" id="prevBtn">Previous 14 days</button>
-          <button type="button" id="todayBtn">Today</button>
-          <button type="button" id="nextBtn">Next 14 days</button>
-          <button type="button" id="refreshBtn">Refresh</button>
-          <button type="button" id="fullscreenBtn">Full screen</button>
-          <button type="button" id="installBtn">Install / add to device</button>
+        <div class="toolbar" aria-label="Calendar controls">
+          <button type="button" id="prevBtn" class="iconBtn" aria-label="Previous" title="Previous"><svg class="icon" aria-hidden="true"><use href="#i-chevron-left"></use></svg></button>
+          <button type="button" id="todayBtn" class="iconBtn" aria-label="Today" title="Today"><svg class="icon" aria-hidden="true"><use href="#i-calendar"></use></svg></button>
+          <button type="button" id="nextBtn" class="iconBtn" aria-label="Next" title="Next"><svg class="icon" aria-hidden="true"><use href="#i-chevron-right"></use></svg></button>
+          <button type="button" id="searchToggleBtn" class="iconBtn" aria-label="Search" title="Search"><svg class="icon" aria-hidden="true"><use href="#i-search"></use></svg></button>
+          <details class="moreMenu">
+            <summary class="iconBtn" aria-label="More options" title="More options"><svg class="icon" aria-hidden="true"><use href="#i-more"></use></svg></summary>
+            <div class="morePopover">
+              <div class="viewSwitch" aria-label="Calendar view">
+                <button type="button" data-view-mode="today" title="Today" aria-label="Today view"><svg class="icon" aria-hidden="true"><use href="#i-day"></use></svg><span>Today</span></button>
+                <button type="button" data-view-mode="week" title="Week" aria-label="Week view"><svg class="icon" aria-hidden="true"><use href="#i-week"></use></svg><span>Week</span></button>
+                <button type="button" data-view-mode="fortnight" title="Two weeks" aria-label="Two week view"><svg class="icon" aria-hidden="true"><use href="#i-grid"></use></svg><span>2 weeks</span></button>
+              </div>
+              <div class="menuActions">
+                <button type="button" id="refreshBtn" aria-label="Refresh" title="Refresh"><svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg><span>Refresh</span></button>
+                <button type="button" id="fullscreenBtn" aria-label="Full screen" title="Full screen"><svg class="icon" aria-hidden="true"><use href="#i-maximize"></use></svg><span>Full screen</span></button>
+                <button type="button" id="installBtn" aria-label="Install" title="Install"><svg class="icon" aria-hidden="true"><use href="#i-download"></use></svg><span>Install</span></button>
+              </div>
+            </div>
+          </details>
         </div>
       </div>
     </section>
@@ -258,7 +306,7 @@
         <div class="notice" id="noticeBox" hidden aria-live="polite"></div>
         <div id="errorBox" aria-live="assertive"></div>
       </div>
-      <div class="searchRow">
+      <div class="searchRow" id="searchRow">
         <div class="searchBox">
           <input id="searchInput" type="text" placeholder="Search events, visits, assemblies, locations...">
           <button type="button" id="clearSearchBtn">Clear</button>
@@ -269,7 +317,7 @@
     </section>
 
     <details class="panel settings" id="settingsPanel">
-      <summary><span>Settings</span><span class="summaryHint">Weather · display · school calendar</span></summary>
+      <summary aria-label="Settings" title="Settings"><svg class="icon" aria-hidden="true"><use href="#i-settings"></use></svg><span class="srOnly">Settings</span></summary>
       <div class="settingsBody">
         <div class="card highlight">
           <div>
@@ -425,12 +473,13 @@
       </div>
     </details>
 
-    <div class="footer">For most users: Settings → School calendar → Use online school calendar. If the board is opened as a local file and the online calendar is blocked, import the included calendar file instead.</div>
+    <div class="footer">PHS Calendar</div>
   </div>
 
   <script>
     // Default feed uses RAW ICS (GitHub raw is much more reliable than a blob viewer URL)
-    const DEFAULT_FEED = 'https://raw.githubusercontent.com/pukekohetech/phscal/main/PHS%20Calendar.ics';
+    const DEFAULT_FEED = 'https://pukekohe.school.kiwi/ics/f47ac7bf2d51208375f6b3849a02881a.ics';
+    const LEGACY_DEFAULT_FEED = 'https://raw.githubusercontent.com/pukekohetech/phscal/main/PHS%20Calendar.ics';
     const DEFAULT_WEATHER = { name:'Pukekohe, New Zealand', latitude:-37.2008, longitude:174.9010 };
     const WEATHER_CACHE_MS = 45 * 60 * 1000;
     const FETCH_TIMEOUT_MS = 10000;
@@ -451,8 +500,9 @@
       anchor:'',
       refreshMinutes:15,
       returnMinutes:5,
-      showWeekends:true,
+      showWeekends:false,
       includeAllDay:true,
+      viewMode:'week',
       weatherEnabled:true,
       weatherLocation:DEFAULT_WEATHER.name,
       weatherLatitude:DEFAULT_WEATHER.latitude,
@@ -540,7 +590,19 @@
     }
 
     function ensureDefaultSource(){
-      if (Array.isArray(state.sources) && state.sources.length) return;
+      if (Array.isArray(state.sources) && state.sources.length){
+        let migrated = false;
+        for (const source of state.sources){
+          if (source.type === 'url' && canonicalFeedKey(source.value) === canonicalFeedKey(LEGACY_DEFAULT_FEED)){
+            source.value = DEFAULT_FEED;
+            source.name = source.name || 'Pukekohe High School';
+            source.status = '';
+            migrated = true;
+          }
+        }
+        if (migrated) saveState();
+        return;
+      }
       state.sources = [{
         id: uid(),
         type:'url',
@@ -625,6 +687,7 @@
       if (els.weatherLocation) els.weatherLocation.value = state.weatherLocation || DEFAULT_WEATHER.name;
       els.searchInput.value = state.searchTerm || '';
       if (els.periodsText) els.periodsText.value = state.periodsText || JSON.stringify(DEFAULT_PERIODS, null, 2);
+      document.querySelectorAll('[data-view-mode]').forEach(button => button.classList.toggle('active', button.getAttribute('data-view-mode') === (state.viewMode || 'week')));
       renderPeriodEditor();
     }
 
@@ -642,6 +705,15 @@
       els.clearSearchBtn.addEventListener('click', () => {
         setSearchTerm('');
         els.searchInput.focus();
+      });
+      const searchToggleBtn = document.getElementById('searchToggleBtn');
+      const searchRow = document.getElementById('searchRow');
+      if (searchToggleBtn && searchRow) searchToggleBtn.addEventListener('click', () => {
+        const open = searchRow.classList.toggle('open');
+        if (open) setTimeout(() => els.searchInput.focus(), 0);
+      });
+      document.querySelectorAll('[data-view-mode]').forEach(button => {
+        button.addEventListener('click', () => setViewMode(button.getAttribute('data-view-mode')));
       });
       if (els.fullscreenBtn) els.fullscreenBtn.addEventListener('click', toggleFullscreen);
       if (els.installBtn) els.installBtn.addEventListener('click', installApp);
@@ -708,10 +780,23 @@
 
     function shiftRange(direction){
       const anchor = getAnchorDate();
-      state.anchor = addDays(anchor, direction * 14).toISOString();
+      const span = state.viewMode === 'today' ? 1 : state.viewMode === 'fortnight' ? 14 : 7;
+      state.anchor = addDays(anchor, direction * span).toISOString();
       saveState();
       registerActivity();
       render();
+    }
+
+    function setViewMode(mode){
+      if (!['today','week','fortnight'].includes(mode)) return;
+      state.viewMode = mode;
+      state.anchor = startOfDay(new Date()).toISOString();
+      saveState();
+      document.querySelectorAll('[data-view-mode]').forEach(button => button.classList.toggle('active', button.getAttribute('data-view-mode') === mode));
+      const menu = document.querySelector('.moreMenu');
+      if (menu) menu.removeAttribute('open');
+      render();
+      registerActivity();
     }
 
     function saveSettingsAction(){
@@ -1294,16 +1379,18 @@
       els.clearSearchBtn.disabled = !term;
       els.searchInfo.textContent = term
         ? 'Search: ' + filteredEvents.length + ' match' + (filteredEvents.length === 1 ? '' : 'es') + ' across ' + dayCount + ' day' + (dayCount === 1 ? '' : 's') + ' in loaded calendar'
-        : 'Showing next 14 days';
+        : (state.viewMode === 'today' ? 'Today' : state.viewMode === 'fortnight' ? 'Two weeks' : 'This week');
     }
 
     function renderPeriodStrip(){
       const now = new Date();
+      const dayStatus = getSchoolDayStatus(now);
       const periods = getPeriodsForDate(now);
       const currentPeriod = periods.find(p => now >= p.start && now < p.end) || null;
       const nextPeriod = periods.find(p => p.start > now) || null;
       const todaysEvents = getDisplayEvents().filter(evt => overlapsDay(evt, now));
       const activeEvent = todaysEvents.filter(evt => !evt.allDay && evt.start <= now && evt.end > now).sort((a,b) => a.end - b.end)[0] || null;
+      const nextEvent = todaysEvents.filter(evt => !evt.allDay && evt.start > now).sort((a,b) => a.start - b.start)[0] || null;
 
       let start = null, end = null;
       if (currentPeriod){
@@ -1317,15 +1404,16 @@
         start = activeEvent.start;
         end = activeEvent.end;
       }else{
-        els.periodLabel.textContent = 'Next period';
-        els.periodTitle.textContent = nextPeriod ? nextPeriod.name : 'Outside timetable';
+        els.periodLabel.textContent = dayStatus.closed ? 'Today' : (nextPeriod ? 'Next period' : 'Today');
+        els.periodTitle.textContent = dayStatus.closed ? dayStatus.label : (nextPeriod ? nextPeriod.name : 'School finished');
       }
 
       const pills = [];
       if (currentPeriod) pills.push('<span class="pill">' + escapeHtml(formatClockRange(currentPeriod.start, currentPeriod.end)) + '</span>');
       if (activeEvent && (!currentPeriod || activeEvent.title !== currentPeriod.name)) pills.push('<span class="pill">Event now · ' + escapeHtml(activeEvent.title) + '</span>');
       if (!currentPeriod && nextPeriod) pills.push('<span class="pill">Starts ' + escapeHtml(nextPeriod.start.toLocaleTimeString([], { hour:'numeric', minute:'2-digit' })) + '</span>');
-      if (!currentPeriod && !activeEvent && !nextPeriod) pills.push('<span class="pill">No more periods today</span>');
+      if (nextEvent) pills.push('<span class="pill">› ' + escapeHtml(nextEvent.title) + ' · ' + escapeHtml(nextEvent.start.toLocaleTimeString([], { hour:'numeric', minute:'2-digit' })) + '</span>');
+      if (!dayStatus.closed && !currentPeriod && !activeEvent && !nextPeriod) pills.push('<span class="pill">School finished</span>');
       els.periodMeta.innerHTML = pills.join(' ');
 
       if (start && end){
@@ -1367,6 +1455,7 @@
 
     function renderDays(){
       const range = getVisibleRange();
+      els.daysList.dataset.view = state.viewMode || 'week';
       const term = normalizeSearchTerm(state.searchTerm);
       const events = getVisibleEvents(term);
       const days = [];
@@ -1821,7 +1910,18 @@
       return { className:'generic', label: evt.allDay ? 'All day' : 'Event' };
     }
 
+    function getSchoolDayStatus(date){
+      if (isWeekend(date)) return { closed:true, label:'No school today' };
+      const closure = getDisplayEvents().find(evt => {
+        if (!evt.allDay || !overlapsDay(evt, date)) return false;
+        const text = normalizeTitle((evt.title || '') + ' ' + (evt.description || ''));
+        return /school holidays?|teacher only day|\btod\b/.test(text);
+      });
+      return closure ? { closed:true, label:closure.title || 'No school today' } : { closed:false, label:'' };
+    }
+
     function getPeriodsForDate(date){
+      if (getSchoolDayStatus(date).closed) return [];
       return getStoredPeriods().map(row => ({ ...row, start:timeOnDate(date, row.start), end:timeOnDate(date, row.end) })).filter(row => row.start && row.end).sort((a,b) => a.start - b.start);
     }
 
@@ -1840,7 +1940,9 @@
     function updateInstallButton(){
       if (!els.installBtn) return;
       els.installBtn.hidden = isStandaloneMode();
-      els.installBtn.textContent = deferredInstallPrompt ? 'Install app' : 'Install / add to device';
+      const installLabel = deferredInstallPrompt ? 'Install app' : 'Install / add to device';
+      els.installBtn.setAttribute('aria-label', installLabel);
+      els.installBtn.setAttribute('title', installLabel);
     }
 
     function installHelpMessage(){
@@ -1937,7 +2039,9 @@
         return;
       }
       els.fullscreenBtn.hidden = false;
-      els.fullscreenBtn.textContent = document.fullscreenElement ? 'Exit full screen' : 'Full screen';
+      const fullscreenLabel = document.fullscreenElement ? 'Exit full screen' : 'Full screen';
+      els.fullscreenBtn.setAttribute('aria-label', fullscreenLabel);
+      els.fullscreenBtn.setAttribute('title', fullscreenLabel);
     }
 
     function tickClock(){
@@ -1978,7 +2082,8 @@
     }
     function getVisibleRange(){
       const anchor = getAnchorDate();
-      return { start:startOfDay(anchor), end:addDays(startOfDay(anchor), 13) };
+      const days = state.viewMode === 'today' ? 1 : state.viewMode === 'fortnight' ? 14 : 7;
+      return { start:startOfDay(anchor), end:addDays(startOfDay(anchor), days - 1) };
     }
     function getExpansionRange(){
       const range = getVisibleRange();
@@ -2191,7 +2296,7 @@
     function parseICalDate(value, params){
       if (!value) return null;
       const raw = String(value).trim();
-      const tzid = String((params && params.TZID) || '').replace(/^\"|\"$/g, '');
+      const tzid = String((params && params.TZID) || '').replace(/^"|"$/g, '');
       // The PHS feed uses TZID=Pacific/Auckland. Store these as school wall-clock times
       // so the board still displays the intended bell/event time if a device timezone is changed.
       const isSchoolTimezone = normalizeTitle(tzid) === normalizeTitle(APP_TIMEZONE);
