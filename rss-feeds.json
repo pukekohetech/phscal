@@ -1,0 +1,32 @@
+{
+  "feeds": [
+    {
+      "name": "NCEA on TKI",
+      "url": "https://ncea.tki.org.nz/layout/set/rss",
+      "tags": ["Assessment", "Technology"],
+      "filterTechnology": true,
+      "enabled": true
+    },
+    {
+      "name": "Technology Online - What's new",
+      "url": "https://www.technology.tki.org.nz/rss/feed/whats-new",
+      "tags": ["Technology", "Curriculum"],
+      "filterTechnology": false,
+      "enabled": true
+    },
+    {
+      "name": "Technology Online - News",
+      "url": "https://www.technology.tki.org.nz/rss/feed/technology-news-articles",
+      "tags": ["Technology"],
+      "filterTechnology": false,
+      "enabled": true
+    },
+    {
+      "name": "Technology Online - Teaching snapshots",
+      "url": "https://www.technology.tki.org.nz/rss/feed/teaching-snapshots",
+      "tags": ["Technology", "Teaching"],
+      "filterTechnology": false,
+      "enabled": true
+    }
+  ]
+}

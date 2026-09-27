@@ -291,6 +291,53 @@
     @keyframes newsTickerMove{from{transform:translateX(0)}to{transform:translateX(-50%)}}
     @media (prefers-reduced-motion:reduce){.newsTickerViewport{overflow-x:auto;mask-image:none;-webkit-mask-image:none}.newsTickerTrack{animation:none}.tickerGroup[aria-hidden="true"]{display:none}}
     @media (max-width:720px){body{padding-bottom:32px}.newsTicker{height:32px}.newsTickerLabel{padding:0 9px}.newsTickerLabel span{display:none}.tickerItem{font-size:10px}details.settings{bottom:44px}}
+  
+
+    /* v6.4 in-app update reader + configurable RSS feeds */
+    .updatesDrawer{background:#e8e8e5;grid-template-columns:minmax(0,1fr) minmax(350px,520px)}
+    .updatesBackdrop{display:none!important}
+    .updatesReaderPane{min-width:0;min-height:100vh;max-height:100vh;padding:12px;display:grid;grid-template-rows:auto auto 1fr;gap:9px;background:#efefec;overflow:hidden}
+    .readerToolbar{display:flex;align-items:center;gap:10px;min-height:42px}
+    .readerBack{display:none}
+    .readerIdentity{min-width:0;flex:1}
+    .readerSource{font-size:9px;font-weight:950;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+    .readerTitle{font-size:13px;font-weight:950;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#1f2937}
+    .readerActions{display:flex;gap:5px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+    .readerActions button,.readerActions a{border:1px solid var(--line);background:#fff;color:#4b5563;border-radius:9px;padding:7px 9px;font-size:10px;font-weight:900;text-decoration:none;cursor:pointer}
+    .readerActions button.active{background:var(--accent-soft);border-color:#e5c9d4;color:var(--accent)}
+    .readerHint{font-size:10px;color:#6b7280;line-height:1.35;padding:0 4px}
+    .readerStage{min-height:0;position:relative;border:1px solid #d9d9d6;background:#fff;border-radius:15px;overflow:hidden;box-shadow:0 8px 24px rgba(15,23,42,.06)}
+    .readerEmpty{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:32px;color:#7c838d;font-size:13px;font-weight:800;background:linear-gradient(180deg,#fafafa,#f4f4f1)}
+    .readerEmpty strong{display:block;color:#343a42;font-size:16px;margin-bottom:5px}
+    .readerFrame{width:100%;height:100%;border:0;background:#fff;display:block}
+    .readerText{height:100%;overflow:auto;padding:26px 30px 60px;max-width:900px;margin:0 auto;font-size:14px;line-height:1.65;color:#252a31;background:#fff}
+    .readerText h2{font-size:22px;line-height:1.25;margin:0 0 6px}
+    .readerText .readerTextMeta{font-size:10px;text-transform:uppercase;letter-spacing:.07em;font-weight:950;color:var(--accent);margin-bottom:18px}
+    .readerText p{margin:0 0 14px}
+    .readerText .readerTextEmpty{color:var(--muted);font-weight:800}
+    .updateItem.selected{box-shadow:inset 0 0 0 2px rgba(111,23,56,.18);background:#fcf8fa}
+    .rssDivider{height:1px;background:var(--line);margin:3px 0}
+    .rssFeedEditor{display:grid;gap:8px}
+    .rssFeedRows{display:grid;gap:7px;max-height:280px;overflow:auto;padding-right:2px}
+    .rssFeedRow{display:grid;grid-template-columns:minmax(120px,.9fr) minmax(220px,1.7fr) minmax(120px,.8fr) auto auto;gap:6px;align-items:center;border:1px solid var(--line);border-radius:11px;padding:7px;background:#fafafa}
+    .rssFeedRow input[type="text"],.rssFeedRow input[type="url"]{min-width:0;padding:7px 8px;font-size:10px}
+    .rssFeedRow .rssEnabled,.rssFeedRow .rssTechOnly{display:flex;align-items:center;gap:4px;font-size:9px;font-weight:900;color:#5f6670;white-space:nowrap}
+    .rssFeedRow button{padding:6px 8px;font-size:9px}
+    .rssFeedHead{display:grid;grid-template-columns:minmax(120px,.9fr) minmax(220px,1.7fr) minmax(120px,.8fr) auto auto;gap:6px;padding:0 8px;color:var(--muted);font-size:9px;font-weight:950;text-transform:uppercase;letter-spacing:.05em}
+    .rssConfigStatus{font-size:10px;color:var(--muted);line-height:1.4}
+    @media (max-width:980px){.rssFeedHead{display:none}.rssFeedRow{grid-template-columns:1fr 1fr}.rssFeedRow input[data-rss-field="url"]{grid-column:1 / -1}.rssFeedRow input[data-rss-field="tags"]{grid-column:1 / -1}.rssFeedRow button{justify-self:start}}
+    @media (max-width:720px){
+      .updatesDrawer{grid-template-columns:1fr;background:#fff}
+      .updatesReaderPane{display:none;padding:9px;background:#efefec}
+      .updatesPanel{display:grid}
+      .updatesDrawer.readerActive .updatesReaderPane{display:grid}
+      .updatesDrawer.readerActive .updatesPanel{display:none}
+      .readerBack{display:grid}
+      .readerToolbar{gap:6px}.readerActions{gap:4px}.readerActions button,.readerActions a{padding:6px 7px;font-size:9px}
+      .readerText{padding:20px 18px 50px}
+      .rssFeedRow{grid-template-columns:1fr}.rssFeedRow input[data-rss-field="url"],.rssFeedRow input[data-rss-field="tags"]{grid-column:auto}
+    }
+
   </style>
 </head>
 <body>
@@ -384,12 +431,31 @@
     </section>
 
     <aside class="updatesDrawer" id="updatesDrawer" hidden aria-label="Official education updates">
-      <div class="updatesBackdrop" id="updatesBackdrop"></div>
+      <section class="updatesReaderPane" id="updatesReaderPane" aria-label="Update reader">
+        <div class="readerToolbar">
+          <button type="button" class="iconBtn readerBack" id="updatesReaderBackBtn" aria-label="Back to update list" title="Back to updates"><svg class="icon" aria-hidden="true"><use href="#i-chevron-left"></use></svg></button>
+          <div class="readerIdentity">
+            <div class="readerSource" id="updatesReaderSource">Update reader</div>
+            <div class="readerTitle" id="updatesReaderTitle">Select an update to read it here</div>
+          </div>
+          <div class="readerActions">
+            <button type="button" id="updatesLiveViewBtn" class="active">Live page</button>
+            <button type="button" id="updatesReaderViewBtn">Reader</button>
+            <a id="updatesOpenOriginal" href="#" target="_blank" rel="noopener noreferrer" aria-disabled="true">Open original ↗</a>
+          </div>
+        </div>
+        <div class="readerHint" id="updatesReaderHint">Select an item from the feed. If a website blocks iframe viewing, switch to Reader or use Open original.</div>
+        <div class="readerStage" id="updatesReaderStage">
+          <div class="readerEmpty" id="updatesReaderEmpty"><div><strong>Updates open here</strong>Choose an item on the right instead of leaving the calendar.</div></div>
+          <iframe class="readerFrame" id="updatesReaderFrame" title="Official update page" loading="lazy" referrerpolicy="no-referrer" hidden></iframe>
+          <article class="readerText" id="updatesReaderText" hidden></article>
+        </div>
+      </section>
       <section class="updatesPanel" role="dialog" aria-modal="true" aria-labelledby="updatesTitle">
         <div class="updatesHead">
           <div>
             <div class="updatesTitle" id="updatesTitle">Official updates</div>
-            <div class="updatesMeta" id="updatesMeta">NZQA · NCEA · Ministry · WorkSafe</div>
+            <div class="updatesMeta" id="updatesMeta">NZQA · NCEA · Ministry · WorkSafe · RSS</div>
           </div>
           <div class="updatesHeadActions">
             <button type="button" class="iconBtn" id="updatesRefreshBtn" aria-label="Refresh official updates" title="Refresh updates"><svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg></button>
@@ -466,7 +532,7 @@
         <div class="card standardsSettings">
           <div>
             <div class="sectionTitle">Official updates</div>
-            <p class="helper">Choose the NZQA standards the automatic checker watches, and control the rolling news banner.</p>
+            <p class="helper">Choose watched NZQA standards, manage RSS feeds, and control the rolling news banner.</p>
           </div>
           <div class="field">
             <label for="standardsWatchInput">Standards to watch</label>
@@ -476,9 +542,24 @@
           <label class="check"><input id="showNewsTicker" type="checkbox"> Show rolling official news banner</label>
           <div class="actions">
             <button type="button" id="saveOfficialDisplayBtn" class="primary">Save banner setting</button>
-            <button type="button" id="prepareStandardsWatchBtn">Copy list + open GitHub</button>
+            <button type="button" id="prepareStandardsWatchBtn">Publish standards list</button>
           </div>
           <div class="standardsConfigStatus" id="standardsConfigStatus">The automatic checker uses the shared GitHub watch file. Changing that file triggers an immediate refresh.</div>
+          <div class="rssDivider"></div>
+          <div class="rssFeedEditor">
+            <div>
+              <div class="sectionTitle">RSS feeds</div>
+              <p class="helper">Add, edit, disable or remove RSS/Atom feeds. Tags are comma-separated, for example <b>Technology, Assessment</b>.</p>
+            </div>
+            <div class="rssFeedHead"><span>Name</span><span>Feed URL</span><span>Tags</span><span>On</span><span>Tech only</span></div>
+            <div class="rssFeedRows" id="rssFeedRows"></div>
+            <div class="actions">
+              <button type="button" id="addRssFeedBtn">Add RSS feed</button>
+              <button type="button" id="prepareRssFeedsBtn" class="primary">Publish RSS feeds</button>
+              <button type="button" id="reloadRssFeedsBtn">Reload shared list</button>
+            </div>
+            <div class="rssConfigStatus" id="rssConfigStatus">RSS feeds are stored in <b>rss-feeds.json</b>. Publishing the file triggers the feed updater automatically.</div>
+          </div>
         </div>
 
         <div class="card">
@@ -602,8 +683,10 @@
     const DEFAULT_FEED = './PHS Calendar.ics';
     const OFFICIAL_UPDATES_URL = './updates.json';
     const STANDARDS_WATCH_URL = './standards-watch.json';
+    const RSS_FEEDS_URL = './rss-feeds.json';
     const DEFAULT_WATCHED_STANDARDS = ['92012','92014','92015','29655'];
     const STANDARDS_EDIT_URL = 'https://github.com/pukekohetech/phscal/edit/main/standards-watch.json';
+    const RSS_FEEDS_EDIT_URL = 'https://github.com/pukekohetech/phscal/edit/main/rss-feeds.json';
     const LEGACY_DEFAULT_FEED = 'https://raw.githubusercontent.com/pukekohetech/phscal/main/PHS%20Calendar.ics';
     const DEFAULT_WEATHER = { name:'Pukekohe, New Zealand', latitude:-37.2008, longitude:174.9010 };
     const WEATHER_CACHE_MS = 45 * 60 * 1000;
@@ -639,6 +722,7 @@
       officialSeenIds:[],
       showNewsTicker:true,
       standardsWatchDraft:'',
+      rssFeedsDraft:[],
       sources:[]
     };
 
@@ -664,6 +748,10 @@
     let updatesFilter = 'all';
     let sharedWatchStandards = [...DEFAULT_WATCHED_STANDARDS];
     let standardsEditorDirty = false;
+    let sharedRssFeeds = [];
+    let rssEditorDirty = false;
+    let activeUpdateId = '';
+    let updateReaderMode = 'live';
 
     // transient message (not persisted)
     let tempNotice = '';
@@ -672,7 +760,7 @@
     init();
 
     function mapEls(){
-      const ids = ['statusChip','rangeChip','sourceChip','lastUpdatedChip','periodLabel','periodTitle','periodMeta','periodProgress','periodCountdown','periodCountdownNote','clockTime','clockDate','termWeek','prevBtn','todayBtn','nextBtn','refreshBtn','fullscreenBtn','installBtn','updatesBtn','updatesBadge','updatesDrawer','updatesBackdrop','updatesCloseBtn','updatesRefreshBtn','updatesMeta','updatesFilters','updatesList','standardChips','standardsMeta','newsTicker','newsTickerBtn','newsTickerTrack','standardsWatchInput','showNewsTicker','saveOfficialDisplayBtn','prepareStandardsWatchBtn','standardsConfigStatus','noticeBox','errorBox','searchInput','clearSearchBtn','searchInfo','daysList','feedUrl','feedName','addFeedBtn','exampleBtn','icsFileInput','importFilesBtn','mirrorFileBtn','chooseFolderBtn','scanFolderBtn','pasteName','pasteText','importPasteBtn','refreshMinutes','returnMinutes','showWeekends','includeAllDay','showWeather','weatherLocation','saveWeatherBtn','detectWeatherBtn','refreshWeatherBtn','weatherStatusBox','periodRows','addPeriodBtn','savePeriodsBtn','periodsText','saveSettingsBtn','resetPeriodsBtn','reloadAllBtn','calendarRefreshBtn','clearAllBtn','sourceList','folderStatusBox'];
+      const ids = ['statusChip','rangeChip','sourceChip','lastUpdatedChip','periodLabel','periodTitle','periodMeta','periodProgress','periodCountdown','periodCountdownNote','clockTime','clockDate','termWeek','prevBtn','todayBtn','nextBtn','refreshBtn','fullscreenBtn','installBtn','updatesBtn','updatesBadge','updatesDrawer','updatesCloseBtn','updatesRefreshBtn','updatesMeta','updatesFilters','updatesList','standardChips','standardsMeta','updatesReaderPane','updatesReaderBackBtn','updatesReaderSource','updatesReaderTitle','updatesReaderHint','updatesReaderStage','updatesReaderEmpty','updatesReaderFrame','updatesReaderText','updatesLiveViewBtn','updatesReaderViewBtn','updatesOpenOriginal','newsTicker','newsTickerBtn','newsTickerTrack','standardsWatchInput','showNewsTicker','saveOfficialDisplayBtn','prepareStandardsWatchBtn','standardsConfigStatus','rssFeedRows','addRssFeedBtn','prepareRssFeedsBtn','reloadRssFeedsBtn','rssConfigStatus','noticeBox','errorBox','searchInput','clearSearchBtn','searchInfo','daysList','feedUrl','feedName','addFeedBtn','exampleBtn','icsFileInput','importFilesBtn','mirrorFileBtn','chooseFolderBtn','scanFolderBtn','pasteName','pasteText','importPasteBtn','refreshMinutes','returnMinutes','showWeekends','includeAllDay','showWeather','weatherLocation','saveWeatherBtn','detectWeatherBtn','refreshWeatherBtn','weatherStatusBox','periodRows','addPeriodBtn','savePeriodsBtn','periodsText','saveSettingsBtn','resetPeriodsBtn','reloadAllBtn','calendarRefreshBtn','clearAllBtn','sourceList','folderStatusBox'];
       return Object.fromEntries(ids.map(id => [id, document.getElementById(id)]));
     }
 
@@ -680,7 +768,7 @@
     function loadState(){
       try{
         const parsed = JSON.parse(localStorage.getItem(STORE_KEY) || '{}');
-        return { ...structuredClone(DEFAULT_STATE), ...parsed, sources:Array.isArray(parsed.sources) ? parsed.sources : [], officialSeenIds:Array.isArray(parsed.officialSeenIds) ? parsed.officialSeenIds : [], showNewsTicker:parsed.showNewsTicker !== false, standardsWatchDraft:String(parsed.standardsWatchDraft || ''), weatherCache:parsed.weatherCache || null };
+        return { ...structuredClone(DEFAULT_STATE), ...parsed, sources:Array.isArray(parsed.sources) ? parsed.sources : [], officialSeenIds:Array.isArray(parsed.officialSeenIds) ? parsed.officialSeenIds : [], showNewsTicker:parsed.showNewsTicker !== false, standardsWatchDraft:String(parsed.standardsWatchDraft || ''), rssFeedsDraft:Array.isArray(parsed.rssFeedsDraft) ? parsed.rssFeedsDraft : [], weatherCache:parsed.weatherCache || null };
       }catch(_){ return structuredClone(DEFAULT_STATE); }
     }
     function saveState(){
@@ -721,6 +809,7 @@
       if (state.weatherEnabled) reloadWeather({ force:false });
       else renderWeatherStatus();
       reloadStandardsWatchConfig({ force:false });
+      reloadRssFeedsConfig({ force:false });
       reloadOfficialUpdates({ force:false });
     }
 
@@ -859,13 +948,26 @@
       if (els.installBtn) els.installBtn.addEventListener('click', installApp);
       if (els.updatesBtn) els.updatesBtn.addEventListener('click', openOfficialUpdates);
       if (els.updatesCloseBtn) els.updatesCloseBtn.addEventListener('click', closeOfficialUpdates);
-      if (els.updatesBackdrop) els.updatesBackdrop.addEventListener('click', closeOfficialUpdates);
+      if (els.updatesReaderBackBtn) els.updatesReaderBackBtn.addEventListener('click', () => els.updatesDrawer && els.updatesDrawer.classList.remove('readerActive'));
+      if (els.updatesLiveViewBtn) els.updatesLiveViewBtn.addEventListener('click', () => setUpdateReaderMode('live'));
+      if (els.updatesReaderViewBtn) els.updatesReaderViewBtn.addEventListener('click', () => setUpdateReaderMode('reader'));
       if (els.updatesRefreshBtn) els.updatesRefreshBtn.addEventListener('click', () => reloadOfficialUpdates({ force:true }));
       if (els.updatesFilters) els.updatesFilters.addEventListener('click', handleUpdateFilterClick);
+      if (els.updatesList) els.updatesList.addEventListener('click', handleUpdateReaderClick);
+      if (els.newsTickerTrack) els.newsTickerTrack.addEventListener('click', handleUpdateReaderClick);
       if (els.newsTickerBtn) els.newsTickerBtn.addEventListener('click', openOfficialUpdates);
       if (els.saveOfficialDisplayBtn) els.saveOfficialDisplayBtn.addEventListener('click', saveOfficialDisplaySettings);
       if (els.prepareStandardsWatchBtn) els.prepareStandardsWatchBtn.addEventListener('click', prepareStandardsWatchUpdate);
       if (els.standardsWatchInput) els.standardsWatchInput.addEventListener('input', () => { standardsEditorDirty = true; state.standardsWatchDraft = els.standardsWatchInput.value; saveState(); });
+      if (els.addRssFeedBtn) els.addRssFeedBtn.addEventListener('click', addRssFeedRow);
+      if (els.prepareRssFeedsBtn) els.prepareRssFeedsBtn.addEventListener('click', prepareRssFeedsUpdate);
+      if (els.reloadRssFeedsBtn) els.reloadRssFeedsBtn.addEventListener('click', () => { rssEditorDirty = false; reloadRssFeedsConfig({ force:true }); });
+      if (els.rssFeedRows){
+        els.rssFeedRows.addEventListener('input', () => { rssEditorDirty = true; });
+        els.rssFeedRows.addEventListener('change', () => { rssEditorDirty = true; });
+        els.rssFeedRows.addEventListener('click', handleRssFeedRowsClick);
+      }
+      if (els.updatesOpenOriginal) els.updatesOpenOriginal.addEventListener('click', event => { if (els.updatesOpenOriginal.getAttribute('aria-disabled') === 'true') event.preventDefault(); });
       document.addEventListener('keydown', event => { if (event.key === 'Escape' && els.updatesDrawer && !els.updatesDrawer.hidden) closeOfficialUpdates(); });
       els.addFeedBtn.addEventListener('click', addFeed);
       els.exampleBtn.addEventListener('click', useDefaultFeed);
@@ -1632,6 +1734,209 @@
       else setTempNotice(copied ? 'Watch list copied. Paste it into GitHub and commit.' : 'GitHub watch file opened.');
     }
 
+
+    function normalizeRssTags(value){
+      const raw = Array.isArray(value) ? value : String(value || '').split(/[,;]+/);
+      const tags = raw.map(tag => String(tag || '').trim()).filter(Boolean).map(tag => tag.slice(0,40));
+      return [...new Set(tags)].slice(0,8);
+    }
+
+    function normalizeRssFeed(row){
+      const feed = row && typeof row === 'object' ? row : {};
+      return {
+        name:String(feed.name || '').trim().slice(0,80),
+        url:String(feed.url || feed.feed_url || '').trim(),
+        tags:normalizeRssTags(feed.tags || []),
+        filterTechnology:!!feed.filterTechnology,
+        enabled:feed.enabled !== false
+      };
+    }
+
+    function validRssUrl(value){
+      try{
+        const url = new URL(String(value || '').trim());
+        return url.protocol === 'https:' || url.protocol === 'http:';
+      }catch(_){ return false; }
+    }
+
+    async function reloadRssFeedsConfig({ force=false } = {}){
+      try{
+        const suffix = force ? '?_ts=' + Date.now() : '';
+        const response = await fetch(RSS_FEEDS_URL + suffix, { cache:'no-store' });
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        const data = await response.json();
+        const feeds = (data && Array.isArray(data.feeds) ? data.feeds : []).map(normalizeRssFeed).filter(feed => feed.name && validRssUrl(feed.url));
+        if (!rssEditorDirty) sharedRssFeeds = feeds;
+        renderRssFeedEditor();
+        if (els.rssConfigStatus) els.rssConfigStatus.textContent = feeds.length + ' shared RSS feed' + (feeds.length === 1 ? '' : 's') + '. Publishing a change triggers the updater automatically.';
+      }catch(_){
+        if (!rssEditorDirty && Array.isArray(state.rssFeedsDraft) && state.rssFeedsDraft.length) sharedRssFeeds = state.rssFeedsDraft.map(normalizeRssFeed);
+        renderRssFeedEditor();
+        if (els.rssConfigStatus) els.rssConfigStatus.textContent = 'Could not load rss-feeds.json right now. Existing official updates are unaffected.';
+      }
+    }
+
+    function rssFeedRowHtml(feed, index){
+      const tags = normalizeRssTags(feed.tags).join(', ');
+      return '<div class="rssFeedRow" data-rss-index="' + index + '">'
+        + '<input type="text" data-rss-field="name" value="' + escapeHtml(feed.name || '') + '" placeholder="Feed name" aria-label="RSS feed name">'
+        + '<input type="url" data-rss-field="url" value="' + escapeHtml(feed.url || '') + '" placeholder="https://example.org/feed.xml" aria-label="RSS feed URL">'
+        + '<input type="text" data-rss-field="tags" value="' + escapeHtml(tags) + '" placeholder="Technology, Assessment" aria-label="RSS feed tags">'
+        + '<label class="rssEnabled"><input type="checkbox" data-rss-field="enabled"' + (feed.enabled !== false ? ' checked' : '') + '> On</label>'
+        + '<label class="rssTechOnly"><input type="checkbox" data-rss-field="filterTechnology"' + (feed.filterTechnology ? ' checked' : '') + '> Tech only</label>'
+        + '<button type="button" data-rss-action="remove" aria-label="Remove RSS feed">Remove</button>'
+        + '</div>';
+    }
+
+    function collectRssFeedEditor(){
+      if (!els.rssFeedRows) return [];
+      return [...els.rssFeedRows.querySelectorAll('.rssFeedRow')].map(row => {
+        const get = field => row.querySelector('[data-rss-field="' + field + '"]');
+        return normalizeRssFeed({
+          name:get('name') && get('name').value,
+          url:get('url') && get('url').value,
+          tags:get('tags') && get('tags').value,
+          enabled:get('enabled') ? get('enabled').checked : true,
+          filterTechnology:get('filterTechnology') ? get('filterTechnology').checked : false
+        });
+      }).filter(feed => feed.name || feed.url);
+    }
+
+    function renderRssFeedEditor(){
+      if (!els.rssFeedRows) return;
+      const feeds = rssEditorDirty ? collectRssFeedEditor() : sharedRssFeeds;
+      if (!feeds.length){
+        els.rssFeedRows.innerHTML = '<div class="updatesEmpty">No RSS feeds configured yet.</div>';
+        return;
+      }
+      els.rssFeedRows.innerHTML = feeds.map(rssFeedRowHtml).join('');
+    }
+
+    function addRssFeedRow(){
+      if (!els.rssFeedRows) return;
+      const feeds = collectRssFeedEditor();
+      feeds.push(normalizeRssFeed({ name:'New feed', url:'', tags:['Technology'], enabled:true }));
+      sharedRssFeeds = feeds;
+      rssEditorDirty = true;
+      els.rssFeedRows.innerHTML = feeds.map(rssFeedRowHtml).join('');
+      const rows = els.rssFeedRows.querySelectorAll('.rssFeedRow');
+      const last = rows[rows.length - 1];
+      if (last){
+        last.scrollIntoView({ block:'nearest' });
+        const input = last.querySelector('[data-rss-field="name"]');
+        if (input){ input.focus(); input.select(); }
+      }
+    }
+
+    function handleRssFeedRowsClick(event){
+      const button = event.target.closest('[data-rss-action="remove"]');
+      if (!button || !els.rssFeedRows) return;
+      const row = button.closest('.rssFeedRow');
+      if (row) row.remove();
+      rssEditorDirty = true;
+      if (!els.rssFeedRows.querySelector('.rssFeedRow')) els.rssFeedRows.innerHTML = '<div class="updatesEmpty">No RSS feeds configured yet.</div>';
+    }
+
+    async function prepareRssFeedsUpdate(){
+      let feeds = collectRssFeedEditor();
+      const invalid = feeds.filter(feed => !feed.name || !validRssUrl(feed.url));
+      if (invalid.length){
+        setTempNotice('Each RSS feed needs a name and a valid http/https URL.');
+        return;
+      }
+      feeds = feeds.slice(0,30);
+      sharedRssFeeds = feeds;
+      state.rssFeedsDraft = feeds;
+      saveState();
+      const configText = JSON.stringify({ feeds }, null, 2) + '\n';
+      const tab = window.open(RSS_FEEDS_EDIT_URL, '_blank');
+      try{ if (tab) tab.opener = null; }catch(_){ }
+      let copied = false;
+      try{ await navigator.clipboard.writeText(configText); copied = true; }
+      catch(_){
+        try{
+          const area = document.createElement('textarea');
+          area.value = configText; area.style.position = 'fixed'; area.style.opacity = '0';
+          document.body.appendChild(area); area.select(); copied = document.execCommand('copy'); area.remove();
+        }catch(_){ }
+      }
+      if (els.rssConfigStatus){
+        els.rssConfigStatus.textContent = copied
+          ? 'Copied rss-feeds.json. Replace the GitHub file contents and commit; the updater will run automatically.'
+          : 'GitHub opened. Save these ' + feeds.length + ' RSS feeds into rss-feeds.json.';
+      }
+      if (!tab) setTempNotice('Your browser blocked the GitHub tab. Allow pop-ups, then try again.');
+      else setTempNotice(copied ? 'RSS feed list copied. Paste it into GitHub and commit.' : 'GitHub RSS feed file opened.');
+    }
+
+    function findOfficialUpdate(id){
+      return (officialUpdates.items || []).find(item => String(item.id || '') === String(id || '')) || null;
+    }
+
+    function handleUpdateReaderClick(event){
+      const link = event.target.closest('a[data-update-id]');
+      if (!link) return;
+      const id = link.getAttribute('data-update-id');
+      if (!id) return;
+      event.preventDefault();
+      openUpdateInReader(id);
+    }
+
+    function openUpdateInReader(id){
+      const item = findOfficialUpdate(id);
+      if (!item) return;
+      activeUpdateId = String(item.id || '');
+      updateReaderMode = 'live';
+      openOfficialUpdates();
+      if (els.updatesDrawer) els.updatesDrawer.classList.add('readerActive');
+      renderOfficialUpdates();
+    }
+
+    function setUpdateReaderMode(mode){
+      if (!['live','reader'].includes(mode)) return;
+      updateReaderMode = mode;
+      renderUpdateReader();
+    }
+
+    function renderUpdateReader(){
+      if (!els.updatesReaderFrame || !els.updatesReaderText || !els.updatesReaderEmpty) return;
+      const item = findOfficialUpdate(activeUpdateId);
+      const hasItem = !!item;
+      if (els.updatesLiveViewBtn) els.updatesLiveViewBtn.classList.toggle('active', updateReaderMode === 'live');
+      if (els.updatesReaderViewBtn) els.updatesReaderViewBtn.classList.toggle('active', updateReaderMode === 'reader');
+      if (!hasItem){
+        els.updatesReaderSource.textContent = 'Update reader';
+        els.updatesReaderTitle.textContent = 'Select an update to read it here';
+        els.updatesReaderHint.textContent = 'Select an item from the feed. If a website blocks iframe viewing, switch to Reader or use Open original.';
+        els.updatesReaderEmpty.hidden = false;
+        els.updatesReaderFrame.hidden = true;
+        els.updatesReaderText.hidden = true;
+        if (els.updatesOpenOriginal){ els.updatesOpenOriginal.href = '#'; els.updatesOpenOriginal.setAttribute('aria-disabled','true'); }
+        return;
+      }
+      els.updatesReaderSource.textContent = item.source || 'Official update';
+      els.updatesReaderTitle.textContent = item.title || 'Update';
+      if (els.updatesOpenOriginal){ els.updatesOpenOriginal.href = item.url || '#'; els.updatesOpenOriginal.removeAttribute('aria-disabled'); }
+      els.updatesReaderEmpty.hidden = true;
+      if (updateReaderMode === 'reader'){
+        els.updatesReaderFrame.hidden = true;
+        const body = String(item.readerText || item.summary || '').trim();
+        const paras = body ? body.split(/\n{2,}/).map(text => '<p>' + escapeHtml(text) + '</p>').join('') : '<p class="readerTextEmpty">This feed did not provide enough article text for Reader mode. Try Live page or Open original.</p>';
+        els.updatesReaderText.innerHTML = '<div class="readerTextMeta">' + escapeHtml(item.source || 'Official update') + '</div><h2>' + escapeHtml(item.title || 'Update') + '</h2>' + paras;
+        els.updatesReaderText.hidden = false;
+        els.updatesReaderHint.textContent = 'Reader mode uses the text captured by the updater. Use Live page for the original layout.';
+      }else{
+        els.updatesReaderText.hidden = true;
+        els.updatesReaderFrame.hidden = false;
+        const target = String(item.url || '');
+        if (els.updatesReaderFrame.dataset.url !== target){
+          els.updatesReaderFrame.dataset.url = target;
+          els.updatesReaderFrame.src = target || 'about:blank';
+        }
+        els.updatesReaderHint.textContent = 'Live page. Some websites block iframe viewing; if it stays blank, use Reader or Open original.';
+      }
+    }
+
     function tickerItems(){
       const items = (officialUpdates.items || []).filter(item => item && item.title && item.url);
       const scored = items.map((item, index) => {
@@ -1658,7 +1963,7 @@
         const source = escapeHtml(item.source || 'Update');
         const title = escapeHtml(trimText(item.title || 'Official update', 105));
         const sep = index ? '<span class="tickerSep" aria-hidden="true">•</span>' : '';
-        return sep + '<a class="tickerItem" href="' + escapeHtml(item.url) + '" target="_blank" rel="noopener noreferrer"><span class="tickerSource">' + source + '</span><span>' + title + '</span></a>';
+        return sep + '<a class="tickerItem" data-update-id="' + escapeHtml(item.id || '') + '" href="' + escapeHtml(item.url) + '"><span class="tickerSource">' + source + '</span><span>' + title + '</span></a>';
       }).join('') + '</div>';
       els.newsTickerTrack.innerHTML = makeGroup(false) + makeGroup(true);
       const chars = items.reduce((sum, item) => sum + String(item.title || '').length + String(item.source || '').length, 0);
@@ -1688,6 +1993,7 @@
     function closeOfficialUpdates(){
       if (!els.updatesDrawer) return;
       els.updatesDrawer.hidden = true;
+      els.updatesDrawer.classList.remove('readerActive');
       document.body.style.overflow = '';
     }
 
@@ -1724,6 +2030,7 @@
     function renderOfficialUpdates(){
       renderOfficialUpdatesBadge();
       renderNewsTicker();
+      renderUpdateReader();
       if (!els.updatesList) return;
       document.querySelectorAll('[data-update-filter]').forEach(button => button.classList.toggle('active', button.getAttribute('data-update-filter') === updatesFilter));
       const generated = officialUpdates.generatedAt ? new Date(officialUpdates.generatedAt) : null;
@@ -1756,7 +2063,7 @@
         const date = item.date ? new Date(item.date + 'T12:00:00') : null;
         const dateText = date && !Number.isNaN(date.getTime()) ? date.toLocaleDateString([], { day:'numeric', month:'short' }) : '';
         const tags = (item.tags || []).slice(0,4).map(tag => '<span class="updateTag">' + escapeHtml(tag) + '</span>').join('');
-        return '<a class="updateItem ' + updateItemClass(item) + '" href="' + escapeHtml(item.url || '#') + '" target="_blank" rel="noopener noreferrer">'
+        return '<a class="updateItem ' + updateItemClass(item) + (activeUpdateId === item.id ? ' selected' : '') + '" data-update-id="' + escapeHtml(item.id || '') + '" href="' + escapeHtml(item.url || '#') + '">'
           + '<div class="updateItemTop"><div class="updateSource">' + escapeHtml(item.source || 'Official update') + '</div><div class="updateDate">' + escapeHtml(dateText) + '</div></div>'
           + '<div class="updateTitle">' + escapeHtml(item.title || 'Update') + '</div>'
           + (item.summary ? '<div class="updateSummary">' + escapeHtml(trimText(item.summary, 210)) + '</div>' : '')

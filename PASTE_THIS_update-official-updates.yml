@@ -7,6 +7,7 @@ on:
   push:
     paths:
       - 'standards-watch.json'
+      - 'rss-feeds.json'
       - 'update_official_updates.py'
       - '.github/workflows/update-official-updates.yml'
 

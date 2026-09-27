@@ -2,13 +2,14 @@
 """Build updates.json from official NZ education and safety sources.
 
 No third-party packages are required. The script is designed for GitHub Actions.
-It keeps the previous data when a source is temporarily unavailable and watches a
-small set of NZQA standards by fingerprinting their public pages.
+It keeps the previous data when a source is temporarily unavailable, reads RSS/Atom
+sources from rss-feeds.json, and watches NZQA standards by fingerprinting public pages.
 """
 
 from __future__ import annotations
 
 import hashlib
+import ipaddress
 import html
 import json
 import re
@@ -28,9 +29,10 @@ from urllib.request import Request, urlopen
 ROOT = Path(__file__).resolve().parent
 OUTPUT = ROOT / "updates.json"
 WATCH_CONFIG = ROOT / "standards-watch.json"
+RSS_CONFIG = ROOT / "rss-feeds.json"
 USER_AGENT = "Mozilla/5.0 (compatible; PHS-Calendar-Official-Updates/1.0; +https://pukekohetech.github.io/phscal/)"
 TIMEOUT = 25
-MAX_ITEMS = 40
+MAX_ITEMS = 70
 
 MONTHS = {
     "january": 1, "february": 2, "march": 3, "april": 4,
@@ -135,15 +137,34 @@ class RssSource:
     default_tags: tuple[str, ...]
     max_items: int = 12
     filter_irrelevant: bool = False
+    enabled: bool = True
 
 
-RSS_SOURCES = (
+DEFAULT_RSS_SOURCES = (
     RssSource(
         "NCEA on TKI",
         "https://ncea.tki.org.nz/layout/set/rss",
         ("Assessment", "Technology"),
         max_items=12,
         filter_irrelevant=True,
+    ),
+    RssSource(
+        "Technology Online - What's new",
+        "https://www.technology.tki.org.nz/rss/feed/whats-new",
+        ("Technology", "Curriculum"),
+        max_items=10,
+    ),
+    RssSource(
+        "Technology Online - News",
+        "https://www.technology.tki.org.nz/rss/feed/technology-news-articles",
+        ("Technology",),
+        max_items=10,
+    ),
+    RssSource(
+        "Technology Online - Teaching snapshots",
+        "https://www.technology.tki.org.nz/rss/feed/teaching-snapshots",
+        ("Technology", "Teaching"),
+        max_items=10,
     ),
 )
 
@@ -279,7 +300,7 @@ def parse_date_text(value: str) -> str:
     if not value:
         return ""
     # ISO / RFC-ish metadata.
-    iso_match = re.search(r"\b(20\d{2})-(\d{2})-(\d{2})\b", value)
+    iso_match = re.search(r"\b(20\d{2})-(\d{2})-(\d{2})(?=\D|$)", value)
     if iso_match:
         return "-".join(iso_match.groups())
     # 23 September 2026 / Published 23 September 2026.
@@ -342,6 +363,25 @@ def page_summary(parser: PageParser) -> str:
         if len(text) >= 55 and not any(skip in low for skip in ("cookie", "privacy", "subscribe", "skip to", "contact us")):
             return text[:360]
     return ""
+
+
+def page_reader_text(parser: PageParser, limit: int = 5000) -> str:
+    parts: list[str] = []
+    seen: set[str] = set()
+    for text in parser.paragraphs:
+        clean = clean_text(text)
+        low = clean.lower()
+        if len(clean) < 40 or any(skip in low for skip in ("cookie", "privacy", "subscribe", "skip to", "contact us", "copyright")):
+            continue
+        key = clean.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        parts.append(clean)
+        if sum(len(part) for part in parts) >= limit:
+            break
+    joined = "\n\n".join(parts)
+    return joined[:limit]
 
 
 def tags_for(source: Source, title: str, summary: str) -> list[str]:
@@ -419,6 +459,7 @@ def scrape_source(source: Source) -> list[dict]:
                 "date": date,
                 "url": url,
                 "summary": summary,
+                "readerText": page_reader_text(page),
                 "tags": tags,
             })
         except Exception as exc:  # keep one bad article from breaking the whole source
@@ -446,6 +487,68 @@ def load_watch_standards() -> list[str]:
     return standards or list(DEFAULT_STANDARD_NUMBERS)
 
 
+def safe_feed_url(url: str) -> bool:
+    try:
+        parsed = urlparse(str(url or "").strip())
+        if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+            return False
+        host = parsed.hostname.lower().strip(".")
+        if host in {"localhost", "metadata.google.internal"} or host.endswith(".local"):
+            return False
+        try:
+            addr = ipaddress.ip_address(host)
+            if addr.is_private or addr.is_loopback or addr.is_link_local or addr.is_reserved:
+                return False
+        except ValueError:
+            pass
+        return True
+    except Exception:
+        return False
+
+
+def load_rss_sources() -> list[RssSource]:
+    try:
+        data = json.loads(RSS_CONFIG.read_text(encoding="utf-8"))
+        raw = data.get("feeds", []) if isinstance(data, dict) else []
+    except Exception:
+        return list(DEFAULT_RSS_SOURCES)
+
+    sources: list[RssSource] = []
+    seen_urls: set[str] = set()
+    for row in raw:
+        if not isinstance(row, dict) or row.get("enabled", True) is False:
+            continue
+        name = clean_text(row.get("name", ""))[:80]
+        url = str(row.get("url", "")).strip()
+        if not name or not safe_feed_url(url) or url in seen_urls:
+            continue
+        tags_raw = row.get("tags", [])
+        if isinstance(tags_raw, str):
+            tags_raw = re.split(r"[,;]+", tags_raw)
+        tags: list[str] = []
+        for value in tags_raw if isinstance(tags_raw, list) else []:
+            tag = clean_text(value)[:40]
+            if tag and tag not in tags:
+                tags.append(tag)
+        max_items = row.get("maxItems", 12)
+        try:
+            max_items = max(1, min(30, int(max_items)))
+        except Exception:
+            max_items = 12
+        sources.append(RssSource(
+            name=name,
+            feed_url=url,
+            default_tags=tuple(tags or ["Technology"]),
+            max_items=max_items,
+            filter_irrelevant=bool(row.get("filterTechnology", False)),
+            enabled=True,
+        ))
+        seen_urls.add(url)
+        if len(sources) >= 30:
+            break
+    return sources
+
+
 def standard_url(standard: str) -> str:
     return "https://www.nzqa.govt.nz/ncea/assessment/view-detailed.do?standardNumber=" + standard
 
@@ -467,15 +570,43 @@ def strip_markup(value: str) -> str:
     return clean_text(re.sub(r"<[^>]+>", " ", html.unescape(value or "")))
 
 
+def _xml_local(tag: str) -> str:
+    return tag.rsplit("}", 1)[-1].lower()
+
+
+def _child_text(node: ET.Element, names: set[str]) -> str:
+    for child in list(node):
+        if _xml_local(child.tag) in names:
+            return "".join(child.itertext()).strip()
+    return ""
+
+
+def _entry_link(node: ET.Element) -> str:
+    for child in list(node):
+        if _xml_local(child.tag) != "link":
+            continue
+        href = (child.attrib.get("href") or "").strip()
+        rel = (child.attrib.get("rel") or "alternate").strip().lower()
+        if href and rel in {"", "alternate"}:
+            return href
+        text = "".join(child.itertext()).strip()
+        if text:
+            return text
+    return ""
+
+
 def scrape_rss_source(source: RssSource) -> list[dict]:
     content = fetch_html(source.feed_url)
     root = ET.fromstring(content)
+    nodes = [node for node in root.iter() if _xml_local(node.tag) in {"item", "entry"}]
     items: list[dict] = []
-    for node in root.findall(".//item"):
-        title = clean_text(node.findtext("title") or "")
-        url = clean_text(node.findtext("link") or "")
-        summary = strip_markup(node.findtext("description") or "")[:360]
-        date = rss_date(node.findtext("pubDate") or node.findtext("date") or "")
+    for node in nodes:
+        title = clean_text(_child_text(node, {"title"}))
+        url = clean_text(_entry_link(node) or _child_text(node, {"link", "guid", "id"}))
+        summary_raw = _child_text(node, {"description", "summary", "content", "encoded"})
+        summary = strip_markup(summary_raw)[:360]
+        reader_text = strip_markup(summary_raw)[:4000]
+        date = rss_date(_child_text(node, {"pubdate", "date", "published", "updated"}))
         haystack = title + " " + summary
         if source.filter_irrelevant and not is_technology_relevant(haystack):
             continue
@@ -485,10 +616,13 @@ def scrape_rss_source(source: RssSource) -> list[dict]:
         items.append({
             "id": make_id(source.name, url, title),
             "source": source.name,
+            "sourceType": "rss",
+            "feedUrl": source.feed_url,
             "title": title,
             "date": date,
             "url": url,
             "summary": summary,
+            "readerText": reader_text or summary,
             "tags": tags,
         })
         if len(items) >= source.max_items:
@@ -532,6 +666,7 @@ def watch_standards(previous: dict, standards: list[str]) -> tuple[list[dict], l
                     "date": today,
                     "url": url,
                     "summary": "The public NZQA page for this watched standard changed since the previous check. Open it to review the current standard or supporting materials.",
+                    "readerText": "The public NZQA page for this watched standard changed since the previous check. Review the live NZQA page for the current wording, version and supporting materials.",
                     "tags": ["Standards Watch", "Assessment", "Technology"],
                 })
         except Exception as exc:
@@ -585,6 +720,17 @@ def main() -> int:
     previous = load_previous()
     items = list(previous.get("items", []))
     statuses: list[dict] = []
+    rss_sources = load_rss_sources()
+    configured_rss_urls = {source.feed_url for source in rss_sources}
+    configured_rss_names = {source.name for source in rss_sources}
+    items = [
+        item for item in items
+        if not (
+            item.get("sourceType") == "rss" and item.get("feedUrl") not in configured_rss_urls
+        ) and not (
+            item.get("source") == "NCEA on TKI" and "NCEA on TKI" not in configured_rss_names
+        )
+    ]
 
     for source in SOURCES:
         try:
@@ -598,7 +744,7 @@ def main() -> int:
             statuses.append({"name": source.name, "url": source.listing_url, "status": "error"})
             print(f"WARN {source.name}: {exc}; keeping previous items", file=sys.stderr)
 
-    for source in RSS_SOURCES:
+    for source in rss_sources:
         try:
             fresh = scrape_rss_source(source)
             if fresh:
