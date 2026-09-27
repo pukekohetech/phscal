@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="PHS Calendar">
-  <link rel="manifest" href="./manifest.webmanifest?v=21">
+  <link rel="manifest" href="./manifest.webmanifest?v=22">
   <link rel="apple-touch-icon" href="./icons/icon-192.png">
   <link rel="icon" href="./icons/icon-192.png" sizes="192x192" type="image/png">
   <link rel="icon" href="./icons/icon-512.png" sizes="512x512" type="image/png">
@@ -303,7 +303,7 @@
     .tickerNav button{width:30px;height:30px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.07);color:#fff;display:grid;place-items:center;cursor:pointer;font-size:15px;line-height:1;backdrop-filter:blur(8px)}
     .tickerNav button:hover{background:rgba(255,255,255,.14)}
     .tickerProgress{position:absolute;left:0;right:0;bottom:0;height:4px;background:rgba(255,255,255,.08);z-index:7;overflow:hidden}
-    .tickerProgressBar{height:100%;width:100%;background:linear-gradient(90deg,var(--gold),#f1d48f);transform-origin:left center;animation:tickerProgress var(--ticker-cycle,9s) linear forwards}
+    .tickerProgressBar{height:100%;width:100%;background:linear-gradient(90deg,var(--gold),#f1d48f);transform-origin:left center;animation:tickerProgress var(--ticker-cycle,5s) linear forwards}
     .newsTicker:hover .tickerProgressBar,.newsTicker:focus-within .tickerProgressBar{animation-play-state:paused}
     .standardsSettings{display:grid;gap:10px}
     .standardsSettings input[type="text"]{font-variant-numeric:tabular-nums}
@@ -498,9 +498,9 @@
       </section>
     </aside>
 
-    <div class="newsTicker" id="newsTicker" hidden aria-label="Official education news">
+    <div class="newsTicker" id="newsTicker" aria-label="Official education news">
       <button type="button" class="newsTickerLabel" id="newsTickerBtn" aria-label="Open official updates"><svg class="icon" aria-hidden="true"><use href="#i-bell"></use></svg><span>Updates</span></button>
-      <div class="newsTickerViewport"><div class="newsTickerTrack" id="newsTickerTrack"></div></div>
+      <div class="newsTickerViewport"><div class="newsTickerTrack" id="newsTickerTrack"><div class="tickerItem active" role="status"><div class="tickerMain"><div class="tickerMeta"><span class="tickerSource">Official education updates</span><span class="tickerTag">Live</span></div><div class="tickerHeadline">Loading the latest updates…</div><div class="tickerSummary">NZQA, NCEA, curriculum, Technology and safety feeds will appear here automatically.</div></div><div class="tickerAside"><span class="tickerCounter">LIVE</span></div></div></div></div>
     </div>
 
     <details class="panel settings" id="settingsPanel">
@@ -552,17 +552,16 @@
         <div class="card standardsSettings">
           <div>
             <div class="sectionTitle">Official updates</div>
-            <p class="helper">Choose watched NZQA standards, manage RSS feeds, and control the rolling news banner.</p>
+            <p class="helper">Choose watched NZQA standards and manage RSS feeds. The live news panel is always visible and advances automatically every 5 seconds.</p>
           </div>
           <div class="field">
             <label for="standardsWatchInput">Standards to watch</label>
             <input id="standardsWatchInput" type="text" inputmode="numeric" placeholder="92012, 92014, 92015, 29655">
             <p class="helper">Comma-separated NZQA standard numbers. The shared list lives in <b>standards-watch.json</b>.</p>
           </div>
-          <label class="check"><input id="showNewsTicker" type="checkbox"> Show large auto-rotating official news panel</label>
+          <div class="standardsConfigStatus"><b>Live news:</b> always on · advances every 5 seconds · pauses while you interact with it.</div>
           <div class="actions">
-            <button type="button" id="saveOfficialDisplayBtn" class="primary">Save banner setting</button>
-            <button type="button" id="prepareStandardsWatchBtn">Publish standards list</button>
+            <button type="button" id="prepareStandardsWatchBtn" class="primary">Publish standards list</button>
           </div>
           <div class="standardsConfigStatus" id="standardsConfigStatus">The automatic checker uses the shared GitHub watch file. Changing that file triggers an immediate refresh.</div>
           <div class="rssDivider"></div>
@@ -768,7 +767,7 @@
     let updatesFilter = 'all';
     let newsTickerIndex = 0;
     let newsTickerTimer = null;
-    const NEWS_TICKER_MS = 9000;
+    const NEWS_TICKER_MS = 5000;
     let sharedWatchStandards = [...DEFAULT_WATCHED_STANDARDS];
     let standardsEditorDirty = false;
     let sharedRssFeeds = [];
@@ -791,7 +790,7 @@
     function loadState(){
       try{
         const parsed = JSON.parse(localStorage.getItem(STORE_KEY) || '{}');
-        return { ...structuredClone(DEFAULT_STATE), ...parsed, sources:Array.isArray(parsed.sources) ? parsed.sources : [], officialSeenIds:Array.isArray(parsed.officialSeenIds) ? parsed.officialSeenIds : [], showNewsTicker:parsed.showNewsTicker !== false, standardsWatchDraft:String(parsed.standardsWatchDraft || ''), rssFeedsDraft:Array.isArray(parsed.rssFeedsDraft) ? parsed.rssFeedsDraft : [], weatherCache:parsed.weatherCache || null };
+        return { ...structuredClone(DEFAULT_STATE), ...parsed, sources:Array.isArray(parsed.sources) ? parsed.sources : [], officialSeenIds:Array.isArray(parsed.officialSeenIds) ? parsed.officialSeenIds : [], showNewsTicker:true, standardsWatchDraft:String(parsed.standardsWatchDraft || ''), rssFeedsDraft:Array.isArray(parsed.rssFeedsDraft) ? parsed.rssFeedsDraft : [], weatherCache:parsed.weatherCache || null };
       }catch(_){ return structuredClone(DEFAULT_STATE); }
     }
     function saveState(){
@@ -2024,7 +2023,7 @@
 
     function startNewsTickerCycle(){
       stopNewsTickerCycle();
-      if (!els.newsTicker || els.newsTicker.hidden || state.showNewsTicker === false) return;
+      if (!els.newsTicker || els.newsTicker.hidden) return;
       const cards = els.newsTickerTrack ? els.newsTickerTrack.querySelectorAll('.tickerItem') : [];
       if (cards.length < 2) return;
       if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -2048,13 +2047,11 @@
     function renderNewsTicker(){
       if (!els.newsTicker || !els.newsTickerTrack) return;
       stopNewsTickerCycle();
-      if (state.showNewsTicker === false){
-        els.newsTicker.hidden = true;
-        return;
-      }
+      state.showNewsTicker = true;
+      els.newsTicker.hidden = false;
       const items = tickerItems();
       if (!items.length){
-        els.newsTicker.hidden = true;
+        els.newsTickerTrack.innerHTML = '<div class="tickerItem active" role="status"><div class="tickerMain"><div class="tickerMeta"><span class="tickerSource">Official education updates</span><span class="tickerTag">Live</span></div><div class="tickerHeadline">Waiting for the latest official updates…</div><div class="tickerSummary">The panel stays visible and will fill automatically when the update feed is available.</div></div><div class="tickerAside"><span class="tickerCounter">LIVE</span></div></div>';
         return;
       }
       newsTickerIndex = Math.min(newsTickerIndex, Math.max(0, items.length - 1));
