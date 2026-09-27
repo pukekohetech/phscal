@@ -170,6 +170,13 @@ DEFAULT_RSS_SOURCES = (
 
 
 class PageParser(HTMLParser):
+    # Ignore site chrome so navigation labels such as "Header" do not become
+    # article titles or fallback reader text.
+    SKIP_TAGS = {
+        "script", "style", "noscript", "svg", "nav", "aside", "footer",
+        "header", "form", "button", "template", "iframe"
+    }
+
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
         self.links: list[tuple[str, str]] = []
@@ -190,10 +197,12 @@ class PageParser(HTMLParser):
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         attrs_d = {k.lower(): (v or "") for k, v in attrs}
         tag = tag.lower()
-        if tag in {"script", "style", "noscript", "svg"}:
-            self._skip_depth += 1
-            return
         if self._skip_depth:
+            if tag in self.SKIP_TAGS:
+                self._skip_depth += 1
+            return
+        if tag in self.SKIP_TAGS:
+            self._skip_depth = 1
             return
         if tag == "a":
             self._anchor_href = attrs_d.get("href", "")
@@ -218,11 +227,9 @@ class PageParser(HTMLParser):
 
     def handle_endtag(self, tag: str) -> None:
         tag = tag.lower()
-        if tag in {"script", "style", "noscript", "svg"}:
-            if self._skip_depth:
-                self._skip_depth -= 1
-            return
         if self._skip_depth:
+            if tag in self.SKIP_TAGS:
+                self._skip_depth -= 1
             return
         if tag == "a" and self._anchor_href is not None:
             text = clean_text(" ".join(self._anchor_parts))
@@ -530,15 +537,48 @@ def item_date(parser: PageParser, url: str) -> str:
     return parsed or date_from_url(url)
 
 
+GENERIC_PAGE_TITLES = {
+    "header", "site header", "menu", "navigation", "main", "main content",
+    "content", "home", "page", "website", "skip to main content"
+}
+
+
+def is_generic_page_title(value: str) -> bool:
+    title = clean_text(value)
+    if not title:
+        return True
+    low = title.casefold().strip(" :-|–—")
+    if low in GENERIC_PAGE_TITLES:
+        return True
+    return bool(re.fullmatch(r"(?:site\s+)?(?:header|navigation|menu)(?:\s+region)?", low))
+
+
 def page_title(parser: PageParser, fallback: str) -> str:
+    # Explicit social metadata is normally the cleanest article title.
     for key in ("og:title", "twitter:title"):
-        if parser.meta.get(key):
-            return clean_text(parser.meta[key])
-    if parser.h1_text:
-        return clean_text(parser.h1_text)
-    if parser.page_title_text:
-        return clean_text(re.sub(r'\s*[|–—-]\s*(NZQA|NCEA|WorkSafe|Ministry of Education).*$','', parser.page_title_text, flags=re.I))
-    return clean_text(fallback)
+        candidate = clean_text(parser.meta.get(key, ""))
+        if candidate and not is_generic_page_title(candidate):
+            return candidate
+
+    # The title discovered on the listing page is more reliable than site-shell
+    # headings. NCEA Education currently exposes a generic <h1>Header</h1> on
+    # some pages, which previously leaked into the ticker.
+    candidate = clean_text(fallback)
+    if candidate and not is_generic_page_title(candidate):
+        return candidate
+
+    candidate = clean_text(parser.h1_text)
+    if candidate and not is_generic_page_title(candidate):
+        return candidate
+
+    candidate = clean_text(re.sub(
+        r'\s*[|–—-]\s*(NZQA|NCEA|WorkSafe|Ministry of Education).*$',
+        '', parser.page_title_text, flags=re.I
+    ))
+    if candidate and not is_generic_page_title(candidate):
+        return candidate
+
+    return ""
 
 
 def page_summary(parser: PageParser) -> str:
