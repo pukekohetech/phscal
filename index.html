@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="PHS Calendar">
-  <link rel="manifest" href="./manifest.webmanifest?v=17">
+  <link rel="manifest" href="./manifest.webmanifest?v=18">
   <link rel="apple-touch-icon" href="./icons/icon-192.png">
   <link rel="icon" href="./icons/icon-192.png" sizes="192x192" type="image/png">
   <link rel="icon" href="./icons/icon-512.png" sizes="512x512" type="image/png">
@@ -231,6 +231,42 @@
     .days{gap:9px}.days[data-view="today"]{grid-template-columns:minmax(0,1fr)}.days[data-view="week"]{grid-template-columns:repeat(5,minmax(0,1fr))}.days[data-view="fortnight"]{grid-template-columns:repeat(3,minmax(0,1fr))}.day{border:1px solid #e8e8e6;border-radius:14px;padding:11px;background:#fff;min-height:170px;gap:9px}.day.today{background:#fff;border-color:#d7b6c4;box-shadow:inset 3px 0 0 var(--accent)}.eyebrow{font-size:10px}.dayTitle{font-size:17px}.count{border:0;background:#f3f4f6;padding:4px 7px}.weatherChip{border:0;background:transparent!important;box-shadow:none;padding:3px 4px;max-width:150px}.weatherMeta{display:none}
     .eventList{gap:5px}.event{border-top:0;border-right:0;border-bottom:0;border-radius:7px;padding:7px 8px;background:#fff!important}.event.now{box-shadow:inset 0 0 0 1px #d6d8dd}.eventBadge{display:none}.eventTitleWrap{gap:2px}.eventTitle{font-size:13px;line-height:1.25}.eventTime{font-size:10px}.eventMeta{font-size:10px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}.empty{border:0;background:transparent;padding:8px 0;font-size:12px;color:#9ca3af}.footer{display:none}
     details.settings{position:fixed;right:14px;bottom:14px;z-index:60;border:0!important;background:transparent!important;box-shadow:none!important;overflow:visible}details.settings>summary{width:42px;height:42px;padding:0;border:1px solid var(--line);border-radius:50%;background:#fff;box-shadow:0 8px 20px rgba(15,23,42,.09);display:grid;place-items:center}details.settings>summary .icon{width:18px;height:18px}details.settings[open]{inset:0;overflow:auto;padding:18px;background:rgba(15,23,42,.22)!important;backdrop-filter:blur(4px)}details.settings[open]>summary{position:fixed;right:22px;top:18px;z-index:62}details.settings[open] .settingsBody{max-width:1120px;margin:52px auto 24px;padding:14px;background:#f7f7f5;border-radius:18px;box-shadow:0 24px 70px rgba(15,23,42,.22)}
+    .termWeek{font-size:10px;color:var(--muted);font-weight:900;text-align:right;min-height:13px}
+    .updateBell{position:relative}
+    .updateBadge{position:absolute;right:-4px;top:-5px;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:var(--accent);color:#fff;border:2px solid #fff;display:grid;place-items:center;font-size:9px;font-weight:950;line-height:1}
+    .updatesDrawer{position:fixed;inset:0;z-index:90;display:grid;grid-template-columns:1fr minmax(320px,520px)}
+    .updatesBackdrop{background:rgba(15,23,42,.28);backdrop-filter:blur(3px)}
+    .updatesPanel{background:#fff;box-shadow:-20px 0 60px rgba(15,23,42,.18);padding:18px;display:grid;grid-template-rows:auto auto auto 1fr;gap:12px;min-height:100vh;max-height:100vh;overflow:hidden}
+    .updatesHead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+    .updatesTitle{font-size:20px;font-weight:950;letter-spacing:-.35px}
+    .updatesMeta{font-size:11px;color:var(--muted);font-weight:800;margin-top:3px}
+    .updatesHeadActions{display:flex;gap:6px}
+    .updatesFilters{display:flex;gap:6px;flex-wrap:wrap}
+    .updatesFilters button{padding:6px 9px;border-radius:999px;font-size:10px;color:var(--muted)}
+    .updatesFilters button.active{background:var(--accent-soft);border-color:#e5c9d4;color:var(--accent)}
+    .standardsWatch{border:1px solid var(--line);background:#fafafa;border-radius:12px;padding:10px;display:grid;gap:8px}
+    .standardsTop{display:flex;justify-content:space-between;gap:10px;align-items:center}
+    .standardsTitle{font-size:11px;font-weight:950;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+    .standardChips{display:flex;gap:6px;flex-wrap:wrap}
+    .standardChip{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:5px 8px;background:#fff;border:1px solid var(--line);font-size:10px;font-weight:900}
+    .standardChip.changed{border-color:#e4becd;background:var(--accent-soft);color:var(--accent)}
+    .updatesList{overflow:auto;display:grid;gap:8px;padding-right:3px;align-content:start}
+    .updateItem{display:grid;gap:6px;border:1px solid var(--line);border-left:4px solid #94a3b8;border-radius:12px;padding:10px;background:#fff;text-decoration:none;color:inherit}
+    .updateItem:hover{background:#fafafa}
+    .updateItem.assessment{border-left-color:var(--nzqa)}
+    .updateItem.curriculum{border-left-color:var(--hui)}
+    .updateItem.safety{border-left-color:var(--exam)}
+    .updateItem.technology{border-left-color:var(--visit)}
+    .updateItem.standard-watch{border-left-color:var(--accent)}
+    .updateItemTop{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+    .updateSource{font-size:9px;font-weight:950;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+    .updateDate{font-size:10px;color:var(--muted);font-weight:800;white-space:nowrap}
+    .updateTitle{font-size:13px;line-height:1.3;font-weight:950}
+    .updateSummary{font-size:11px;line-height:1.4;color:var(--muted)}
+    .updateTags{display:flex;gap:5px;flex-wrap:wrap}
+    .updateTag{font-size:9px;font-weight:900;padding:3px 6px;border-radius:999px;background:#f3f4f6;color:#4b5563}
+    .updatesEmpty{padding:22px 8px;text-align:center;color:var(--muted);font-size:12px;font-weight:800}
+    @media (max-width:720px){.updatesDrawer{grid-template-columns:1fr}.updatesBackdrop{display:none}.updatesPanel{width:100%;padding:14px}.termWeek{text-align:right}.header-logo{height:52px}}
     @media (max-width:1500px){.days[data-view="week"]{grid-template-columns:repeat(3,minmax(0,1fr))}.days[data-view="fortnight"]{grid-template-columns:repeat(2,minmax(0,1fr))}}
     @media (max-width:1180px){.header{grid-template-columns:1fr auto}.periodStrip{grid-column:1 / -1;grid-row:2}.days[data-view="week"],.days[data-view="fortnight"]{grid-template-columns:repeat(2,minmax(0,1fr))}.headerRight{justify-items:end}.date,.countdownNote{text-align:right}}
     @media (max-width:720px){.shell{padding:7px}.header{grid-template-columns:1fr auto;padding:9px}.brand .title{font-size:16px}.clock{font-size:24px}.date{display:none}.periodTitle{font-size:22px}.days[data-view="week"],.days[data-view="fortnight"]{grid-template-columns:1fr}.morePopover{position:fixed;right:8px;top:auto;bottom:58px}.day{min-height:0}}
@@ -250,6 +286,8 @@
     <symbol id="i-day" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 8h8M8 12h8"/></symbol>
     <symbol id="i-week" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 5v14M16 5v14"/></symbol>
     <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
   </svg>
   <div class="shell">
     <section class="panel header">
@@ -283,11 +321,13 @@
       <div class="headerRight">
         <div class="clock" id="clockTime">--:--</div>
         <div class="date" id="clockDate">—</div>
+        <div class="termWeek" id="termWeek"></div>
         <div class="toolbar" aria-label="Calendar controls">
           <button type="button" id="prevBtn" class="iconBtn" aria-label="Previous" title="Previous"><svg class="icon" aria-hidden="true"><use href="#i-chevron-left"></use></svg></button>
           <button type="button" id="todayBtn" class="iconBtn" aria-label="Today" title="Today"><svg class="icon" aria-hidden="true"><use href="#i-calendar"></use></svg></button>
           <button type="button" id="nextBtn" class="iconBtn" aria-label="Next" title="Next"><svg class="icon" aria-hidden="true"><use href="#i-chevron-right"></use></svg></button>
           <button type="button" id="searchToggleBtn" class="iconBtn" aria-label="Search" title="Search"><svg class="icon" aria-hidden="true"><use href="#i-search"></use></svg></button>
+          <button type="button" id="updatesBtn" class="iconBtn updateBell" aria-label="Official updates" title="Official updates"><svg class="icon" aria-hidden="true"><use href="#i-bell"></use></svg><span class="updateBadge" id="updatesBadge" hidden>0</span></button>
           <details class="moreMenu">
             <summary class="iconBtn" aria-label="More options" title="More options"><svg class="icon" aria-hidden="true"><use href="#i-more"></use></svg></summary>
             <div class="morePopover">
@@ -321,6 +361,35 @@
       </div>
       <div class="days" id="daysList"></div>
     </section>
+
+    <aside class="updatesDrawer" id="updatesDrawer" hidden aria-label="Official education updates">
+      <div class="updatesBackdrop" id="updatesBackdrop"></div>
+      <section class="updatesPanel" role="dialog" aria-modal="true" aria-labelledby="updatesTitle">
+        <div class="updatesHead">
+          <div>
+            <div class="updatesTitle" id="updatesTitle">Official updates</div>
+            <div class="updatesMeta" id="updatesMeta">NZQA · NCEA · Ministry · WorkSafe</div>
+          </div>
+          <div class="updatesHeadActions">
+            <button type="button" class="iconBtn" id="updatesRefreshBtn" aria-label="Refresh official updates" title="Refresh updates"><svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg></button>
+            <button type="button" class="iconBtn" id="updatesCloseBtn" aria-label="Close official updates" title="Close"><svg class="icon" aria-hidden="true"><use href="#i-x"></use></svg></button>
+          </div>
+        </div>
+        <div class="updatesFilters" id="updatesFilters" aria-label="Update filters">
+          <button type="button" class="active" data-update-filter="all">All</button>
+          <button type="button" data-update-filter="technology">Technology</button>
+          <button type="button" data-update-filter="assessment">Assessment</button>
+          <button type="button" data-update-filter="curriculum">Curriculum</button>
+          <button type="button" data-update-filter="safety">Safety</button>
+          <button type="button" data-update-filter="standard-watch">Standards</button>
+        </div>
+        <div class="standardsWatch">
+          <div class="standardsTop"><div class="standardsTitle">Standards watch</div><div class="updatesMeta" id="standardsMeta">Watching key Technology standards</div></div>
+          <div class="standardChips" id="standardChips"></div>
+        </div>
+        <div class="updatesList" id="updatesList"><div class="updatesEmpty">Loading official updates…</div></div>
+      </section>
+    </aside>
 
     <details class="panel settings" id="settingsPanel">
       <summary aria-label="Settings" title="Settings"><svg class="icon" aria-hidden="true"><use href="#i-settings"></use></svg><span class="srOnly">Settings</span></summary>
@@ -485,6 +554,8 @@
   <script>
     // Default feed is same-origin. GitHub Actions refreshes this file from KAMAR in the background.
     const DEFAULT_FEED = './PHS Calendar.ics';
+    const OFFICIAL_UPDATES_URL = './updates.json';
+    const WATCHED_STANDARDS = ['92012','92014','92015','29655'];
     const LEGACY_DEFAULT_FEED = 'https://raw.githubusercontent.com/pukekohetech/phscal/main/PHS%20Calendar.ics';
     const DEFAULT_WEATHER = { name:'Pukekohe, New Zealand', latitude:-37.2008, longitude:174.9010 };
     const WEATHER_CACHE_MS = 45 * 60 * 1000;
@@ -517,6 +588,7 @@
       weatherCache:null,
       searchTerm:'',
       periodsText: JSON.stringify(DEFAULT_PERIODS, null, 2),
+      officialSeenIds:[],
       sources:[]
     };
 
@@ -537,6 +609,9 @@
     let errors = [];
     let busy = false;
     let deferredInstallPrompt = null;
+    let officialUpdates = { generatedAt:'', items:[], standardSnapshots:[], sources:[] };
+    let updatesBusy = false;
+    let updatesFilter = 'all';
 
     // transient message (not persisted)
     let tempNotice = '';
@@ -545,7 +620,7 @@
     init();
 
     function mapEls(){
-      const ids = ['statusChip','rangeChip','sourceChip','lastUpdatedChip','periodLabel','periodTitle','periodMeta','periodProgress','periodCountdown','periodCountdownNote','clockTime','clockDate','prevBtn','todayBtn','nextBtn','refreshBtn','fullscreenBtn','installBtn','noticeBox','errorBox','searchInput','clearSearchBtn','searchInfo','daysList','feedUrl','feedName','addFeedBtn','exampleBtn','icsFileInput','importFilesBtn','mirrorFileBtn','chooseFolderBtn','scanFolderBtn','pasteName','pasteText','importPasteBtn','refreshMinutes','returnMinutes','showWeekends','includeAllDay','showWeather','weatherLocation','saveWeatherBtn','detectWeatherBtn','refreshWeatherBtn','weatherStatusBox','periodRows','addPeriodBtn','savePeriodsBtn','periodsText','saveSettingsBtn','resetPeriodsBtn','reloadAllBtn','calendarRefreshBtn','clearAllBtn','sourceList','folderStatusBox'];
+      const ids = ['statusChip','rangeChip','sourceChip','lastUpdatedChip','periodLabel','periodTitle','periodMeta','periodProgress','periodCountdown','periodCountdownNote','clockTime','clockDate','termWeek','prevBtn','todayBtn','nextBtn','refreshBtn','fullscreenBtn','installBtn','updatesBtn','updatesBadge','updatesDrawer','updatesBackdrop','updatesCloseBtn','updatesRefreshBtn','updatesMeta','updatesFilters','updatesList','standardChips','standardsMeta','noticeBox','errorBox','searchInput','clearSearchBtn','searchInfo','daysList','feedUrl','feedName','addFeedBtn','exampleBtn','icsFileInput','importFilesBtn','mirrorFileBtn','chooseFolderBtn','scanFolderBtn','pasteName','pasteText','importPasteBtn','refreshMinutes','returnMinutes','showWeekends','includeAllDay','showWeather','weatherLocation','saveWeatherBtn','detectWeatherBtn','refreshWeatherBtn','weatherStatusBox','periodRows','addPeriodBtn','savePeriodsBtn','periodsText','saveSettingsBtn','resetPeriodsBtn','reloadAllBtn','calendarRefreshBtn','clearAllBtn','sourceList','folderStatusBox'];
       return Object.fromEntries(ids.map(id => [id, document.getElementById(id)]));
     }
 
@@ -553,7 +628,7 @@
     function loadState(){
       try{
         const parsed = JSON.parse(localStorage.getItem(STORE_KEY) || '{}');
-        return { ...structuredClone(DEFAULT_STATE), ...parsed, sources:Array.isArray(parsed.sources) ? parsed.sources : [], weatherCache:parsed.weatherCache || null };
+        return { ...structuredClone(DEFAULT_STATE), ...parsed, sources:Array.isArray(parsed.sources) ? parsed.sources : [], officialSeenIds:Array.isArray(parsed.officialSeenIds) ? parsed.officialSeenIds : [], weatherCache:parsed.weatherCache || null };
       }catch(_){ return structuredClone(DEFAULT_STATE); }
     }
     function saveState(){
@@ -593,6 +668,7 @@
       if (state.sources.length) reloadSources();
       if (state.weatherEnabled) reloadWeather({ force:false });
       else renderWeatherStatus();
+      reloadOfficialUpdates({ force:false });
     }
 
     function ensureDefaultSource(){
@@ -707,9 +783,9 @@
         resetToToday({ reload:false });
         registerActivity();
       });
-      els.refreshBtn.addEventListener('click', () => { reloadSources(); reloadWeather({ force:true }); });
-      els.reloadAllBtn.addEventListener('click', () => { reloadSources(); reloadWeather({ force:true }); });
-      if (els.calendarRefreshBtn) els.calendarRefreshBtn.addEventListener('click', () => { reloadSources(); reloadWeather({ force:true }); });
+      els.refreshBtn.addEventListener('click', () => { reloadSources(); reloadWeather({ force:true }); reloadOfficialUpdates({ force:true }); });
+      els.reloadAllBtn.addEventListener('click', () => { reloadSources(); reloadWeather({ force:true }); reloadOfficialUpdates({ force:true }); });
+      if (els.calendarRefreshBtn) els.calendarRefreshBtn.addEventListener('click', () => { reloadSources(); reloadWeather({ force:true }); reloadOfficialUpdates({ force:true }); });
       els.searchInput.addEventListener('input', event => setSearchTerm(event.target.value));
       els.clearSearchBtn.addEventListener('click', () => {
         setSearchTerm('');
@@ -726,6 +802,12 @@
       });
       if (els.fullscreenBtn) els.fullscreenBtn.addEventListener('click', toggleFullscreen);
       if (els.installBtn) els.installBtn.addEventListener('click', installApp);
+      if (els.updatesBtn) els.updatesBtn.addEventListener('click', openOfficialUpdates);
+      if (els.updatesCloseBtn) els.updatesCloseBtn.addEventListener('click', closeOfficialUpdates);
+      if (els.updatesBackdrop) els.updatesBackdrop.addEventListener('click', closeOfficialUpdates);
+      if (els.updatesRefreshBtn) els.updatesRefreshBtn.addEventListener('click', () => reloadOfficialUpdates({ force:true }));
+      if (els.updatesFilters) els.updatesFilters.addEventListener('click', handleUpdateFilterClick);
+      document.addEventListener('keydown', event => { if (event.key === 'Escape' && els.updatesDrawer && !els.updatesDrawer.hidden) closeOfficialUpdates(); });
       els.addFeedBtn.addEventListener('click', addFeed);
       els.exampleBtn.addEventListener('click', useDefaultFeed);
       els.importFilesBtn.addEventListener('click', importFiles);
@@ -753,7 +835,7 @@
         saveState();
         render();
       });
-      window.addEventListener('focus', () => { catchUpToNow('focus'); reloadSources(); reloadWeather({ force:false }); });
+      window.addEventListener('focus', () => { catchUpToNow('focus'); reloadSources(); reloadWeather({ force:false }); reloadOfficialUpdates({ force:false }); });
       document.addEventListener('visibilitychange', () => { if (!document.hidden) catchUpToNow('visible'); });
       ['click','keydown','mousemove','touchstart','scroll'].forEach(evt => window.addEventListener(evt, registerActivity, { passive:true }));
     }
@@ -777,7 +859,7 @@
 
     function armRefresh(){
       if (refreshTimer) clearInterval(refreshTimer);
-      refreshTimer = setInterval(() => { reloadSources(); reloadWeather({ force:true }); }, clampInt(state.refreshMinutes, 1, 180, 15) * 60000);
+      refreshTimer = setInterval(() => { reloadSources(); reloadWeather({ force:true }); reloadOfficialUpdates({ force:false }); }, clampInt(state.refreshMinutes, 1, 180, 15) * 60000);
     }
 
     function armInactivity(){
@@ -1345,6 +1427,7 @@
 
     function render(){
       renderTop();
+      renderOfficialUpdates();
       renderMessages();
       renderSearch();
       renderPeriodStrip();
@@ -1362,6 +1445,7 @@
       else if (errors.length) els.statusChip.textContent = enabled + ' live · errors';
       else els.statusChip.textContent = enabled + ' live';
       if (els.lastUpdatedChip) els.lastUpdatedChip.textContent = getLastUpdatedSummary();
+      if (els.termWeek) els.termWeek.textContent = getTermWeekLabel(new Date());
     }
 
     function getLastUpdatedSummary(){
@@ -1378,6 +1462,160 @@
 
     function formatShortTime(ts){
       try{ return new Date(ts).toLocaleTimeString([], { hour:'numeric', minute:'2-digit' }); }catch(_){ return 'unknown'; }
+    }
+
+    function getTermWeekLabel(date){
+      const placeholders = loadedEvents.filter(isWeekdayPlaceholder).map(evt => startOfDay(evt.start)).sort((a,b) => a - b);
+      if (!placeholders.length) return '';
+      const unique = [];
+      let lastKey = '';
+      for (const day of placeholders){
+        const key = dateKey(day);
+        if (key !== lastKey){ unique.push(day); lastKey = key; }
+      }
+      const blocks = [];
+      for (const day of unique){
+        const block = blocks[blocks.length - 1];
+        if (!block || (day - block.end) / 86400000 > 8) blocks.push({ start:day, end:day });
+        else block.end = day;
+      }
+      const today = startOfDay(date);
+      const activeIndex = blocks.findIndex(block => today >= block.start && today <= block.end);
+      if (activeIndex >= 0){
+        const block = blocks[activeIndex];
+        const week = Math.floor((startOfWeekMonday(today) - startOfWeekMonday(block.start)) / (7 * 86400000)) + 1;
+        return 'Term ' + (activeIndex + 1) + ' · Week ' + Math.max(1, week);
+      }
+      const nextIndex = blocks.findIndex(block => today < block.start);
+      if (nextIndex > 0) return 'School holidays · Term ' + nextIndex + ' finished';
+      if (nextIndex === 0) return 'Before Term 1';
+      return blocks.length ? 'School holidays · Term ' + blocks.length + ' finished' : '';
+    }
+
+    function startOfWeekMonday(date){
+      const d = startOfDay(date);
+      const day = d.getDay();
+      const shift = day === 0 ? -6 : 1 - day;
+      return addDays(d, shift);
+    }
+
+    function handleUpdateFilterClick(event){
+      const button = event.target.closest('[data-update-filter]');
+      if (!button) return;
+      updatesFilter = button.getAttribute('data-update-filter') || 'all';
+      renderOfficialUpdates();
+    }
+
+    function openOfficialUpdates(){
+      if (!els.updatesDrawer) return;
+      els.updatesDrawer.hidden = false;
+      document.body.style.overflow = 'hidden';
+      renderOfficialUpdates();
+      const ids = (officialUpdates.items || []).map(item => item.id).filter(Boolean);
+      state.officialSeenIds = [...new Set([...(state.officialSeenIds || []), ...ids])].slice(-250);
+      saveState();
+      renderOfficialUpdatesBadge();
+    }
+
+    function closeOfficialUpdates(){
+      if (!els.updatesDrawer) return;
+      els.updatesDrawer.hidden = true;
+      document.body.style.overflow = '';
+    }
+
+    function renderOfficialUpdatesBadge(){
+      if (!els.updatesBadge) return;
+      const seen = new Set(state.officialSeenIds || []);
+      const unread = (officialUpdates.items || []).filter(item => item.id && !seen.has(item.id)).length;
+      els.updatesBadge.textContent = unread > 99 ? '99+' : String(unread);
+      els.updatesBadge.hidden = unread < 1;
+      if (els.updatesBtn){
+        const label = unread ? 'Official updates, ' + unread + ' new' : 'Official updates';
+        els.updatesBtn.setAttribute('aria-label', label);
+        els.updatesBtn.setAttribute('title', label);
+      }
+    }
+
+    function updateItemClass(item){
+      const tags = (item.tags || []).map(tag => String(tag).toLowerCase());
+      if (tags.includes('standards watch')) return 'standard-watch';
+      if (tags.includes('technology')) return 'technology';
+      if (tags.includes('safety')) return 'safety';
+      if (tags.includes('assessment')) return 'assessment';
+      if (tags.includes('curriculum')) return 'curriculum';
+      return '';
+    }
+
+    function itemMatchesUpdateFilter(item){
+      if (updatesFilter === 'all') return true;
+      const tags = (item.tags || []).map(tag => String(tag).toLowerCase());
+      if (updatesFilter === 'standard-watch') return tags.includes('standards watch');
+      return tags.includes(updatesFilter);
+    }
+
+    function renderOfficialUpdates(){
+      renderOfficialUpdatesBadge();
+      if (!els.updatesList) return;
+      document.querySelectorAll('[data-update-filter]').forEach(button => button.classList.toggle('active', button.getAttribute('data-update-filter') === updatesFilter));
+      const generated = officialUpdates.generatedAt ? new Date(officialUpdates.generatedAt) : null;
+      if (els.updatesMeta){
+        const sourceCount = (officialUpdates.sources || []).filter(source => source.status === 'ok').length;
+        const checked = generated && !Number.isNaN(generated.getTime()) ? ' · updated ' + generated.toLocaleDateString([], { day:'numeric', month:'short' }) : '';
+        els.updatesMeta.textContent = (sourceCount ? sourceCount + ' official sources' : 'Official education sources') + checked;
+      }
+      if (els.standardChips){
+        const snapshots = new Map((officialUpdates.standardSnapshots || []).map(row => [String(row.standard), row]));
+        els.standardChips.innerHTML = WATCHED_STANDARDS.map(standard => {
+          const snap = snapshots.get(standard) || {};
+          const changed = !!snap.changed;
+          const title = snap.status === 'error' ? 'Could not check this standard' : (changed ? 'Change detected' : 'Checked');
+          return '<span class="standardChip' + (changed ? ' changed' : '') + '" title="' + escapeHtml(title) + '">' + escapeHtml(standard) + (changed ? ' · changed' : '') + '</span>';
+        }).join('');
+      }
+      if (els.standardsMeta){
+        const changed = (officialUpdates.standardSnapshots || []).filter(row => row.changed).length;
+        els.standardsMeta.textContent = changed ? changed + ' watched standard' + (changed === 1 ? '' : 's') + ' changed' : 'Watching ' + WATCHED_STANDARDS.join(', ');
+      }
+      const items = (officialUpdates.items || []).filter(itemMatchesUpdateFilter);
+      if (!items.length){
+        els.updatesList.innerHTML = '<div class="updatesEmpty">' + (updatesBusy ? 'Checking official sources…' : 'No updates in this filter yet.') + '</div>';
+        return;
+      }
+      els.updatesList.innerHTML = items.map(item => {
+        const date = item.date ? new Date(item.date + 'T12:00:00') : null;
+        const dateText = date && !Number.isNaN(date.getTime()) ? date.toLocaleDateString([], { day:'numeric', month:'short' }) : '';
+        const tags = (item.tags || []).slice(0,4).map(tag => '<span class="updateTag">' + escapeHtml(tag) + '</span>').join('');
+        return '<a class="updateItem ' + updateItemClass(item) + '" href="' + escapeHtml(item.url || '#') + '" target="_blank" rel="noopener noreferrer">'
+          + '<div class="updateItemTop"><div class="updateSource">' + escapeHtml(item.source || 'Official update') + '</div><div class="updateDate">' + escapeHtml(dateText) + '</div></div>'
+          + '<div class="updateTitle">' + escapeHtml(item.title || 'Update') + '</div>'
+          + (item.summary ? '<div class="updateSummary">' + escapeHtml(trimText(item.summary, 210)) + '</div>' : '')
+          + (tags ? '<div class="updateTags">' + tags + '</div>' : '')
+          + '</a>';
+      }).join('');
+    }
+
+    async function reloadOfficialUpdates({ force=false } = {}){
+      if (updatesBusy) return;
+      updatesBusy = true;
+      renderOfficialUpdates();
+      try{
+        const suffix = force ? '?_ts=' + Date.now() : '';
+        const response = await fetch(OFFICIAL_UPDATES_URL + suffix, { cache:'no-store' });
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        const data = await response.json();
+        officialUpdates = {
+          generatedAt:data.generatedAt || '',
+          items:Array.isArray(data.items) ? data.items : [],
+          standardSnapshots:Array.isArray(data.standardSnapshots) ? data.standardSnapshots : [],
+          sources:Array.isArray(data.sources) ? data.sources : []
+        };
+      }catch(err){
+        if (!(officialUpdates.items || []).length) officialUpdates = { generatedAt:'', items:[], standardSnapshots:[], sources:[] };
+        if (force) setTempNotice('Official updates could not refresh right now. The calendar itself is unaffected.');
+      }finally{
+        updatesBusy = false;
+        renderOfficialUpdates();
+      }
     }
 
     function renderSearch(){

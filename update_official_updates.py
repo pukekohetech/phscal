@@ -1,0 +1,562 @@
+#!/usr/bin/env python3
+"""Build updates.json from official NZ education and safety sources.
+
+No third-party packages are required. The script is designed for GitHub Actions.
+It keeps the previous data when a source is temporarily unavailable and watches a
+small set of NZQA standards by fingerprinting their public pages.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import html
+import json
+import re
+import sys
+import time
+from dataclasses import dataclass
+from datetime import datetime, timezone
+from html.parser import HTMLParser
+from pathlib import Path
+from typing import Iterable
+from urllib.error import HTTPError, URLError
+from urllib.parse import urljoin, urlparse
+from urllib.request import Request, urlopen
+
+ROOT = Path(__file__).resolve().parent
+OUTPUT = ROOT / "updates.json"
+USER_AGENT = "Mozilla/5.0 (compatible; PHS-Calendar-Official-Updates/1.0; +https://pukekohetech.github.io/phscal/)"
+TIMEOUT = 25
+MAX_ITEMS = 40
+
+MONTHS = {
+    "january": 1, "february": 2, "march": 3, "april": 4,
+    "may": 5, "june": 6, "july": 7, "august": 8,
+    "september": 9, "october": 10, "november": 11, "december": 12,
+}
+
+TECH_KEYWORDS = {
+    "technology", "digital technology", "materials", "processing", "engineering",
+    "construction", "building", "food", "manufacturing", "design", "visual communication",
+    "dvc", "machinery", "machine", "joinery", "wood", "workshop", "electrical",
+    "hazardous substances", "asbestos", "dust", "guarding", "welding", "hswa", "industry-led",
+    "vocational", "trades", "working at height", "exposure standards",
+}
+ASSESSMENT_KEYWORDS = {
+    "assessment", "ncea", "achievement standard", "unit standard", "moderation",
+    "examination", "exam", "scholarship", "derived grade", "specification",
+    "portfolio", "standard", "qualification",
+}
+CURRICULUM_KEYWORDS = {
+    "curriculum", "years 9", "years 10", "years 11", "years 12", "years 13",
+    "senior secondary", "subject", "professional learning", "pld", "teacher only",
+    "qualification", "industry-led",
+}
+SAFETY_KEYWORDS = {
+    "safety", "health and safety", "hazard", "machinery", "machine", "joinery",
+    "manufacturing", "construction", "hazardous substances", "asbestos", "dust",
+    "electrical", "guard", "workplace exposure", "working at height", "work-related health", "hswa",
+}
+
+STANDARD_URLS = {
+    "92012": "https://www.nzqa.govt.nz/ncea/assessment/view-detailed.do?standardNumber=92012",
+    "92014": "https://www.nzqa.govt.nz/ncea/assessment/view-detailed.do?standardNumber=92014",
+    "92015": "https://www.nzqa.govt.nz/ncea/assessment/view-detailed.do?standardNumber=92015",
+    "29655": "https://www.nzqa.govt.nz/ncea/assessment/view-detailed.do?standardNumber=29655",
+}
+
+
+@dataclass(frozen=True)
+class Source:
+    name: str
+    listing_url: str
+    path_fragment: str
+    default_tags: tuple[str, ...]
+    max_links: int = 12
+    filter_irrelevant: bool = False
+    fallback_links: tuple[str, ...] = ()
+
+
+SOURCES = (
+    Source(
+        "NZQA",
+        "https://www2.nzqa.govt.nz/about-us/publications/newsletters-circulars/assessment-matters/",
+        "/about-us/publications/newsletters-circulars/assessment-matters/",
+        ("Assessment",),
+        max_links=12,
+        fallback_links=(
+            "https://www2.nzqa.govt.nz/about-us/publications/newsletters-circulars/assessment-matters/a2026-4/",
+            "https://www2.nzqa.govt.nz/about-us/publications/newsletters-circulars/assessment-matters/a2026-3/",
+            "https://www2.nzqa.govt.nz/about-us/publications/newsletters-circulars/assessment-matters/a2026-2/",
+        ),
+    ),
+    Source(
+        "NCEA",
+        "https://ncea.education.govt.nz/whats-new",
+        "/whats-new/",
+        ("Curriculum", "Assessment"),
+        max_links=14,
+        fallback_links=(
+            "https://ncea.education.govt.nz/whats-new/revised-achievement-standards-and-supporting-materials-assessment-2027",
+            "https://ncea.education.govt.nz/whats-new/additional-senior-secondary-subjects-open-feedback",
+            "https://ncea.education.govt.nz/whats-new/new-industry-led-subjects-announced-senior-secondary-students",
+        ),
+    ),
+    Source(
+        "Ministry",
+        "https://www.education.govt.nz/bulletins/",
+        "/bulletins/te-poutahu-curriculum-centre-school-update/",
+        ("Curriculum",),
+        max_links=8,
+        fallback_links=(
+            "https://www.education.govt.nz/bulletins/te-poutahu-curriculum-centre-school-update/05-08-26",
+            "https://www.education.govt.nz/bulletins/te-poutahu-curriculum-centre-school-update/26-06-26",
+            "https://www.education.govt.nz/bulletins/te-poutahu-curriculum-centre-school-update/29-05-26",
+        ),
+    ),
+    Source(
+        "WorkSafe",
+        "https://www.worksafe.govt.nz/about-us/news-and-media/",
+        "/about-us/news-and-media/",
+        ("Safety",),
+        max_links=18,
+        filter_irrelevant=True,
+        fallback_links=(
+            "https://www.worksafe.govt.nz/about-us/news-and-media/targeted-checks-highlight-opportunities-to-lift-safety-in-joinery-sector/",
+            "https://www.worksafe.govt.nz/about-us/news-and-media/work-related-health-newsletter-september-2026/",
+            "https://www.worksafe.govt.nz/about-us/news-and-media/food-manufacturing-visits-finding-safety-gaps-in-machinery-and-hazardous-substances/",
+        ),
+    ),
+)
+
+
+class PageParser(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.links: list[tuple[str, str]] = []
+        self.meta: dict[str, str] = {}
+        self.times: list[str] = []
+        self.paragraphs: list[str] = []
+        self._anchor_href: str | None = None
+        self._anchor_parts: list[str] = []
+        self._paragraph_parts: list[str] | None = None
+        self._time_parts: list[str] | None = None
+        self._skip_depth = 0
+        self._all_text: list[str] = []
+        self._title_parts: list[str] | None = None
+        self._h1_parts: list[str] | None = None
+        self.page_title_text = ''
+        self.h1_text = ''
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        attrs_d = {k.lower(): (v or "") for k, v in attrs}
+        tag = tag.lower()
+        if tag in {"script", "style", "noscript", "svg"}:
+            self._skip_depth += 1
+            return
+        if self._skip_depth:
+            return
+        if tag == "a":
+            self._anchor_href = attrs_d.get("href", "")
+            self._anchor_parts = []
+        elif tag == "p":
+            self._paragraph_parts = []
+        elif tag == "time":
+            dt = attrs_d.get("datetime", "").strip()
+            if dt:
+                self.times.append(dt)
+            self._time_parts = []
+        elif tag == "title":
+            self._title_parts = []
+        elif tag == "h1":
+            self._h1_parts = []
+        elif tag == "meta":
+            key = (attrs_d.get("property") or attrs_d.get("name") or "").lower().strip()
+            content = attrs_d.get("content", "").strip()
+            if key and content:
+                self.meta[key] = content
+
+    def handle_endtag(self, tag: str) -> None:
+        tag = tag.lower()
+        if tag in {"script", "style", "noscript", "svg"}:
+            if self._skip_depth:
+                self._skip_depth -= 1
+            return
+        if self._skip_depth:
+            return
+        if tag == "a" and self._anchor_href is not None:
+            text = clean_text(" ".join(self._anchor_parts))
+            if text:
+                self.links.append((self._anchor_href, text))
+            self._anchor_href = None
+            self._anchor_parts = []
+        elif tag == "p" and self._paragraph_parts is not None:
+            text = clean_text(" ".join(self._paragraph_parts))
+            if text:
+                self.paragraphs.append(text)
+            self._paragraph_parts = None
+        elif tag == "time" and self._time_parts is not None:
+            text = clean_text(" ".join(self._time_parts))
+            if text:
+                self.times.append(text)
+            self._time_parts = None
+        elif tag == "title" and self._title_parts is not None:
+            self.page_title_text = clean_text(" ".join(self._title_parts))
+            self._title_parts = None
+        elif tag == "h1" and self._h1_parts is not None:
+            if not self.h1_text:
+                self.h1_text = clean_text(" ".join(self._h1_parts))
+            self._h1_parts = None
+
+    def handle_data(self, data: str) -> None:
+        if self._skip_depth:
+            return
+        text = clean_text(data)
+        if not text:
+            return
+        self._all_text.append(text)
+        if self._anchor_href is not None:
+            self._anchor_parts.append(text)
+        if self._paragraph_parts is not None:
+            self._paragraph_parts.append(text)
+        if self._time_parts is not None:
+            self._time_parts.append(text)
+        if self._title_parts is not None:
+            self._title_parts.append(text)
+        if self._h1_parts is not None:
+            self._h1_parts.append(text)
+
+    @property
+    def visible_text(self) -> str:
+        return clean_text(" ".join(self._all_text))
+
+
+def clean_text(value: str) -> str:
+    return re.sub(r"\s+", " ", html.unescape(str(value or ""))).strip()
+
+
+def fetch_html(url: str) -> str:
+    req = Request(
+        url,
+        headers={
+            "User-Agent": USER_AGENT,
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-NZ,en;q=0.9",
+        },
+    )
+    with urlopen(req, timeout=TIMEOUT) as resp:
+        raw = resp.read()
+        charset = resp.headers.get_content_charset() or "utf-8"
+    return raw.decode(charset, errors="replace")
+
+
+def parse_page(content: str) -> PageParser:
+    parser = PageParser()
+    parser.feed(content)
+    return parser
+
+
+def parse_date_text(value: str) -> str:
+    value = clean_text(value)
+    if not value:
+        return ""
+    # ISO / RFC-ish metadata.
+    iso_match = re.search(r"\b(20\d{2})-(\d{2})-(\d{2})\b", value)
+    if iso_match:
+        return "-".join(iso_match.groups())
+    # 23 September 2026 / Published 23 September 2026.
+    m = re.search(r"\b(\d{1,2})\s+([A-Za-z]+)\s+(20\d{2})\b", value)
+    if m:
+        month = MONTHS.get(m.group(2).lower())
+        if month:
+            return f"{int(m.group(3)):04d}-{month:02d}-{int(m.group(1)):02d}"
+    # DD/MM/YYYY.
+    m = re.search(r"\b(\d{1,2})/(\d{1,2})/(20\d{2})\b", value)
+    if m:
+        return f"{int(m.group(3)):04d}-{int(m.group(2)):02d}-{int(m.group(1)):02d}"
+    return ""
+
+
+def date_from_url(url: str) -> str:
+    # Ministry bulletin URLs use DD-MM-YY.
+    m = re.search(r"/(\d{2})-(\d{2})-(\d{2})(?:/|$)", url)
+    if m:
+        yy = 2000 + int(m.group(3))
+        return f"{yy:04d}-{int(m.group(2)):02d}-{int(m.group(1)):02d}"
+    return ""
+
+
+def item_date(parser: PageParser, url: str) -> str:
+    for key in (
+        "article:published_time", "date", "datepublished", "publish-date",
+        "dc.date", "dcterms.date", "parsely-pub-date",
+    ):
+        if key in parser.meta:
+            parsed = parse_date_text(parser.meta[key])
+            if parsed:
+                return parsed
+    for value in parser.times:
+        parsed = parse_date_text(value)
+        if parsed:
+            return parsed
+    parsed = parse_date_text(parser.visible_text[:5000])
+    return parsed or date_from_url(url)
+
+
+def page_title(parser: PageParser, fallback: str) -> str:
+    for key in ("og:title", "twitter:title"):
+        if parser.meta.get(key):
+            return clean_text(parser.meta[key])
+    if parser.h1_text:
+        return clean_text(parser.h1_text)
+    if parser.page_title_text:
+        return clean_text(re.sub(r'\s*[|–—-]\s*(NZQA|NCEA|WorkSafe|Ministry of Education).*$','', parser.page_title_text, flags=re.I))
+    return clean_text(fallback)
+
+
+def page_summary(parser: PageParser) -> str:
+    for key in ("description", "og:description", "twitter:description"):
+        text = clean_text(parser.meta.get(key, ""))
+        if len(text) >= 35:
+            return text[:360]
+    for text in parser.paragraphs:
+        low = text.lower()
+        if len(text) >= 55 and not any(skip in low for skip in ("cookie", "privacy", "subscribe", "skip to", "contact us")):
+            return text[:360]
+    return ""
+
+
+def tags_for(source: Source, title: str, summary: str) -> list[str]:
+    haystack = (title + " " + summary).lower()
+    tags = list(source.default_tags)
+    if any(word in haystack for word in TECH_KEYWORDS):
+        tags.append("Technology")
+    if any(word in haystack for word in ASSESSMENT_KEYWORDS):
+        tags.append("Assessment")
+    if any(word in haystack for word in CURRICULUM_KEYWORDS):
+        tags.append("Curriculum")
+    if any(word in haystack for word in SAFETY_KEYWORDS):
+        tags.append("Safety")
+    return list(dict.fromkeys(tags))
+
+
+def is_technology_relevant(text: str) -> bool:
+    low = text.lower()
+    return any(word in low for word in TECH_KEYWORDS | SAFETY_KEYWORDS)
+
+
+def make_id(source: str, url: str, title: str) -> str:
+    digest = hashlib.sha256(f"{source}|{url}|{title}".encode("utf-8")).hexdigest()[:18]
+    return f"{source.lower().replace(' ', '-')}-{digest}"
+
+
+def discover_links(source: Source) -> list[tuple[str, str]]:
+    content = fetch_html(source.listing_url)
+    parser = parse_page(content)
+    base_path = urlparse(source.listing_url).path.rstrip("/") + "/"
+    found: list[tuple[str, str]] = []
+    seen: set[str] = set()
+    for href, text in parser.links:
+        absolute = urljoin(source.listing_url, href)
+        parsed = urlparse(absolute)
+        if source.path_fragment not in parsed.path:
+            continue
+        if parsed.path.rstrip("/") + "/" == base_path:
+            continue
+        if absolute in seen:
+            continue
+        if len(text) < 8:
+            continue
+        if source.filter_irrelevant and not is_technology_relevant(text):
+            continue
+        seen.add(absolute)
+        found.append((absolute, text))
+        if len(found) >= source.max_links:
+            break
+    for fallback in source.fallback_links:
+        if fallback not in seen and len(found) < source.max_links:
+            found.append((fallback, ""))
+            seen.add(fallback)
+    return found
+
+
+def scrape_source(source: Source) -> list[dict]:
+    links = discover_links(source)
+    items: list[dict] = []
+    for index, (url, discovered_title) in enumerate(links):
+        try:
+            page = parse_page(fetch_html(url))
+            title = page_title(page, discovered_title)
+            if not title:
+                continue
+            summary = page_summary(page)
+            date = item_date(page, url)
+            tags = tags_for(source, title, summary + ' ' + page.visible_text[:6000])
+            if source.filter_irrelevant and "Technology" not in tags and "Safety" not in tags:
+                continue
+            items.append({
+                "id": make_id(source.name, url, title),
+                "source": source.name,
+                "title": title,
+                "date": date,
+                "url": url,
+                "summary": summary,
+                "tags": tags,
+            })
+        except Exception as exc:  # keep one bad article from breaking the whole source
+            print(f"WARN {source.name} article {url}: {exc}", file=sys.stderr)
+        # Small pause is polite and reduces the chance of rate limiting.
+        if index + 1 < len(links):
+            time.sleep(0.12)
+    return items
+
+
+def normalize_standard_text(text: str) -> str:
+    low_noise = re.sub(r"Data as at\s+\d{4}-\d{2}-\d{2}[^ ]*", "Data as at", text, flags=re.I)
+    low_noise = re.sub(r"Page last updated:\s*\d{1,2}\s+[A-Za-z]+\s+20\d{2}", "Page last updated", low_noise, flags=re.I)
+    return clean_text(low_noise)
+
+
+def watch_standards(previous: dict) -> tuple[list[dict], list[dict]]:
+    old = {str(row.get("standard")): row for row in previous.get("standardSnapshots", []) if row.get("standard")}
+    snapshots: list[dict] = []
+    alerts: list[dict] = []
+    today = datetime.now(timezone.utc).date().isoformat()
+    for standard, url in STANDARD_URLS.items():
+        prior = old.get(standard, {})
+        try:
+            parser = parse_page(fetch_html(url))
+            normalized = normalize_standard_text(parser.visible_text)
+            if len(normalized) < 150:
+                raise ValueError("standard page content was unexpectedly short")
+            fingerprint = hashlib.sha256(normalized.encode("utf-8")).hexdigest()
+            changed = bool(prior.get("fingerprint") and prior.get("fingerprint") != fingerprint)
+            snapshots.append({
+                "standard": standard,
+                "url": url,
+                "fingerprint": fingerprint,
+                "changed": changed,
+                "status": "ok",
+            })
+            if changed:
+                title = f"NZQA page changed for standard {standard}"
+                alerts.append({
+                    "id": f"standard-{standard}-{fingerprint[:12]}",
+                    "source": "NZQA Standards",
+                    "title": title,
+                    "date": today,
+                    "url": url,
+                    "summary": "The public NZQA page for this watched standard changed since the previous check. Open it to review the current standard or supporting materials.",
+                    "tags": ["Standards Watch", "Assessment", "Technology"],
+                })
+        except Exception as exc:
+            snapshots.append({
+                "standard": standard,
+                "url": url,
+                "fingerprint": prior.get("fingerprint", ""),
+                "changed": False,
+                "status": "error",
+            })
+            print(f"WARN standard {standard}: {exc}", file=sys.stderr)
+    return snapshots, alerts
+
+
+def load_previous() -> dict:
+    try:
+        return json.loads(OUTPUT.read_text(encoding="utf-8"))
+    except Exception:
+        return {"generatedAt": "", "items": [], "standardSnapshots": [], "sources": []}
+
+
+def parse_sort_date(value: str) -> tuple[int, int, int]:
+    try:
+        d = datetime.strptime(value, "%Y-%m-%d")
+        return d.year, d.month, d.day
+    except Exception:
+        return (0, 0, 0)
+
+
+def merge_source_items(previous_items: list[dict], source: Source, fresh: list[dict], ok: bool) -> list[dict]:
+    if ok:
+        return [item for item in previous_items if item.get("source") != source.name] + fresh
+    return previous_items
+
+
+def semantic_payload(data: dict) -> dict:
+    return {
+        "items": data.get("items", []),
+        "standardSnapshots": [
+            {k: row.get(k) for k in ("standard", "url", "fingerprint", "changed", "status")}
+            for row in data.get("standardSnapshots", [])
+        ],
+        "sources": [
+            {k: row.get(k) for k in ("name", "url", "status")}
+            for row in data.get("sources", [])
+        ],
+    }
+
+
+def main() -> int:
+    previous = load_previous()
+    items = list(previous.get("items", []))
+    statuses: list[dict] = []
+
+    for source in SOURCES:
+        try:
+            fresh = scrape_source(source)
+            if not fresh:
+                raise ValueError("no matching update links found")
+            items = merge_source_items(items, source, fresh, True)
+            statuses.append({"name": source.name, "url": source.listing_url, "status": "ok"})
+            print(f"{source.name}: {len(fresh)} items")
+        except (HTTPError, URLError, TimeoutError, ValueError, OSError) as exc:
+            statuses.append({"name": source.name, "url": source.listing_url, "status": "error"})
+            print(f"WARN {source.name}: {exc}; keeping previous items", file=sys.stderr)
+
+    successful_sources = sum(1 for row in statuses if row.get("status") == "ok")
+    if successful_sources == 0:
+        print("ERROR: none of the official update sources could be refreshed", file=sys.stderr)
+        return 1
+
+    snapshots, alerts = watch_standards(previous)
+    previous_alert_ids = {item.get("id") for item in items if "Standards Watch" in item.get("tags", [])}
+    for alert in alerts:
+        if alert["id"] not in previous_alert_ids:
+            items.append(alert)
+
+    # Dedupe and keep newest, prioritising Technology / Standards Watch items on equal dates.
+    deduped: dict[str, dict] = {}
+    for item in items:
+        item_id = item.get("id") or make_id(item.get("source", ""), item.get("url", ""), item.get("title", ""))
+        item["id"] = item_id
+        deduped[item_id] = item
+    items = list(deduped.values())
+    items.sort(
+        key=lambda item: (
+            parse_sort_date(item.get("date", "")),
+            int("Standards Watch" in item.get("tags", [])),
+            int("Technology" in item.get("tags", [])),
+            item.get("title", ""),
+        ),
+        reverse=True,
+    )
+    items = items[:MAX_ITEMS]
+
+    output = {
+        "generatedAt": datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
+        "items": items,
+        "standardSnapshots": snapshots,
+        "sources": statuses,
+    }
+
+    if semantic_payload(output) == semantic_payload(previous):
+        print("No official update changes detected; leaving updates.json unchanged.")
+        return 0
+
+    OUTPUT.write_text(json.dumps(output, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print(f"Wrote {OUTPUT.name}: {len(items)} items")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

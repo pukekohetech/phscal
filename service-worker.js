@@ -1,9 +1,10 @@
-const CACHE = 'phs-calendar-pwa-v17-same-origin-calendar';
+const CACHE = 'phs-calendar-pwa-v18-official-updates';
 const APP_SHELL = [
   './',
   './index.html',
   './manifest.webmanifest',
   './PHS Calendar.ics',
+  './updates.json',
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/maskable-512.png'
@@ -72,6 +73,24 @@ self.addEventListener('fetch', event => {
         return response;
       } catch (_) {
         return (await caches.match(cacheKey)) || new Response('Calendar unavailable', { status:503 });
+      }
+    })());
+    return;
+  }
+
+  // Official updates JSON: network first so the bell sees new information promptly.
+  if (url.origin === self.location.origin && /\/updates\.json$/i.test(url.pathname)) {
+    const cacheKey = normalizedCalendarRequest(request);
+    event.respondWith((async () => {
+      try {
+        const response = await fetch(request, { cache:'no-store' });
+        if (response && response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE).then(cache => cache.put(cacheKey, copy)).catch(() => {});
+        }
+        return response;
+      } catch (_) {
+        return (await caches.match(cacheKey)) || new Response('{\"items\":[]}', { status:503, headers:{'Content-Type':'application/json'} });
       }
     })());
     return;

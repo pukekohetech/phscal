@@ -1,0 +1,138 @@
+{
+  "generatedAt": "2026-09-28T00:00:00Z",
+  "items": [
+    {
+      "id": "worksafe-joinery-2026-09-23",
+      "source": "WorkSafe",
+      "title": "Targeted checks highlight opportunities to lift safety in joinery sector",
+      "date": "2026-09-23",
+      "url": "https://www.worksafe.govt.nz/about-us/news-and-media/targeted-checks-highlight-opportunities-to-lift-safety-in-joinery-sector/",
+      "summary": "WorkSafe reports common improvement areas in joinery including machine safety, wood dust, hazardous substances, supervision and PPE.",
+      "tags": ["Safety", "Technology"]
+    },
+    {
+      "id": "nzqa-a2026-4",
+      "source": "NZQA",
+      "title": "Feedback opportunity for NZ Scholarship Business Studies draft performance standard A2026/4",
+      "date": "2026-09-23",
+      "url": "https://www2.nzqa.govt.nz/about-us/publications/newsletters-circulars/assessment-matters/a2026-4/",
+      "summary": "The latest Assessment Matters circular invites feedback on a draft 2027 Scholarship performance standard.",
+      "tags": ["Assessment"]
+    },
+    {
+      "id": "worksafe-hswa-guidance-2026-09-17",
+      "source": "WorkSafe",
+      "title": "New guidance released for upcoming HSWA changes",
+      "date": "2026-09-17",
+      "url": "https://www.worksafe.govt.nz/about-us/news-and-media/new-guidance-released-for-upcoming-hswa-changes/",
+      "summary": "WorkSafe has released guidance to help workplaces prepare for upcoming changes to the Health and Safety at Work Act.",
+      "tags": ["Safety"]
+    },
+    {
+      "id": "worksafe-health-newsletter-2026-09",
+      "source": "WorkSafe",
+      "title": "Work-related health newsletter – September 2026",
+      "date": "2026-09-15",
+      "url": "https://www.worksafe.govt.nz/about-us/news-and-media/work-related-health-newsletter-september-2026/",
+      "summary": "Includes inspector focus areas for wood and food product manufacturing plus workplace exposure and health guidance.",
+      "tags": ["Safety", "Technology"]
+    },
+    {
+      "id": "ncea-revised-standards-2027",
+      "source": "NCEA",
+      "title": "Revised Achievement Standards and supporting materials for assessment in 2027",
+      "date": "2026-09-11",
+      "url": "https://ncea.education.govt.nz/whats-new/revised-achievement-standards-and-supporting-materials-assessment-2027",
+      "summary": "Revised Achievement Standards and supporting assessment materials are available for 2027 planning.",
+      "tags": ["Assessment", "Curriculum", "Technology"]
+    },
+    {
+      "id": "worksafe-food-manufacturing-2026-08-28",
+      "source": "WorkSafe",
+      "title": "Food manufacturing visits finding safety gaps in machinery and hazardous substances",
+      "date": "2026-08-28",
+      "url": "https://www.worksafe.govt.nz/about-us/news-and-media/food-manufacturing-visits-finding-safety-gaps-in-machinery-and-hazardous-substances/",
+      "summary": "WorkSafe highlights machinery and hazardous-substance controls following proactive visits to food manufacturing businesses.",
+      "tags": ["Safety", "Technology"]
+    },
+    {
+      "id": "ncea-additional-subjects-2026-08-21",
+      "source": "NCEA",
+      "title": "Additional senior secondary subjects open for feedback",
+      "date": "2026-08-21",
+      "url": "https://ncea.education.govt.nz/whats-new/additional-senior-secondary-subjects-open-feedback",
+      "summary": "Additional new senior secondary subjects are available for sector feedback.",
+      "tags": ["Curriculum"]
+    },
+    {
+      "id": "ncea-industry-led-2026-08-06",
+      "source": "NCEA",
+      "title": "New industry-led subjects announced for senior secondary students",
+      "date": "2026-08-06",
+      "url": "https://ncea.education.govt.nz/whats-new/new-industry-led-subjects-announced-senior-secondary-students",
+      "summary": "New industry-led senior secondary subjects are being developed alongside the future qualification system.",
+      "tags": ["Curriculum", "Technology"]
+    },
+    {
+      "id": "ministry-curriculum-update-2026-08-05",
+      "source": "Ministry",
+      "title": "Te Poutāhū Curriculum Centre school update – 5 August 2026",
+      "date": "2026-08-05",
+      "url": "https://www.education.govt.nz/bulletins/te-poutahu-curriculum-centre-school-update/05-08-26",
+      "summary": "Curriculum Centre update covering Years 0–10 release dates, implementation support and current PLD opportunities.",
+      "tags": ["Curriculum"]
+    }
+  ],
+  "standardSnapshots": [
+    {
+      "standard": "92012",
+      "url": "https://www.nzqa.govt.nz/ncea/assessment/view-detailed.do?standardNumber=92012",
+      "fingerprint": "",
+      "changed": false,
+      "status": "pending"
+    },
+    {
+      "standard": "92014",
+      "url": "https://www.nzqa.govt.nz/ncea/assessment/view-detailed.do?standardNumber=92014",
+      "fingerprint": "",
+      "changed": false,
+      "status": "pending"
+    },
+    {
+      "standard": "92015",
+      "url": "https://www.nzqa.govt.nz/ncea/assessment/view-detailed.do?standardNumber=92015",
+      "fingerprint": "",
+      "changed": false,
+      "status": "pending"
+    },
+    {
+      "standard": "29655",
+      "url": "https://www.nzqa.govt.nz/ncea/assessment/view-detailed.do?standardNumber=29655",
+      "fingerprint": "",
+      "changed": false,
+      "status": "pending"
+    }
+  ],
+  "sources": [
+    {
+      "name": "NZQA",
+      "url": "https://www2.nzqa.govt.nz/about-us/publications/newsletters-circulars/assessment-matters/",
+      "status": "seed"
+    },
+    {
+      "name": "NCEA",
+      "url": "https://ncea.education.govt.nz/whats-new",
+      "status": "seed"
+    },
+    {
+      "name": "Ministry",
+      "url": "https://www.education.govt.nz/bulletins/",
+      "status": "seed"
+    },
+    {
+      "name": "WorkSafe",
+      "url": "https://www.worksafe.govt.nz/about-us/news-and-media/",
+      "status": "seed"
+    }
+  ]
+}
