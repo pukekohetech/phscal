@@ -1,43 +1,29 @@
-PHS CALENDAR v6.5 - LARGE LIVE NEWS BAND
+PHS CALENDAR v6.6 - READER FIRST FIX
 
-WHAT THIS PATCH CHANGES
-- Replaces the thin sideways ticker with a large featured-news band across the bottom of the screen.
-- The band uses roughly one sixth of the screen height on desktop.
-- One official update is featured at a time with source, category, date, headline and short summary.
-- Updates advance automatically every 9 seconds with a smooth fade/slide transition.
-- A gold progress line shows when the next story will appear.
-- Previous/next controls allow manual browsing.
-- Hovering or focusing the band pauses auto-advance; leaving it resumes.
-- Clicking a story opens it in the existing in-app RSS/article reader.
-- The ticker itself has no visible scrollbar.
-- The main page scrollbar is visually hidden while wheel/touch scrolling still works if needed.
-- Settings and the mobile menu have been moved above the larger news band.
+WHY THIS VERSION
+Many NZQA, Ministry, WorkSafe, NCEA and TKI pages block iframe embedding using
+browser security headers. That is controlled by the source website and cannot
+be overridden by the calendar page.
 
-STILL INCLUDED FROM v6.4
-- In-app split RSS/article reader.
-- Live iframe view plus Reader fallback for sites that block embedding.
-- Editable RSS/Atom feeds in Settings.
-- Editable NZQA Standards Watch.
-- NZQA, NCEA Education, Ministry, WorkSafe and configured TKI feeds.
+WHAT CHANGED
+- Reader is now the default when an update is opened.
+- Live page is optional: use "Try live page" only when a site allows embedding.
+- RSS/Atom items now attempt to save a fuller text snapshot from the linked
+  article during the GitHub update job.
+- If the linked page cannot be fetched, the feed description remains as the
+  fallback Reader content.
+- Reader scrolling still works but its visual scrollbar is hidden.
+- Service worker cache bumped to v22-reader-first.
 
 UPLOAD / REPLACE
-Upload these files to the repository root:
 - index.html
 - service-worker.js
 - update_official_updates.py
-- updates.json
-- standards-watch.json
-- rss-feeds.json
-- phs-shield.webp
 
-Also upload/update:
-.github/workflows/update-official-updates.yml
-.github/workflows/update-calendar.yml
+You may upload the whole patch folder if easier. It deliberately does NOT
+contain PHS Calendar.ics, so the working KAMAR calendar is not overwritten.
 
-IMPORTANT
-Do NOT replace or delete PHS Calendar.ics. The existing KAMAR workflow continues to manage it.
-
-AFTER UPLOADING
-1. Hard refresh the calendar once (Ctrl+F5).
-2. If the old ticker is still cached, close/reopen the installed PWA or refresh again after a few seconds.
-3. The larger band should automatically rotate through the highest-priority official updates.
+AFTER UPLOAD
+1. GitHub -> Actions -> Update Official Education Feeds -> Run workflow.
+2. Wait for a green tick so updates.json is rebuilt with article snapshots.
+3. Hard refresh the calendar (Ctrl+F5).

@@ -330,7 +330,7 @@
     .readerEmpty{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:32px;color:#7c838d;font-size:13px;font-weight:800;background:linear-gradient(180deg,#fafafa,#f4f4f1)}
     .readerEmpty strong{display:block;color:#343a42;font-size:16px;margin-bottom:5px}
     .readerFrame{width:100%;height:100%;border:0;background:#fff;display:block}
-    .readerText{height:100%;overflow:auto;padding:26px 30px 60px;max-width:900px;margin:0 auto;font-size:14px;line-height:1.65;color:#252a31;background:#fff}
+    .readerText{height:100%;overflow:auto;padding:26px 30px 60px;max-width:900px;margin:0 auto;font-size:14px;line-height:1.65;color:#252a31;background:#fff;scrollbar-width:none;-ms-overflow-style:none}.readerText::-webkit-scrollbar{display:none}
     .readerText h2{font-size:22px;line-height:1.25;margin:0 0 6px}
     .readerText .readerTextMeta{font-size:10px;text-transform:uppercase;letter-spacing:.07em;font-weight:950;color:var(--accent);margin-bottom:18px}
     .readerText p{margin:0 0 14px}
@@ -459,14 +459,14 @@
             <div class="readerTitle" id="updatesReaderTitle">Select an update to read it here</div>
           </div>
           <div class="readerActions">
-            <button type="button" id="updatesLiveViewBtn" class="active">Live page</button>
-            <button type="button" id="updatesReaderViewBtn">Reader</button>
+            <button type="button" id="updatesReaderViewBtn" class="active">Reader</button>
+            <button type="button" id="updatesLiveViewBtn">Try live page</button>
             <a id="updatesOpenOriginal" href="#" target="_blank" rel="noopener noreferrer" aria-disabled="true">Open original ↗</a>
           </div>
         </div>
-        <div class="readerHint" id="updatesReaderHint">Select an item from the feed. If a website blocks iframe viewing, switch to Reader or use Open original.</div>
+        <div class="readerHint" id="updatesReaderHint">Select an item from the feed. Reader opens first because many official websites block embedded pages.</div>
         <div class="readerStage" id="updatesReaderStage">
-          <div class="readerEmpty" id="updatesReaderEmpty"><div><strong>Updates open here</strong>Choose an item on the right instead of leaving the calendar.</div></div>
+          <div class="readerEmpty" id="updatesReaderEmpty"><div><strong>Updates open here</strong>Choose an item on the right. Reader mode opens first and keeps you inside the calendar.</div></div>
           <iframe class="readerFrame" id="updatesReaderFrame" title="Official update page" loading="lazy" referrerpolicy="no-referrer" hidden></iframe>
           <article class="readerText" id="updatesReaderText" hidden></article>
         </div>
@@ -774,7 +774,7 @@
     let sharedRssFeeds = [];
     let rssEditorDirty = false;
     let activeUpdateId = '';
-    let updateReaderMode = 'live';
+    let updateReaderMode = 'reader';
 
     // transient message (not persisted)
     let tempNotice = '';
@@ -1939,7 +1939,7 @@
       if (!hasItem){
         els.updatesReaderSource.textContent = 'Update reader';
         els.updatesReaderTitle.textContent = 'Select an update to read it here';
-        els.updatesReaderHint.textContent = 'Select an item from the feed. If a website blocks iframe viewing, switch to Reader or use Open original.';
+        els.updatesReaderHint.textContent = 'Select an item from the feed. Reader opens first because many official websites block embedded pages.';
         els.updatesReaderEmpty.hidden = false;
         els.updatesReaderFrame.hidden = true;
         els.updatesReaderText.hidden = true;
@@ -1953,10 +1953,10 @@
       if (updateReaderMode === 'reader'){
         els.updatesReaderFrame.hidden = true;
         const body = String(item.readerText || item.summary || '').trim();
-        const paras = body ? body.split(/\n{2,}/).map(text => '<p>' + escapeHtml(text) + '</p>').join('') : '<p class="readerTextEmpty">This feed did not provide enough article text for Reader mode. Try Live page or Open original.</p>';
+        const paras = body ? body.split(/\n{2,}/).map(text => '<p>' + escapeHtml(text) + '</p>').join('') : '<p class="readerTextEmpty">This item did not provide enough text for the saved Reader view. Use Open original, or try the live page if the site allows embedding.</p>';
         els.updatesReaderText.innerHTML = '<div class="readerTextMeta">' + escapeHtml(item.source || 'Official update') + '</div><h2>' + escapeHtml(item.title || 'Update') + '</h2>' + paras;
         els.updatesReaderText.hidden = false;
-        els.updatesReaderHint.textContent = 'Reader mode uses the text captured by the updater. Use Live page for the original layout.';
+        els.updatesReaderHint.textContent = 'Reader shows a saved text snapshot captured by the updater, so it works even when the original website blocks embedding.';
       }else{
         els.updatesReaderText.hidden = true;
         els.updatesReaderFrame.hidden = false;
@@ -1965,7 +1965,7 @@
           els.updatesReaderFrame.dataset.url = target;
           els.updatesReaderFrame.src = target || 'about:blank';
         }
-        els.updatesReaderHint.textContent = 'Live page. Some websites block iframe viewing; if it stays blank, use Reader or Open original.';
+        els.updatesReaderHint.textContent = 'Live page is optional. Many official sites deliberately block iframe viewing; if it is blank or says refused to connect, return to Reader or use Open original.';
       }
     }
 

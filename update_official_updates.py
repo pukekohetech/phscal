@@ -600,9 +600,15 @@ def scrape_rss_source(source: RssSource) -> list[dict]:
     root = ET.fromstring(content)
     nodes = [node for node in root.iter() if _xml_local(node.tag) in {"item", "entry"}]
     items: list[dict] = []
+    # Fetch a limited number of linked articles so Reader mode has useful text
+    # without turning each scheduled run into dozens of page requests.
+    article_fetch_budget = min(source.max_items, 6)
+    article_fetches = 0
+
     for node in nodes:
         title = clean_text(_child_text(node, {"title"}))
-        url = clean_text(_entry_link(node) or _child_text(node, {"link", "guid", "id"}))
+        raw_url = clean_text(_entry_link(node) or _child_text(node, {"link", "guid", "id"}))
+        url = urljoin(source.feed_url, raw_url) if raw_url else ""
         summary_raw = _child_text(node, {"description", "summary", "content", "encoded"})
         summary = strip_markup(summary_raw)[:360]
         reader_text = strip_markup(summary_raw)[:4000]
@@ -610,9 +616,27 @@ def scrape_rss_source(source: RssSource) -> list[dict]:
         haystack = title + " " + summary
         if source.filter_irrelevant and not is_technology_relevant(haystack):
             continue
-        tags = tags_for(source, title, summary)
         if not title or not url:
             continue
+
+        # Many source sites block iframe embedding. Save a fuller article snapshot
+        # at update time so the PHS Calendar can render it locally in Reader mode.
+        if article_fetches < article_fetch_budget and safe_feed_url(url):
+            article_fetches += 1
+            try:
+                page = parse_page(fetch_html(url))
+                fuller_text = page_reader_text(page, limit=8000)
+                fuller_summary = page_summary(page)
+                if len(fuller_text) >= 120:
+                    reader_text = fuller_text
+                if len(fuller_summary) >= 50:
+                    summary = fuller_summary[:360]
+                if not date:
+                    date = item_date(page, url)
+            except Exception as exc:
+                print(f"WARN {source.name} reader snapshot {url}: {exc}", file=sys.stderr)
+
+        tags = tags_for(source, title, summary + " " + reader_text[:2500])
         items.append({
             "id": make_id(source.name, url, title),
             "source": source.name,
