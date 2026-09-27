@@ -1,68 +1,46 @@
-PHS CALENDAR v6.2 - OFFICIAL UPDATES PATCH
-==========================================
+PHS CALENDAR v6.3 - CONFIGURABLE STANDARDS WATCH + NEWS TICKER
 
-WHAT THIS ADDS
-- Minimal Official Updates bell in the calendar header.
-- Updates drawer for NZQA, NCEA, Ministry of Education and WorkSafe.
-- Filters for Technology, Assessment, Curriculum, Safety and Standards Watch.
-- Standards Watch for 92012, 92014, 92015 and 29655.
-- Compact Term / Week indicator derived from the school calendar.
-- Network-first caching for updates.json so fresh updates appear without breaking offline use.
-- GitHub Actions checkout upgraded to v7 to avoid the old Node 20 warning.
+WHAT THIS PATCH ADDS
+- Editable/shared NZQA Standards Watch using standards-watch.json
+- Rolling official-news ticker along the bottom of the calendar
+- Toggle to show/hide the ticker in Settings
+- NCEA on TKI RSS as a secondary Technology/assessment source
+- Existing NZQA, NCEA Education, Ministry and WorkSafe sources remain
+- Editing standards-watch.json triggers the official-updates workflow immediately
 
-IMPORTANT
-This patch deliberately does NOT contain PHS Calendar.ics.
-Do not delete your live PHS Calendar.ics. Your existing KAMAR updater continues to maintain it.
-No new GitHub secret is required. Keep your existing KAMAR_ICS_URL secret unchanged.
-
-UPLOAD / REPLACE THESE FILES IN THE REPOSITORY ROOT
+UPLOAD / REPLACE
+Upload these files to the matching locations in your phscal repo:
 - index.html
 - service-worker.js
-- updates.json
 - update_official_updates.py
-- phs-shield.webp (safe to replace; it is the existing shield)
-
-GITHUB WORKFLOW FILES
-These must be at these exact paths:
-- .github/workflows/update-official-updates.yml
+- updates.json
+- standards-watch.json
+- phs-shield.webp
 - .github/workflows/update-calendar.yml
+- .github/workflows/update-official-updates.yml
 
-The update-calendar workflow is your existing KAMAR updater with actions/checkout updated to v7.
-The new update-official-updates workflow needs no secret.
+IMPORTANT
+Do NOT delete PHS Calendar.ics. It is still maintained by the KAMAR updater.
 
-IF THE .github FOLDER IS AWKWARD TO UPLOAD
-1. In GitHub choose Add file > Create new file.
-2. Enter this exact filename:
-   .github/workflows/update-official-updates.yml
-3. Paste the contents of PASTE_THIS_update-official-updates.yml from this patch.
-4. Commit the file.
+HOW TO CHANGE WATCHED STANDARDS
+Option 1 - from the calendar Settings panel:
+1. Enter the standard numbers you want, comma-separated.
+2. Press 'Copy list + open GitHub'.
+3. Replace the contents of standards-watch.json with the copied JSON.
+4. Commit the change.
+The GitHub Action runs automatically and updates the Standards Watch results.
 
-FIRST TEST
-1. Open GitHub > Actions.
-2. Open "Update Official Education Feeds".
-3. Choose Run workflow.
-4. A green run means the official-source updater is working.
-5. If new information was found, GitHub will create a commit called:
-   Update official education feeds
-6. Open the calendar and use the bell icon to see the updates.
+Option 2 - edit standards-watch.json directly in GitHub.
+Example:
+{
+  "standards": ["92012", "92014", "92015", "29655"]
+}
 
-AUTOMATIC SCHEDULES
-- KAMAR calendar: every 15 minutes (existing workflow).
-- Official education/safety updates: every 6 hours.
+ROLLING NEWS
+The bottom banner uses the newest/highest-priority official updates, favouring Standards Watch, Technology, Assessment and Safety. Hover or focus it to pause. Users who prefer reduced motion get a non-animated horizontal list.
 
-OFFICIAL SOURCES CHECKED
-- NZQA Assessment Matters
-- NCEA What's New
-- Ministry of Education Te Poutahu Curriculum Centre school updates
-- WorkSafe New Zealand news and media, filtered for relevant safety/technology items
+WORKFLOWS
+- Update PHS Calendar: KAMAR calendar sync every 15 minutes.
+- Update Official Education Feeds: official update refresh every 6 hours, plus immediately when standards-watch.json changes.
 
-STANDARDS WATCHED
-- AS 92012
-- AS 92014
-- AS 92015
-- US 29655
-
-NOTES
-- The app keeps the main calendar uncluttered. Updates live behind the bell.
-- If one official website is temporarily unavailable, existing data is retained.
-- If all official sources fail, the GitHub Action fails visibly rather than pretending the refresh succeeded.
+The existing KAMAR secret KAMAR_ICS_URL is still required only by the calendar workflow. No new secret is needed for official updates.

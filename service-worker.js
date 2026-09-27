@@ -1,10 +1,12 @@
-const CACHE = 'phs-calendar-pwa-v18-official-updates';
+const CACHE = 'phs-calendar-pwa-v19-configurable-watch-ticker';
 const APP_SHELL = [
   './',
   './index.html',
   './manifest.webmanifest',
   './PHS Calendar.ics',
   './updates.json',
+  './standards-watch.json',
+  './phs-shield.webp',
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/maskable-512.png'
@@ -79,7 +81,7 @@ self.addEventListener('fetch', event => {
   }
 
   // Official updates JSON: network first so the bell sees new information promptly.
-  if (url.origin === self.location.origin && /\/updates\.json$/i.test(url.pathname)) {
+  if (url.origin === self.location.origin && /\/(updates|standards-watch)\.json$/i.test(url.pathname)) {
     const cacheKey = normalizedCalendarRequest(request);
     event.respondWith((async () => {
       try {

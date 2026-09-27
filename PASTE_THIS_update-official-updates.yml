@@ -4,6 +4,11 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '17 */6 * * *'
+  push:
+    paths:
+      - 'standards-watch.json'
+      - 'update_official_updates.py'
+      - '.github/workflows/update-official-updates.yml'
 
 permissions:
   contents: write

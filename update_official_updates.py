@@ -17,6 +17,8 @@ import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from html.parser import HTMLParser
+from email.utils import parsedate_to_datetime
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Iterable
 from urllib.error import HTTPError, URLError
@@ -25,6 +27,7 @@ from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parent
 OUTPUT = ROOT / "updates.json"
+WATCH_CONFIG = ROOT / "standards-watch.json"
 USER_AGENT = "Mozilla/5.0 (compatible; PHS-Calendar-Official-Updates/1.0; +https://pukekohetech.github.io/phscal/)"
 TIMEOUT = 25
 MAX_ITEMS = 40
@@ -58,12 +61,7 @@ SAFETY_KEYWORDS = {
     "electrical", "guard", "workplace exposure", "working at height", "work-related health", "hswa",
 }
 
-STANDARD_URLS = {
-    "92012": "https://www.nzqa.govt.nz/ncea/assessment/view-detailed.do?standardNumber=92012",
-    "92014": "https://www.nzqa.govt.nz/ncea/assessment/view-detailed.do?standardNumber=92014",
-    "92015": "https://www.nzqa.govt.nz/ncea/assessment/view-detailed.do?standardNumber=92015",
-    "29655": "https://www.nzqa.govt.nz/ncea/assessment/view-detailed.do?standardNumber=29655",
-}
+DEFAULT_STANDARD_NUMBERS = ("92012", "92014", "92015", "29655")
 
 
 @dataclass(frozen=True)
@@ -126,6 +124,26 @@ SOURCES = (
             "https://www.worksafe.govt.nz/about-us/news-and-media/work-related-health-newsletter-september-2026/",
             "https://www.worksafe.govt.nz/about-us/news-and-media/food-manufacturing-visits-finding-safety-gaps-in-machinery-and-hazardous-substances/",
         ),
+    ),
+)
+
+
+@dataclass(frozen=True)
+class RssSource:
+    name: str
+    feed_url: str
+    default_tags: tuple[str, ...]
+    max_items: int = 12
+    filter_irrelevant: bool = False
+
+
+RSS_SOURCES = (
+    RssSource(
+        "NCEA on TKI",
+        "https://ncea.tki.org.nz/layout/set/rss",
+        ("Assessment", "Technology"),
+        max_items=12,
+        filter_irrelevant=True,
     ),
 )
 
@@ -411,18 +429,85 @@ def scrape_source(source: Source) -> list[dict]:
     return items
 
 
+
+def load_watch_standards() -> list[str]:
+    try:
+        data = json.loads(WATCH_CONFIG.read_text(encoding="utf-8"))
+        raw = data.get("standards", []) if isinstance(data, dict) else []
+    except Exception:
+        raw = list(DEFAULT_STANDARD_NUMBERS)
+    standards: list[str] = []
+    for value in raw:
+        standard = str(value).strip()
+        if re.fullmatch(r"\d{3,6}", standard) and standard not in standards:
+            standards.append(standard)
+        if len(standards) >= 24:
+            break
+    return standards or list(DEFAULT_STANDARD_NUMBERS)
+
+
+def standard_url(standard: str) -> str:
+    return "https://www.nzqa.govt.nz/ncea/assessment/view-detailed.do?standardNumber=" + standard
+
+
+def rss_date(value: str) -> str:
+    text = clean_text(value)
+    if not text:
+        return ""
+    try:
+        dt = parsedate_to_datetime(text)
+        if dt:
+            return dt.date().isoformat()
+    except Exception:
+        pass
+    return parse_date_text(text)
+
+
+def strip_markup(value: str) -> str:
+    return clean_text(re.sub(r"<[^>]+>", " ", html.unescape(value or "")))
+
+
+def scrape_rss_source(source: RssSource) -> list[dict]:
+    content = fetch_html(source.feed_url)
+    root = ET.fromstring(content)
+    items: list[dict] = []
+    for node in root.findall(".//item"):
+        title = clean_text(node.findtext("title") or "")
+        url = clean_text(node.findtext("link") or "")
+        summary = strip_markup(node.findtext("description") or "")[:360]
+        date = rss_date(node.findtext("pubDate") or node.findtext("date") or "")
+        haystack = title + " " + summary
+        if source.filter_irrelevant and not is_technology_relevant(haystack):
+            continue
+        tags = tags_for(source, title, summary)
+        if not title or not url:
+            continue
+        items.append({
+            "id": make_id(source.name, url, title),
+            "source": source.name,
+            "title": title,
+            "date": date,
+            "url": url,
+            "summary": summary,
+            "tags": tags,
+        })
+        if len(items) >= source.max_items:
+            break
+    return items
+
 def normalize_standard_text(text: str) -> str:
     low_noise = re.sub(r"Data as at\s+\d{4}-\d{2}-\d{2}[^ ]*", "Data as at", text, flags=re.I)
     low_noise = re.sub(r"Page last updated:\s*\d{1,2}\s+[A-Za-z]+\s+20\d{2}", "Page last updated", low_noise, flags=re.I)
     return clean_text(low_noise)
 
 
-def watch_standards(previous: dict) -> tuple[list[dict], list[dict]]:
+def watch_standards(previous: dict, standards: list[str]) -> tuple[list[dict], list[dict]]:
     old = {str(row.get("standard")): row for row in previous.get("standardSnapshots", []) if row.get("standard")}
     snapshots: list[dict] = []
     alerts: list[dict] = []
     today = datetime.now(timezone.utc).date().isoformat()
-    for standard, url in STANDARD_URLS.items():
+    for standard in standards:
+        url = standard_url(standard)
         prior = old.get(standard, {})
         try:
             parser = parse_page(fetch_html(url))
@@ -513,12 +598,25 @@ def main() -> int:
             statuses.append({"name": source.name, "url": source.listing_url, "status": "error"})
             print(f"WARN {source.name}: {exc}; keeping previous items", file=sys.stderr)
 
+    for source in RSS_SOURCES:
+        try:
+            fresh = scrape_rss_source(source)
+            if fresh:
+                items = merge_source_items(items, source, fresh, True)
+            statuses.append({"name": source.name, "url": source.feed_url, "status": "ok"})
+            print(f"{source.name}: {len(fresh)} relevant RSS items")
+        except (HTTPError, URLError, TimeoutError, ValueError, OSError, ET.ParseError) as exc:
+            statuses.append({"name": source.name, "url": source.feed_url, "status": "error"})
+            print(f"WARN {source.name}: {exc}; keeping previous items", file=sys.stderr)
+
     successful_sources = sum(1 for row in statuses if row.get("status") == "ok")
     if successful_sources == 0:
         print("ERROR: none of the official update sources could be refreshed", file=sys.stderr)
         return 1
 
-    snapshots, alerts = watch_standards(previous)
+    standards = load_watch_standards()
+    print("Standards watch: " + ", ".join(standards))
+    snapshots, alerts = watch_standards(previous, standards)
     previous_alert_ids = {item.get("id") for item in items if "Standards Watch" in item.get("tags", [])}
     for alert in alerts:
         if alert["id"] not in previous_alert_ids:
