@@ -15,6 +15,7 @@
   <link rel="icon" href="./icons/icon-192.png" sizes="192x192" type="image/png">
   <link rel="icon" href="./icons/icon-512.png" sizes="512x512" type="image/png">
   <style>
+    /* v6.8 reliable local news reader + 5-second feed rotation */
     :root{
       --bg:#f6f7f8;
       --card:#ffffff;
@@ -304,8 +305,7 @@
     .tickerNav button:hover{background:rgba(255,255,255,.14)}
     .tickerProgress{position:absolute;left:0;right:0;bottom:0;height:4px;background:rgba(255,255,255,.08);z-index:7;overflow:hidden}
     .tickerProgressBar{height:100%;width:100%;background:linear-gradient(90deg,var(--gold),#f1d48f);transform-origin:left center;animation:tickerProgress var(--ticker-cycle,5s) linear forwards}
-    .newsTicker:hover .tickerProgressBar,.newsTicker:focus-within .tickerProgressBar{animation-play-state:paused}
-    .standardsSettings{display:grid;gap:10px}
+        .standardsSettings{display:grid;gap:10px}
     .standardsSettings input[type="text"]{font-variant-numeric:tabular-nums}
     .standardsConfigStatus{font-size:10px;color:var(--muted);line-height:1.4}
     @keyframes tickerProgress{from{transform:scaleX(0)}to{transform:scaleX(1)}}
@@ -325,6 +325,7 @@
     .readerActions{display:flex;gap:5px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
     .readerActions button,.readerActions a{border:1px solid var(--line);background:#fff;color:#4b5563;border-radius:9px;padding:7px 9px;font-size:10px;font-weight:900;text-decoration:none;cursor:pointer}
     .readerActions button.active{background:var(--accent-soft);border-color:#e5c9d4;color:var(--accent)}
+    .readerLocalBadge{display:inline-flex;align-items:center;padding:7px 9px;border-radius:9px;background:#ecfdf5;border:1px solid #b7ead7;color:#047857;font-size:9px;font-weight:950;letter-spacing:.06em;text-transform:uppercase}
     .readerHint{font-size:10px;color:#6b7280;line-height:1.35;padding:0 4px}
     .readerStage{min-height:0;position:relative;border:1px solid #d9d9d6;background:#fff;border-radius:15px;overflow:hidden;box-shadow:0 8px 24px rgba(15,23,42,.06)}
     .readerEmpty{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:32px;color:#7c838d;font-size:13px;font-weight:800;background:linear-gradient(180deg,#fafafa,#f4f4f1)}
@@ -459,15 +460,14 @@
             <div class="readerTitle" id="updatesReaderTitle">Select an update to read it here</div>
           </div>
           <div class="readerActions">
-            <button type="button" id="updatesReaderViewBtn" class="active">Reader</button>
-            <button type="button" id="updatesLiveViewBtn">Try live page</button>
+            <span class="readerLocalBadge">Saved reader</span>
             <a id="updatesOpenOriginal" href="#" target="_blank" rel="noopener noreferrer" aria-disabled="true">Open original ↗</a>
           </div>
         </div>
-        <div class="readerHint" id="updatesReaderHint">Select an item from the feed. Reader opens first because many official websites block embedded pages.</div>
+        <div class="readerHint" id="updatesReaderHint">Select an item from the feed. Articles are displayed from a saved local snapshot, so blocked iframes are no longer used.</div>
         <div class="readerStage" id="updatesReaderStage">
-          <div class="readerEmpty" id="updatesReaderEmpty"><div><strong>Updates open here</strong>Choose an item on the right. Reader mode opens first and keeps you inside the calendar.</div></div>
-          <iframe class="readerFrame" id="updatesReaderFrame" title="Official update page" loading="lazy" referrerpolicy="no-referrer" hidden></iframe>
+          <div class="readerEmpty" id="updatesReaderEmpty"><div><strong>Updates open here</strong>Choose an item on the right. The saved article will open locally inside the calendar.</div></div>
+          <iframe class="readerFrame" id="updatesReaderFrame" title="Official update page" hidden></iframe>
           <article class="readerText" id="updatesReaderText" hidden></article>
         </div>
       </section>
@@ -971,21 +971,14 @@
       if (els.updatesBtn) els.updatesBtn.addEventListener('click', openOfficialUpdates);
       if (els.updatesCloseBtn) els.updatesCloseBtn.addEventListener('click', closeOfficialUpdates);
       if (els.updatesReaderBackBtn) els.updatesReaderBackBtn.addEventListener('click', () => els.updatesDrawer && els.updatesDrawer.classList.remove('readerActive'));
-      if (els.updatesLiveViewBtn) els.updatesLiveViewBtn.addEventListener('click', () => setUpdateReaderMode('live'));
       if (els.updatesReaderViewBtn) els.updatesReaderViewBtn.addEventListener('click', () => setUpdateReaderMode('reader'));
       if (els.updatesRefreshBtn) els.updatesRefreshBtn.addEventListener('click', () => reloadOfficialUpdates({ force:true }));
       if (els.updatesFilters) els.updatesFilters.addEventListener('click', handleUpdateFilterClick);
       if (els.updatesList) els.updatesList.addEventListener('click', handleUpdateReaderClick);
       if (els.newsTickerTrack) els.newsTickerTrack.addEventListener('click', handleNewsTickerClick);
       if (els.newsTickerBtn) els.newsTickerBtn.addEventListener('click', openOfficialUpdates);
-      if (els.newsTicker){
-        els.newsTicker.addEventListener('mouseenter', stopNewsTickerCycle);
-        els.newsTicker.addEventListener('mouseleave', startNewsTickerCycle);
-        els.newsTicker.addEventListener('focusin', stopNewsTickerCycle);
-        els.newsTicker.addEventListener('focusout', () => setTimeout(() => {
-          if (!els.newsTicker.contains(document.activeElement)) startNewsTickerCycle();
-        }, 0));
-      }
+      // Keep the large news band advancing every five seconds even when the mouse
+      // is resting over it. Only pause while the browser tab itself is hidden.
       document.addEventListener('visibilitychange', () => document.hidden ? stopNewsTickerCycle() : startNewsTickerCycle());
       if (els.saveOfficialDisplayBtn) els.saveOfficialDisplayBtn.addEventListener('click', saveOfficialDisplaySettings);
       if (els.prepareStandardsWatchBtn) els.prepareStandardsWatchBtn.addEventListener('click', prepareStandardsWatchUpdate);
@@ -1917,30 +1910,32 @@
       const item = findOfficialUpdate(id);
       if (!item) return;
       activeUpdateId = String(item.id || '');
-      updateReaderMode = 'live';
+      updateReaderMode = 'reader';
       openOfficialUpdates();
       if (els.updatesDrawer) els.updatesDrawer.classList.add('readerActive');
       renderOfficialUpdates();
     }
 
-    function setUpdateReaderMode(mode){
-      if (!['live','reader'].includes(mode)) return;
-      updateReaderMode = mode;
+    function setUpdateReaderMode(){
+      updateReaderMode = 'reader';
       renderUpdateReader();
     }
 
     function renderUpdateReader(){
-      if (!els.updatesReaderFrame || !els.updatesReaderText || !els.updatesReaderEmpty) return;
+      if (!els.updatesReaderText || !els.updatesReaderEmpty) return;
       const item = findOfficialUpdate(activeUpdateId);
       const hasItem = !!item;
-      if (els.updatesLiveViewBtn) els.updatesLiveViewBtn.classList.toggle('active', updateReaderMode === 'live');
-      if (els.updatesReaderViewBtn) els.updatesReaderViewBtn.classList.toggle('active', updateReaderMode === 'reader');
+      updateReaderMode = 'reader';
+      if (els.updatesReaderFrame){
+        els.updatesReaderFrame.hidden = true;
+        els.updatesReaderFrame.removeAttribute('src');
+        els.updatesReaderFrame.dataset.url = '';
+      }
       if (!hasItem){
         els.updatesReaderSource.textContent = 'Update reader';
         els.updatesReaderTitle.textContent = 'Select an update to read it here';
-        els.updatesReaderHint.textContent = 'Select an item from the feed. Reader opens first because many official websites block embedded pages.';
+        els.updatesReaderHint.textContent = 'Select an item from the feed. The article is rendered from a local snapshot saved by the updater.';
         els.updatesReaderEmpty.hidden = false;
-        els.updatesReaderFrame.hidden = true;
         els.updatesReaderText.hidden = true;
         if (els.updatesOpenOriginal){ els.updatesOpenOriginal.href = '#'; els.updatesOpenOriginal.setAttribute('aria-disabled','true'); }
         return;
@@ -1949,34 +1944,45 @@
       els.updatesReaderTitle.textContent = item.title || 'Update';
       if (els.updatesOpenOriginal){ els.updatesOpenOriginal.href = item.url || '#'; els.updatesOpenOriginal.removeAttribute('aria-disabled'); }
       els.updatesReaderEmpty.hidden = true;
-      if (updateReaderMode === 'reader'){
-        els.updatesReaderFrame.hidden = true;
-        const body = String(item.readerText || item.summary || '').trim();
-        const paras = body ? body.split(/\n{2,}/).map(text => '<p>' + escapeHtml(text) + '</p>').join('') : '<p class="readerTextEmpty">This item did not provide enough text for the saved Reader view. Use Open original, or try the live page if the site allows embedding.</p>';
-        els.updatesReaderText.innerHTML = '<div class="readerTextMeta">' + escapeHtml(item.source || 'Official update') + '</div><h2>' + escapeHtml(item.title || 'Update') + '</h2>' + paras;
-        els.updatesReaderText.hidden = false;
-        els.updatesReaderHint.textContent = 'Reader shows a saved text snapshot captured by the updater, so it works even when the original website blocks embedding.';
-      }else{
-        els.updatesReaderText.hidden = true;
-        els.updatesReaderFrame.hidden = false;
-        const target = String(item.url || '');
-        if (els.updatesReaderFrame.dataset.url !== target){
-          els.updatesReaderFrame.dataset.url = target;
-          els.updatesReaderFrame.src = target || 'about:blank';
-        }
-        els.updatesReaderHint.textContent = 'Live page is optional. Many official sites deliberately block iframe viewing; if it is blank or says refused to connect, return to Reader or use Open original.';
-      }
+      const body = String(item.readerText || item.summary || '').trim();
+      const paras = body
+        ? body.split(/\n{2,}/).map(text => '<p>' + escapeHtml(text) + '</p>').join('')
+        : '<p class="readerTextEmpty">A saved article snapshot was not available for this item. Use Open original to view the source website.</p>';
+      els.updatesReaderText.innerHTML = '<div class="readerTextMeta">' + escapeHtml(item.source || 'Official update') + '</div><h2>' + escapeHtml(item.title || 'Update') + '</h2>' + paras;
+      els.updatesReaderText.hidden = false;
+      els.updatesReaderHint.textContent = body
+        ? 'Saved reader view · captured automatically by the PHS update service.'
+        : 'This source did not provide enough text to save locally. Open the original website if needed.';
     }
 
     function tickerItems(){
       const items = (officialUpdates.items || []).filter(item => item && item.title && item.url);
-      const scored = items.map((item, index) => {
-        const tags = new Set((item.tags || []).map(tag => String(tag).toLowerCase()));
-        const score = (tags.has('standards watch') ? 50 : 0) + (tags.has('technology') ? 20 : 0) + (tags.has('assessment') ? 14 : 0) + (tags.has('safety') ? 12 : 0) + (tags.has('curriculum') ? 8 : 0) - index * 0.01;
-        return { item, score };
+      if (!items.length) return [];
+
+      // Keep each source represented instead of allowing one busy feed to fill
+      // every ticker slot. Items are taken round-robin from the available feeds.
+      const bySource = new Map();
+      items.forEach(item => {
+        const key = String(item.source || 'Official update');
+        if (!bySource.has(key)) bySource.set(key, []);
+        bySource.get(key).push(item);
       });
-      scored.sort((a,b) => b.score - a.score);
-      return scored.slice(0, 10).map(row => row.item);
+      const groups = Array.from(bySource.values());
+      const result = [];
+      let level = 0;
+      while (result.length < 20){
+        let added = false;
+        for (const group of groups){
+          if (group[level]){
+            result.push(group[level]);
+            added = true;
+            if (result.length >= 20) break;
+          }
+        }
+        if (!added) break;
+        level += 1;
+      }
+      return result;
     }
 
     function tickerPrimaryTag(item){
@@ -2018,17 +2024,19 @@
     }
 
     function stopNewsTickerCycle(){
-      if (newsTickerTimer){ clearInterval(newsTickerTimer); newsTickerTimer = null; }
+      if (newsTickerTimer){ clearTimeout(newsTickerTimer); newsTickerTimer = null; }
     }
 
     function startNewsTickerCycle(){
       stopNewsTickerCycle();
-      if (!els.newsTicker || els.newsTicker.hidden) return;
+      if (!els.newsTicker || els.newsTicker.hidden || document.hidden) return;
       const cards = els.newsTickerTrack ? els.newsTickerTrack.querySelectorAll('.tickerItem') : [];
       if (cards.length < 2) return;
-      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
       restartTickerProgress();
-      newsTickerTimer = setInterval(() => setNewsTickerIndex(newsTickerIndex + 1, true), NEWS_TICKER_MS);
+      newsTickerTimer = setTimeout(() => {
+        setNewsTickerIndex(newsTickerIndex + 1, true);
+        startNewsTickerCycle();
+      }, NEWS_TICKER_MS);
     }
 
     function handleNewsTickerClick(event){

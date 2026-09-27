@@ -198,8 +198,9 @@ class PageParser(HTMLParser):
         if tag == "a":
             self._anchor_href = attrs_d.get("href", "")
             self._anchor_parts = []
-        elif tag == "p":
-            self._paragraph_parts = []
+        elif tag in {"p", "li", "h2", "h3", "h4", "blockquote"}:
+            if self._paragraph_parts is None:
+                self._paragraph_parts = []
         elif tag == "time":
             dt = attrs_d.get("datetime", "").strip()
             if dt:
@@ -229,7 +230,7 @@ class PageParser(HTMLParser):
                 self.links.append((self._anchor_href, text))
             self._anchor_href = None
             self._anchor_parts = []
-        elif tag == "p" and self._paragraph_parts is not None:
+        elif tag in {"p", "li", "h2", "h3", "h4", "blockquote"} and self._paragraph_parts is not None:
             text = clean_text(" ".join(self._paragraph_parts))
             if text:
                 self.paragraphs.append(text)
@@ -602,7 +603,7 @@ def scrape_rss_source(source: RssSource) -> list[dict]:
     items: list[dict] = []
     # Fetch a limited number of linked articles so Reader mode has useful text
     # without turning each scheduled run into dozens of page requests.
-    article_fetch_budget = min(source.max_items, 6)
+    article_fetch_budget = min(source.max_items, 10)
     article_fetches = 0
 
     for node in nodes:
