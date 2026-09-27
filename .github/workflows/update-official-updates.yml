@@ -1,0 +1,46 @@
+name: Update Official Education Feeds
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 */6 * * *'
+  push:
+    paths:
+      - 'rss-feeds.json'
+      - 'standards-watch.json'
+      - 'update_official_updates.py'
+      - '.github/workflows/update-official-updates.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-official-education-feeds
+  cancel-in-progress: false
+
+jobs:
+  update-feeds:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Build official updates
+        run: python3 update_official_updates.py
+
+      - name: Commit changes when needed
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add updates.json
+
+          if git diff --cached --quiet; then
+            echo 'Official updates are already current.'
+            exit 0
+          fi
+
+          git config user.name 'PHS Calendar Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git commit -m 'Update official education feeds'
+          git push
