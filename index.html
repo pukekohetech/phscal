@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="PHS Calendar">
-  <link rel="manifest" href="./manifest.webmanifest?v=22">
+  <link rel="manifest" href="./manifest.webmanifest?v=26">
   <link rel="apple-touch-icon" href="./icons/icon-192.png">
   <link rel="icon" href="./icons/icon-192.png" sizes="192x192" type="image/png">
   <link rel="icon" href="./icons/icon-512.png" sizes="512x512" type="image/png">
@@ -331,11 +331,29 @@
     .readerEmpty{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:32px;color:#7c838d;font-size:13px;font-weight:800;background:linear-gradient(180deg,#fafafa,#f4f4f1)}
     .readerEmpty strong{display:block;color:#343a42;font-size:16px;margin-bottom:5px}
     .readerFrame{width:100%;height:100%;border:0;background:#fff;display:block}
-    .readerText{height:100%;overflow:auto;padding:26px 30px 60px;max-width:900px;margin:0 auto;font-size:14px;line-height:1.65;color:#252a31;background:#fff;scrollbar-width:none;-ms-overflow-style:none}.readerText::-webkit-scrollbar{display:none}
-    .readerText h2{font-size:22px;line-height:1.25;margin:0 0 6px}
+    .readerText{height:100%;overflow:auto;padding:30px 34px 70px;max-width:1020px;margin:0 auto;font-family:"Segoe UI",Arial,sans-serif;font-size:15px;line-height:1.68;color:#252a31;background:#fff;scrollbar-width:none;-ms-overflow-style:none}.readerText::-webkit-scrollbar{display:none}
+    .readerArticleHeader{padding:0 0 24px;margin-bottom:22px;border-bottom:1px solid #e5e7eb}
+    .readerArticleKicker{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px;font-size:10px;text-transform:uppercase;letter-spacing:.075em;font-weight:950;color:var(--accent)}
+    .readerArticleHeader h1{font-family:Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;font-size:clamp(25px,3vw,38px);line-height:1.12;letter-spacing:-.7px;margin:0;color:#17191d;font-weight:900}
+    .readerArticleDeck{font-size:16px;line-height:1.55;color:#59616d;margin:12px 0 0;font-weight:600}
+    .readerArticleBody{font-size:15px;line-height:1.72}
+    .readerArticleBody h2,.readerArticleBody h3,.readerArticleBody h4{font-family:Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;color:#1d2430;letter-spacing:-.25px;scroll-margin-top:20px}
+    .readerArticleBody h2{font-size:24px;line-height:1.22;margin:34px 0 12px;padding-top:5px;border-top:1px solid #eceef1;font-weight:900}
+    .readerArticleBody h3{font-size:19px;line-height:1.3;margin:26px 0 10px;font-weight:900}
+    .readerArticleBody h4{font-size:16px;line-height:1.35;margin:22px 0 8px;font-weight:900;color:#343c48}
+    .readerArticleBody p{margin:0 0 15px}
+    .readerArticleBody strong{font-weight:850;color:#17191d}.readerArticleBody em{font-style:italic}
+    .readerArticleBody a{color:var(--accent);font-weight:750;text-decoration-thickness:1.5px;text-underline-offset:3px}.readerArticleBody a:hover{color:#4d1027}
+    .readerArticleBody ul,.readerArticleBody ol{margin:8px 0 18px;padding-left:1.55rem}.readerArticleBody li{margin:5px 0;padding-left:3px}.readerArticleBody li::marker{color:var(--accent);font-weight:900}
+    .readerArticleBody blockquote{margin:20px 0;padding:14px 18px;border-left:4px solid var(--gold);background:#faf7ef;border-radius:0 10px 10px 0;color:#434a55}
+    .readerArticleBody table{width:100%;border-collapse:separate;border-spacing:0;margin:18px 0 24px;border:1px solid #dfe3e8;border-radius:12px;overflow:hidden;font-size:13px}
+    .readerArticleBody th,.readerArticleBody td{padding:10px 11px;border-right:1px solid #e5e7eb;border-bottom:1px solid #e5e7eb;text-align:left;vertical-align:top}.readerArticleBody th:last-child,.readerArticleBody td:last-child{border-right:0}.readerArticleBody tr:last-child td{border-bottom:0}
+    .readerArticleBody th{background:#f5f6f7;font-weight:900;color:#29313c}.readerArticleBody tr:nth-child(even) td{background:#fbfbfa}
+    .readerArticleBody img{display:block;max-width:100%;height:auto;margin:18px auto;border-radius:10px}
+    .readerArticleBody hr{border:0;border-top:1px solid #e4e7eb;margin:28px 0}
     .readerText .readerTextMeta{font-size:10px;text-transform:uppercase;letter-spacing:.07em;font-weight:950;color:var(--accent);margin-bottom:18px}
-    .readerText p{margin:0 0 14px}
     .readerText .readerTextEmpty{color:var(--muted);font-weight:800}
+    @media (max-width:760px){.readerText{padding:22px 18px 55px;font-size:14px}.readerArticleHeader h1{font-size:25px}.readerArticleBody h2{font-size:21px}.readerArticleBody table{display:block;overflow-x:auto;white-space:normal}}
     .updateItem.selected{box-shadow:inset 0 0 0 2px rgba(111,23,56,.18);background:#fcf8fa}
     .rssDivider{height:1px;background:var(--line);margin:3px 0}
     .rssFeedEditor{display:grid;gap:8px}
@@ -1921,6 +1939,63 @@
       renderUpdateReader();
     }
 
+    function sanitizeReaderHtml(value){
+      const source = String(value || '').trim();
+      if (!source) return '';
+      const parsed = new DOMParser().parseFromString('<div id="phsReaderRoot">' + source + '</div>', 'text/html');
+      const root = parsed.getElementById('phsReaderRoot');
+      if (!root) return '';
+      const allowed = new Set(['H2','H3','H4','P','UL','OL','LI','BLOCKQUOTE','TABLE','THEAD','TBODY','TR','TH','TD','A','STRONG','EM','BR','HR','IMG']);
+      const safeProtocol = (url, image=false) => {
+        try {
+          const u = new URL(url, window.location.href);
+          return image ? ['http:','https:'].includes(u.protocol) : ['http:','https:','mailto:','tel:'].includes(u.protocol);
+        } catch (_) { return false; }
+      };
+      const cleanNode = (node, doc) => {
+        if (node.nodeType === Node.TEXT_NODE) return doc.createTextNode(node.textContent || '');
+        if (node.nodeType !== Node.ELEMENT_NODE) return doc.createDocumentFragment();
+        const tag = node.tagName.toUpperCase();
+        const frag = doc.createDocumentFragment();
+        if (!allowed.has(tag)) {
+          for (const child of Array.from(node.childNodes)) frag.appendChild(cleanNode(child, doc));
+          return frag;
+        }
+        const el = doc.createElement(tag.toLowerCase());
+        if (tag === 'A') {
+          const href = node.getAttribute('href') || '';
+          if (safeProtocol(href)) {
+            el.setAttribute('href', href);
+            if (/^https?:/i.test(href)) {
+              el.setAttribute('target','_blank');
+              el.setAttribute('rel','noopener noreferrer');
+            }
+            const title = node.getAttribute('title');
+            if (title) el.setAttribute('title', title);
+          }
+        } else if (tag === 'IMG') {
+          const src = node.getAttribute('src') || '';
+          if (!safeProtocol(src, true)) return frag;
+          el.setAttribute('src', src);
+          el.setAttribute('alt', node.getAttribute('alt') || '');
+          el.setAttribute('loading','lazy');
+          el.setAttribute('referrerpolicy','no-referrer');
+        } else if (tag === 'TH' || tag === 'TD') {
+          for (const attr of ['colspan','rowspan']) {
+            const raw = node.getAttribute(attr) || '';
+            const n = Number(raw);
+            if (Number.isInteger(n) && n >= 1 && n <= 20) el.setAttribute(attr, String(n));
+          }
+        }
+        for (const child of Array.from(node.childNodes)) el.appendChild(cleanNode(child, doc));
+        return el;
+      };
+      const cleanDoc = document.implementation.createHTMLDocument('');
+      const holder = cleanDoc.createElement('div');
+      for (const child of Array.from(root.childNodes)) holder.appendChild(cleanNode(child, cleanDoc));
+      return holder.innerHTML;
+    }
+
     function renderUpdateReader(){
       if (!els.updatesReaderText || !els.updatesReaderEmpty) return;
       const item = findOfficialUpdate(activeUpdateId);
@@ -1945,14 +2020,26 @@
       if (els.updatesOpenOriginal){ els.updatesOpenOriginal.href = item.url || '#'; els.updatesOpenOriginal.removeAttribute('aria-disabled'); }
       els.updatesReaderEmpty.hidden = true;
       const body = String(item.readerText || item.summary || '').trim();
-      const paras = body
+      const richBody = sanitizeReaderHtml(item.readerHtml || '');
+      const fallbackBody = body
         ? body.split(/\n{2,}/).map(text => '<p>' + escapeHtml(text) + '</p>').join('')
         : '<p class="readerTextEmpty">A saved article snapshot was not available for this item. Use Open original to view the source website.</p>';
-      els.updatesReaderText.innerHTML = '<div class="readerTextMeta">' + escapeHtml(item.source || 'Official update') + '</div><h2>' + escapeHtml(item.title || 'Update') + '</h2>' + paras;
+      const readerDate = item.date ? new Date(item.date + 'T12:00:00') : null;
+      const readerDateText = readerDate && !Number.isNaN(readerDate.getTime()) ? readerDate.toLocaleDateString([], { day:'numeric', month:'long', year:'numeric' }) : '';
+      const dateLabel = readerDateText ? '<span>' + escapeHtml(readerDateText) + '</span>' : '';
+      const tagLabel = Array.isArray(item.tags) && item.tags.length ? '<span>' + escapeHtml(item.tags.slice(0,3).join(' · ')) + '</span>' : '';
+      const summary = String(item.summary || '').trim();
+      els.updatesReaderText.innerHTML =
+        '<header class="readerArticleHeader">' +
+          '<div class="readerArticleKicker"><span>' + escapeHtml(item.source || 'Official update') + '</span>' + dateLabel + tagLabel + '</div>' +
+          '<h1>' + escapeHtml(item.title || 'Update') + '</h1>' +
+          (summary ? '<p class="readerArticleDeck">' + escapeHtml(summary) + '</p>' : '') +
+        '</header>' +
+        '<div class="readerArticleBody">' + (richBody || fallbackBody) + '</div>';
       els.updatesReaderText.hidden = false;
-      els.updatesReaderHint.textContent = body
-        ? 'Saved reader view · captured automatically by the PHS update service.'
-        : 'This source did not provide enough text to save locally. Open the original website if needed.';
+      els.updatesReaderHint.textContent = richBody
+        ? 'Rich local Reader view - headings, links, lists, tables and emphasis are preserved from the source article.'
+        : (body ? 'Local Reader view - this item only supplied plain text, so a simplified layout is being shown.' : 'This source did not provide a usable article snapshot. Open original is the fallback.');
     }
 
     function tickerItems(){

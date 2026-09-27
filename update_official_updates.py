@@ -271,6 +271,193 @@ class PageParser(HTMLParser):
         return clean_text(" ".join(self._all_text))
 
 
+class RichReaderParser(HTMLParser):
+    """Build a safe, presentation-aware article fragment from an external page.
+
+    The reader intentionally keeps only semantic content tags and safe link/image
+    attributes. Scripts, styles, forms, navigation and other page chrome are never
+    copied into updates.json.
+    """
+
+    SKIP_TAGS = {"script", "style", "noscript", "svg", "nav", "aside", "footer", "form", "button", "template", "iframe"}
+    TAG_MAP = {"b": "strong", "i": "em"}
+    CONTAINER_TAGS = {"h2", "h3", "h4", "p", "ul", "ol", "li", "blockquote", "table", "thead", "tbody", "tr", "th", "td", "a", "strong", "em", "b", "i"}
+    VOID_TAGS = {"br", "hr", "img"}
+
+    def __init__(self, base_url: str, *, capture_from_start: bool = False, text_limit: int = 50000) -> None:
+        super().__init__(convert_charrefs=True)
+        self.base_url = base_url
+        self.capture = capture_from_start
+        self.in_main = False
+        self.seen_main = False
+        self.seen_h1 = False
+        self.in_h1 = 0
+        self.skip_depth = 0
+        self.out: list[str] = []
+        self.open_tags: list[str] = []
+        self.text_limit = text_limit
+        self.text_chars = 0
+        self.truncated = False
+
+    def _safe_url(self, raw: str, *, image: bool = False) -> str:
+        raw = (raw or "").strip()
+        if not raw:
+            return ""
+        absolute = urljoin(self.base_url, raw)
+        parsed = urlparse(absolute)
+        allowed = {"http", "https"} if image else {"http", "https", "mailto", "tel"}
+        if parsed.scheme.lower() not in allowed:
+            return ""
+        return absolute
+
+    def _emit_start(self, tag: str, attrs_d: dict[str, str]) -> None:
+        mapped = self.TAG_MAP.get(tag, tag)
+        if mapped == "a":
+            href = self._safe_url(attrs_d.get("href", ""))
+            if not href:
+                return
+            title = clean_text(attrs_d.get("title", ""))
+            title_attr = f' title="{html.escape(title, quote=True)}"' if title else ""
+            external = urlparse(href).scheme in {"http", "https"}
+            target = ' target="_blank" rel="noopener noreferrer"' if external else ""
+            self.out.append(f'<a href="{html.escape(href, quote=True)}"{title_attr}{target}>')
+            self.open_tags.append("a")
+            return
+        if mapped in {"th", "td"}:
+            extras = []
+            for name in ("colspan", "rowspan"):
+                value = attrs_d.get(name, "").strip()
+                if value.isdigit() and 1 <= int(value) <= 20:
+                    extras.append(f'{name}="{value}"')
+            suffix = (" " + " ".join(extras)) if extras else ""
+            self.out.append(f"<{mapped}{suffix}>")
+            self.open_tags.append(mapped)
+            return
+        self.out.append(f"<{mapped}>")
+        self.open_tags.append(mapped)
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        tag = tag.lower()
+        attrs_d = {k.lower(): (v or "") for k, v in attrs}
+
+        if self.skip_depth:
+            if tag in self.SKIP_TAGS:
+                self.skip_depth += 1
+            return
+        if tag in self.SKIP_TAGS:
+            self.skip_depth = 1
+            return
+
+        if tag == "main":
+            self.in_main = True
+            self.seen_main = True
+            if not self.capture:
+                self.capture = True
+            return
+
+        if tag == "h1":
+            self.seen_h1 = True
+            self.in_h1 += 1
+            # If we started at <main>, drop breadcrumbs and other chrome before h1.
+            if self.capture:
+                self.out.clear()
+                self.open_tags.clear()
+                self.text_chars = 0
+            return
+
+        if not self.capture or self.in_h1:
+            return
+
+        if self.truncated:
+            return
+
+        if tag in self.CONTAINER_TAGS:
+            self._emit_start(tag, attrs_d)
+        elif tag == "br":
+            self.out.append("<br>")
+        elif tag == "hr":
+            self.out.append("<hr>")
+        elif tag == "img":
+            src = self._safe_url(attrs_d.get("src", ""), image=True)
+            if src:
+                alt = clean_text(attrs_d.get("alt", ""))
+                self.out.append(
+                    f'<img src="{html.escape(src, quote=True)}" alt="{html.escape(alt, quote=True)}" loading="lazy" referrerpolicy="no-referrer">'
+                )
+
+    def handle_endtag(self, tag: str) -> None:
+        tag = tag.lower()
+        if self.skip_depth:
+            if tag in self.SKIP_TAGS:
+                self.skip_depth -= 1
+            return
+
+        if tag == "h1":
+            if self.in_h1:
+                self.in_h1 -= 1
+            if self.in_h1 == 0:
+                self.capture = True
+            return
+
+        if tag == "main":
+            self.in_main = False
+            if self.seen_main:
+                self.capture = False
+            return
+
+        if not self.capture or self.in_h1:
+            return
+
+        mapped = self.TAG_MAP.get(tag, tag)
+        if mapped in self.CONTAINER_TAGS:
+            # Close only tags that were actually emitted. If source HTML is messy,
+            # close intervening tags too so the saved fragment stays well formed.
+            if mapped in self.open_tags:
+                while self.open_tags:
+                    current = self.open_tags.pop()
+                    self.out.append(f"</{current}>")
+                    if current == mapped:
+                        break
+
+    def handle_data(self, data: str) -> None:
+        if self.skip_depth or not self.capture or self.in_h1 or self.truncated:
+            return
+        normalized = re.sub(r"\\s+", " ", data)
+        if not normalized.strip():
+            return
+        remaining = self.text_limit - self.text_chars
+        if remaining <= 0:
+            self.truncated = True
+            return
+        if len(normalized) > remaining:
+            normalized = normalized[:remaining].rstrip() + "…"
+            self.truncated = True
+        self.text_chars += len(normalized)
+        self.out.append(html.escape(normalized, quote=False))
+
+    def rich_html(self) -> str:
+        while self.open_tags:
+            self.out.append(f"</{self.open_tags.pop()}>")
+        fragment = "".join(self.out)
+        # Drop structurally empty blocks that can be introduced by page chrome.
+        fragment = re.sub(r"<(p|li|h2|h3|h4|blockquote)>\\s*</\\1>", "", fragment, flags=re.I)
+        return fragment.strip()
+
+
+def page_reader_html(content: str, url: str, limit: int = 50000) -> str:
+    parser = RichReaderParser(url, text_limit=limit)
+    parser.feed(content)
+    return parser.rich_html()
+
+
+def sanitize_feed_fragment(content: str, base_url: str, limit: int = 12000) -> str:
+    if not content:
+        return ""
+    parser = RichReaderParser(base_url, capture_from_start=True, text_limit=limit)
+    parser.feed(content)
+    return parser.rich_html()
+
+
 def clean_text(value: str) -> str:
     return re.sub(r"\s+", " ", html.unescape(str(value or ""))).strip()
 
@@ -444,7 +631,8 @@ def scrape_source(source: Source) -> list[dict]:
     items: list[dict] = []
     for index, (url, discovered_title) in enumerate(links):
         try:
-            page = parse_page(fetch_html(url))
+            raw_page = fetch_html(url)
+            page = parse_page(raw_page)
             title = page_title(page, discovered_title)
             if not title:
                 continue
@@ -460,7 +648,8 @@ def scrape_source(source: Source) -> list[dict]:
                 "date": date,
                 "url": url,
                 "summary": summary,
-                "readerText": page_reader_text(page),
+                "readerText": page_reader_text(page, limit=12000),
+                "readerHtml": page_reader_html(raw_page, url, limit=50000),
                 "tags": tags,
             })
         except Exception as exc:  # keep one bad article from breaking the whole source
@@ -612,7 +801,8 @@ def scrape_rss_source(source: RssSource) -> list[dict]:
         url = urljoin(source.feed_url, raw_url) if raw_url else ""
         summary_raw = _child_text(node, {"description", "summary", "content", "encoded"})
         summary = strip_markup(summary_raw)[:360]
-        reader_text = strip_markup(summary_raw)[:4000]
+        reader_text = strip_markup(summary_raw)[:6000]
+        reader_html = sanitize_feed_fragment(summary_raw, source.feed_url, limit=12000)
         date = rss_date(_child_text(node, {"pubdate", "date", "published", "updated"}))
         haystack = title + " " + summary
         if source.filter_irrelevant and not is_technology_relevant(haystack):
@@ -625,11 +815,15 @@ def scrape_rss_source(source: RssSource) -> list[dict]:
         if article_fetches < article_fetch_budget and safe_feed_url(url):
             article_fetches += 1
             try:
-                page = parse_page(fetch_html(url))
-                fuller_text = page_reader_text(page, limit=8000)
+                raw_page = fetch_html(url)
+                page = parse_page(raw_page)
+                fuller_text = page_reader_text(page, limit=12000)
+                fuller_html = page_reader_html(raw_page, url, limit=50000)
                 fuller_summary = page_summary(page)
                 if len(fuller_text) >= 120:
                     reader_text = fuller_text
+                if len(strip_markup(fuller_html)) >= 120:
+                    reader_html = fuller_html
                 if len(fuller_summary) >= 50:
                     summary = fuller_summary[:360]
                 if not date:
@@ -648,6 +842,7 @@ def scrape_rss_source(source: RssSource) -> list[dict]:
             "url": url,
             "summary": summary,
             "readerText": reader_text or summary,
+            "readerHtml": reader_html,
             "tags": tags,
         })
         if len(items) >= source.max_items:

@@ -1,72 +1,18 @@
-PHS CALENDAR v6.9 - CORRECT REPOSITORY STRUCTURE
-=================================================
+PHS Calendar v7.1 - Rich Links Patch
 
-This package fixes the GitHub folder-layout problem and includes the v6.8
-reliable news reader/ticker build.
+Replace these three files in the ROOT of your GitHub repository:
+  index.html
+  update_official_updates.py
+  service-worker.js
 
-CORRECT LAYOUT
---------------
-.github/
-  workflows/
-    update-calendar.yml
-    update-official-updates.yml
-icons/
-  icon-192.png
-  icon-512.png
-  maskable-512.png
-index.html
-manifest.webmanifest
-phs-shield.webp
-rss-feeds.json
-service-worker.js
-standards-watch.json
-update_official_updates.py
-updates.json
+Do not move update_official_updates.py into .github/workflows.
+Your existing .github/workflows/update-official-updates.yml should stay where it is.
 
-IMPORTANT
----------
-PHS Calendar.ics is deliberately NOT included.
-Your working KAMAR workflow owns that file and will keep updating it.
+After committing the three files:
+1. GitHub -> Actions -> Update Official Education Feeds -> Run workflow.
+2. Wait for a green tick.
+3. Open updates.json and search for "readerHtml". You should now see rich HTML entries containing <a href=...> links.
+4. Hard refresh the calendar (Ctrl+F5).
 
-The Python file update_official_updates.py belongs in the REPOSITORY ROOT.
-It must NOT be inside .github/workflows/.
-
-The two YAML files belong ONLY in .github/workflows/.
-
-UPLOAD
-------
-1. Extract this ZIP on your computer.
-2. Upload/replace the files in your phscal repository, preserving the folders.
-3. Make sure .github/workflows contains BOTH YAML files.
-4. Do not delete or replace PHS Calendar.ics.
-
-OLD MISPLACED FILES YOU CAN DELETE FROM GITHUB
-----------------------------------------------
-These are not needed once this package is installed:
-- /update-calendar.yml
-- /update-official-updates.yml
-- /PASTE_THIS_update-official-updates.yml
-- /workflows
-- /.github/workflows/update_official_updates.py   (if still present there)
-
-KEEP this root file:
-- /update_official_updates.py
-
-CHECK AFTER UPLOAD
-------------------
-GitHub > Actions should show BOTH:
-- Update PHS Calendar
-- Update Official Education Feeds
-
-Run "Update Official Education Feeds" once manually.
-It should show green steps for:
-- Check out repository
-- Build official updates
-- Commit changes when needed
-
-The official-feed workflow also runs every 6 hours and automatically runs
-when rss-feeds.json, standards-watch.json, or update_official_updates.py changes.
-
-The KAMAR workflow remains every 15 minutes.
-
-After the workflows are green, hard-refresh the calendar with Ctrl+F5.
+Example expected saved content:
+<a href="https://...pdf" target="_blank" rel="noopener noreferrer">Download the updated 2026 timetable [PDF, 163 KB]</a>
