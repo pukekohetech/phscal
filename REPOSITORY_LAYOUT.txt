@@ -1,0 +1,19 @@
+phscal/
+|-- .github/
+|   `-- workflows/
+|       |-- update-calendar.yml
+|       `-- update-official-updates.yml
+|-- icons/
+|   |-- icon-192.png
+|   |-- icon-512.png
+|   `-- maskable-512.png
+|-- index.html
+|-- manifest.webmanifest
+|-- phs-shield.webp
+|-- rss-feeds.json
+|-- service-worker.js
+|-- standards-watch.json
+|-- update_official_updates.py
+`-- updates.json
+
+PHS Calendar.ics stays in your existing GitHub repo and is NOT included here.
