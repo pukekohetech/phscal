@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="PHS Calendar">
-  <link rel="manifest" href="./manifest.webmanifest?v=19">
+  <link rel="manifest" href="./manifest.webmanifest?v=21">
   <link rel="apple-touch-icon" href="./icons/icon-192.png">
   <link rel="icon" href="./icons/icon-192.png" sizes="192x192" type="image/png">
   <link rel="icon" href="./icons/icon-512.png" sizes="512x512" type="image/png">
@@ -271,26 +271,46 @@
     @media (max-width:1180px){.header{grid-template-columns:1fr auto}.periodStrip{grid-column:1 / -1;grid-row:2}.days[data-view="week"],.days[data-view="fortnight"]{grid-template-columns:repeat(2,minmax(0,1fr))}.headerRight{justify-items:end}.date,.countdownNote{text-align:right}}
     @media (max-width:720px){.shell{padding:7px}.header{grid-template-columns:1fr auto;padding:9px}.brand .title{font-size:16px}.clock{font-size:24px}.date{display:none}.periodTitle{font-size:22px}.days[data-view="week"],.days[data-view="fortnight"]{grid-template-columns:1fr}.morePopover{position:fixed;right:8px;top:auto;bottom:58px}.day{min-height:0}}
 
-    /* v6.3 configurable standards watch + rolling official news */
-    body{padding-bottom:34px}
-    .newsTicker{position:fixed;left:0;right:0;bottom:0;z-index:56;height:34px;background:#171717;color:#fff;display:grid;grid-template-columns:auto 1fr;align-items:center;border-top:1px solid rgba(255,255,255,.12);box-shadow:0 -4px 18px rgba(15,23,42,.10)}
+    /* v6.5 large auto-rotating official news band */
+    :root{--news-band-h:clamp(132px,16.5vh,190px)}
+    body{padding-bottom:0;scrollbar-width:none}
+    body::-webkit-scrollbar{display:none;width:0;height:0}
+    .shell{padding-bottom:calc(var(--news-band-h) + 12px)}
+    details.settings:not([open]){bottom:calc(var(--news-band-h) + 12px)}
+    .newsTicker{position:fixed;left:0;right:0;bottom:0;z-index:56;height:var(--news-band-h);background:linear-gradient(112deg,#151515 0%,#1d171a 52%,#25171d 100%);color:#fff;display:grid;grid-template-columns:clamp(118px,10.5vw,168px) minmax(0,1fr);align-items:stretch;border-top:1px solid rgba(255,255,255,.12);box-shadow:0 -12px 34px rgba(15,23,42,.16);overflow:hidden}
     .newsTicker[hidden]{display:none!important}
-    .newsTickerLabel{height:100%;border:0;border-radius:0;background:var(--accent);color:#fff;padding:0 12px;display:flex;align-items:center;gap:7px;font-size:9px;font-weight:950;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
-    .newsTickerLabel .icon{width:15px;height:15px}
-    .newsTickerViewport{overflow:hidden;min-width:0;white-space:nowrap;mask-image:linear-gradient(90deg,transparent,#000 18px,#000 calc(100% - 18px),transparent);-webkit-mask-image:linear-gradient(90deg,transparent,#000 18px,#000 calc(100% - 18px),transparent)}
-    .newsTickerTrack{display:flex;width:max-content;align-items:center;animation:newsTickerMove var(--ticker-duration,52s) linear infinite;will-change:transform}
-    .newsTicker:hover .newsTickerTrack,.newsTicker:focus-within .newsTickerTrack{animation-play-state:paused}
-    .tickerGroup{display:flex;align-items:center;gap:18px;padding-right:28px;flex:none}
-    .tickerItem{display:inline-flex;align-items:center;gap:7px;color:#fff;text-decoration:none;font-size:11px;font-weight:800;opacity:.95}
-    .tickerItem:hover{text-decoration:underline}
-    .tickerSource{font-size:8px;font-weight:950;letter-spacing:.06em;text-transform:uppercase;color:#f0c97d}
-    .tickerSep{opacity:.35}
+    .newsTicker::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 84% 20%,rgba(200,155,60,.12),transparent 25%),linear-gradient(90deg,transparent 0 68%,rgba(255,255,255,.025));z-index:0}
+    .newsTickerLabel{position:relative;z-index:2;height:100%;border:0;border-radius:0;background:linear-gradient(160deg,var(--accent),#531029);color:#fff;padding:16px 12px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px;font-size:10px;font-weight:950;letter-spacing:.10em;text-transform:uppercase;cursor:pointer;text-align:center}
+    .newsTickerLabel .icon{width:25px;height:25px}
+    .newsTickerLabel::before{content:"LIVE";display:inline-flex;align-items:center;justify-content:center;min-width:44px;border-radius:999px;padding:4px 7px;background:rgba(255,255,255,.14);font-size:8px;letter-spacing:.14em}
+    .newsTickerLabel::after{content:"OFFICIAL FEED";font-size:8px;letter-spacing:.08em;color:#f3d99c;opacity:.95}
+    .newsTickerViewport{position:relative;z-index:1;overflow:hidden;min-width:0;height:100%;white-space:normal}
+    .newsTickerTrack{position:relative;width:100%;height:100%;overflow:hidden;scrollbar-width:none}
+    .newsTickerTrack::-webkit-scrollbar,.newsTickerViewport::-webkit-scrollbar{display:none;width:0;height:0}
+    .tickerItem{position:absolute;inset:0;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:center;color:#fff;text-decoration:none;opacity:0;transform:translateY(16px) scale(.992);pointer-events:none;transition:opacity .42s ease,transform .42s ease}
+    .tickerItem.active{opacity:1;transform:translateY(0) scale(1);pointer-events:auto}
+    .tickerMain{min-width:0;padding:17px 26px 20px;display:flex;flex-direction:column;justify-content:center;gap:7px}
+    .tickerMeta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-height:18px}
+    .tickerSource{font-size:9px;font-weight:950;letter-spacing:.09em;text-transform:uppercase;color:#f0c97d}
+    .tickerTag{font-size:8px;font-weight:950;letter-spacing:.06em;text-transform:uppercase;padding:3px 7px;border:1px solid rgba(255,255,255,.16);border-radius:999px;background:rgba(255,255,255,.06);color:#f4f4f5}
+    .tickerDate{font-size:9px;font-weight:800;color:rgba(255,255,255,.62)}
+    .tickerHeadline{font-size:clamp(18px,1.55vw,28px);line-height:1.06;font-weight:950;letter-spacing:-.025em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:1100px}
+    .tickerSummary{font-size:clamp(10px,.82vw,13px);line-height:1.35;color:rgba(255,255,255,.72);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:1050px}
+    .tickerAside{align-self:stretch;min-width:98px;padding:14px 16px 14px 4px;display:flex;flex-direction:column;align-items:flex-end;justify-content:space-between;gap:8px}
+    .tickerCounter{font-size:9px;font-weight:900;letter-spacing:.08em;color:rgba(255,255,255,.55);font-variant-numeric:tabular-nums}
+    .tickerOpen{display:flex;align-items:center;gap:6px;font-size:9px;font-weight:900;color:#f3d99c;text-transform:uppercase;letter-spacing:.05em}
+    .tickerNav{position:absolute;right:15px;bottom:13px;z-index:6;display:flex;align-items:center;gap:6px}
+    .tickerNav button{width:30px;height:30px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.07);color:#fff;display:grid;place-items:center;cursor:pointer;font-size:15px;line-height:1;backdrop-filter:blur(8px)}
+    .tickerNav button:hover{background:rgba(255,255,255,.14)}
+    .tickerProgress{position:absolute;left:0;right:0;bottom:0;height:4px;background:rgba(255,255,255,.08);z-index:7;overflow:hidden}
+    .tickerProgressBar{height:100%;width:100%;background:linear-gradient(90deg,var(--gold),#f1d48f);transform-origin:left center;animation:tickerProgress var(--ticker-cycle,9s) linear forwards}
+    .newsTicker:hover .tickerProgressBar,.newsTicker:focus-within .tickerProgressBar{animation-play-state:paused}
     .standardsSettings{display:grid;gap:10px}
     .standardsSettings input[type="text"]{font-variant-numeric:tabular-nums}
     .standardsConfigStatus{font-size:10px;color:var(--muted);line-height:1.4}
-    @keyframes newsTickerMove{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-    @media (prefers-reduced-motion:reduce){.newsTickerViewport{overflow-x:auto;mask-image:none;-webkit-mask-image:none}.newsTickerTrack{animation:none}.tickerGroup[aria-hidden="true"]{display:none}}
-    @media (max-width:720px){body{padding-bottom:32px}.newsTicker{height:32px}.newsTickerLabel{padding:0 9px}.newsTickerLabel span{display:none}.tickerItem{font-size:10px}details.settings{bottom:44px}}
+    @keyframes tickerProgress{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+    @media (prefers-reduced-motion:reduce){.tickerItem{transition:none}.tickerProgressBar{animation:none;transform:scaleX(1)}}
+    @media (max-width:720px){:root{--news-band-h:clamp(120px,20vh,168px)}.newsTicker{grid-template-columns:70px minmax(0,1fr)}.newsTickerLabel{padding:10px 6px}.newsTickerLabel span{display:none}.newsTickerLabel::after{display:none}.tickerMain{padding:12px 12px 17px}.tickerHeadline{font-size:16px;-webkit-line-clamp:2}.tickerSummary{font-size:10px;-webkit-line-clamp:2}.tickerAside{display:none}.tickerNav{right:9px;bottom:9px}.tickerNav button{width:28px;height:28px}.morePopover{bottom:calc(var(--news-band-h) + 10px)}details.settings:not([open]){bottom:calc(var(--news-band-h) + 10px)}}
   
 
     /* v6.4 in-app update reader + configurable RSS feeds */
@@ -539,7 +559,7 @@
             <input id="standardsWatchInput" type="text" inputmode="numeric" placeholder="92012, 92014, 92015, 29655">
             <p class="helper">Comma-separated NZQA standard numbers. The shared list lives in <b>standards-watch.json</b>.</p>
           </div>
-          <label class="check"><input id="showNewsTicker" type="checkbox"> Show rolling official news banner</label>
+          <label class="check"><input id="showNewsTicker" type="checkbox"> Show large auto-rotating official news panel</label>
           <div class="actions">
             <button type="button" id="saveOfficialDisplayBtn" class="primary">Save banner setting</button>
             <button type="button" id="prepareStandardsWatchBtn">Publish standards list</button>
@@ -746,6 +766,9 @@
     let officialUpdates = { generatedAt:'', items:[], standardSnapshots:[], sources:[] };
     let updatesBusy = false;
     let updatesFilter = 'all';
+    let newsTickerIndex = 0;
+    let newsTickerTimer = null;
+    const NEWS_TICKER_MS = 9000;
     let sharedWatchStandards = [...DEFAULT_WATCHED_STANDARDS];
     let standardsEditorDirty = false;
     let sharedRssFeeds = [];
@@ -954,8 +977,17 @@
       if (els.updatesRefreshBtn) els.updatesRefreshBtn.addEventListener('click', () => reloadOfficialUpdates({ force:true }));
       if (els.updatesFilters) els.updatesFilters.addEventListener('click', handleUpdateFilterClick);
       if (els.updatesList) els.updatesList.addEventListener('click', handleUpdateReaderClick);
-      if (els.newsTickerTrack) els.newsTickerTrack.addEventListener('click', handleUpdateReaderClick);
+      if (els.newsTickerTrack) els.newsTickerTrack.addEventListener('click', handleNewsTickerClick);
       if (els.newsTickerBtn) els.newsTickerBtn.addEventListener('click', openOfficialUpdates);
+      if (els.newsTicker){
+        els.newsTicker.addEventListener('mouseenter', stopNewsTickerCycle);
+        els.newsTicker.addEventListener('mouseleave', startNewsTickerCycle);
+        els.newsTicker.addEventListener('focusin', stopNewsTickerCycle);
+        els.newsTicker.addEventListener('focusout', () => setTimeout(() => {
+          if (!els.newsTicker.contains(document.activeElement)) startNewsTickerCycle();
+        }, 0));
+      }
+      document.addEventListener('visibilitychange', () => document.hidden ? stopNewsTickerCycle() : startNewsTickerCycle());
       if (els.saveOfficialDisplayBtn) els.saveOfficialDisplayBtn.addEventListener('click', saveOfficialDisplaySettings);
       if (els.prepareStandardsWatchBtn) els.prepareStandardsWatchBtn.addEventListener('click', prepareStandardsWatchUpdate);
       if (els.standardsWatchInput) els.standardsWatchInput.addEventListener('input', () => { standardsEditorDirty = true; state.standardsWatchDraft = els.standardsWatchInput.value; saveState(); });
@@ -1948,8 +1980,74 @@
       return scored.slice(0, 10).map(row => row.item);
     }
 
+    function tickerPrimaryTag(item){
+      const tags = (item.tags || []).map(tag => String(tag));
+      const priority = ['Standards Watch','Technology','Assessment','Safety','Curriculum'];
+      return priority.find(tag => tags.some(value => value.toLowerCase() === tag.toLowerCase())) || tags[0] || 'Official';
+    }
+
+    function tickerDateLabel(value){
+      if (!value) return '';
+      try{
+        const date = /^\d{4}-\d{2}-\d{2}$/.test(String(value)) ? new Date(String(value) + 'T12:00:00') : new Date(value);
+        if (!Number.isFinite(date.getTime())) return String(value);
+        return new Intl.DateTimeFormat('en-NZ', { day:'numeric', month:'short', timeZone:APP_TIMEZONE }).format(date);
+      }catch(_){ return String(value || ''); }
+    }
+
+    function restartTickerProgress(){
+      if (!els.newsTickerTrack) return;
+      const bar = els.newsTickerTrack.querySelector('.tickerProgressBar');
+      if (!bar) return;
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+        bar.style.animation = 'none';
+        bar.style.transform = 'scaleX(1)';
+        return;
+      }
+      bar.style.animation = 'none';
+      void bar.offsetWidth;
+      bar.style.animation = 'tickerProgress ' + NEWS_TICKER_MS + 'ms linear forwards';
+    }
+
+    function setNewsTickerIndex(index, restartProgress = true){
+      if (!els.newsTickerTrack) return;
+      const cards = Array.from(els.newsTickerTrack.querySelectorAll('.tickerItem'));
+      if (!cards.length) return;
+      newsTickerIndex = ((Number(index) || 0) % cards.length + cards.length) % cards.length;
+      cards.forEach((card, i) => card.classList.toggle('active', i === newsTickerIndex));
+      if (restartProgress) restartTickerProgress();
+    }
+
+    function stopNewsTickerCycle(){
+      if (newsTickerTimer){ clearInterval(newsTickerTimer); newsTickerTimer = null; }
+    }
+
+    function startNewsTickerCycle(){
+      stopNewsTickerCycle();
+      if (!els.newsTicker || els.newsTicker.hidden || state.showNewsTicker === false) return;
+      const cards = els.newsTickerTrack ? els.newsTickerTrack.querySelectorAll('.tickerItem') : [];
+      if (cards.length < 2) return;
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      restartTickerProgress();
+      newsTickerTimer = setInterval(() => setNewsTickerIndex(newsTickerIndex + 1, true), NEWS_TICKER_MS);
+    }
+
+    function handleNewsTickerClick(event){
+      const nav = event.target.closest('[data-ticker-action]');
+      if (nav){
+        event.preventDefault();
+        event.stopPropagation();
+        const direction = nav.getAttribute('data-ticker-action') === 'prev' ? -1 : 1;
+        setNewsTickerIndex(newsTickerIndex + direction, true);
+        startNewsTickerCycle();
+        return;
+      }
+      handleUpdateReaderClick(event);
+    }
+
     function renderNewsTicker(){
       if (!els.newsTicker || !els.newsTickerTrack) return;
+      stopNewsTickerCycle();
       if (state.showNewsTicker === false){
         els.newsTicker.hidden = true;
         return;
@@ -1959,17 +2057,26 @@
         els.newsTicker.hidden = true;
         return;
       }
-      const makeGroup = hidden => '<div class="tickerGroup"' + (hidden ? ' aria-hidden="true"' : '') + '>' + items.map((item, index) => {
-        const source = escapeHtml(item.source || 'Update');
-        const title = escapeHtml(trimText(item.title || 'Official update', 105));
-        const sep = index ? '<span class="tickerSep" aria-hidden="true">•</span>' : '';
-        return sep + '<a class="tickerItem" data-update-id="' + escapeHtml(item.id || '') + '" href="' + escapeHtml(item.url) + '"><span class="tickerSource">' + source + '</span><span>' + title + '</span></a>';
-      }).join('') + '</div>';
-      els.newsTickerTrack.innerHTML = makeGroup(false) + makeGroup(true);
-      const chars = items.reduce((sum, item) => sum + String(item.title || '').length + String(item.source || '').length, 0);
-      const seconds = Math.max(42, Math.min(110, Math.round(chars / 7)));
-      els.newsTickerTrack.style.setProperty('--ticker-duration', seconds + 's');
+      newsTickerIndex = Math.min(newsTickerIndex, Math.max(0, items.length - 1));
+      const cards = items.map((item, index) => {
+        const source = escapeHtml(item.source || 'Official update');
+        const title = escapeHtml(trimText(item.title || 'Official update', 180));
+        const summary = escapeHtml(trimText(item.summary || item.description || 'Open this update for more information.', 260));
+        const tag = escapeHtml(tickerPrimaryTag(item));
+        const date = escapeHtml(tickerDateLabel(item.date));
+        const active = index === newsTickerIndex ? ' active' : '';
+        return '<a class="tickerItem' + active + '" data-update-id="' + escapeHtml(item.id || '') + '" href="' + escapeHtml(item.url) + '">' +
+          '<div class="tickerMain"><div class="tickerMeta"><span class="tickerSource">' + source + '</span><span class="tickerTag">' + tag + '</span>' + (date ? '<span class="tickerDate">' + date + '</span>' : '') + '</div>' +
+          '<div class="tickerHeadline">' + title + '</div><div class="tickerSummary">' + summary + '</div></div>' +
+          '<div class="tickerAside"><span class="tickerCounter"><span class="tickerCounterCurrent">' + String(index + 1).padStart(2,'0') + '</span> / ' + String(items.length).padStart(2,'0') + '</span><span class="tickerOpen">Read update ↗</span></div></a>';
+      }).join('');
+      els.newsTickerTrack.innerHTML = cards +
+        '<div class="tickerNav" aria-label="News controls"><button type="button" data-ticker-action="prev" aria-label="Previous update" title="Previous update">‹</button><button type="button" data-ticker-action="next" aria-label="Next update" title="Next update">›</button></div>' +
+        '<div class="tickerProgress" aria-hidden="true"><div class="tickerProgressBar"></div></div>';
+      els.newsTickerTrack.style.setProperty('--ticker-cycle', (NEWS_TICKER_MS / 1000) + 's');
       els.newsTicker.hidden = false;
+      setNewsTickerIndex(newsTickerIndex, true);
+      startNewsTickerCycle();
     }
 
     function handleUpdateFilterClick(event){

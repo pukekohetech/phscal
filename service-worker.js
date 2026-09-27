@@ -1,4 +1,4 @@
-const CACHE = 'phs-calendar-pwa-v20-rss-reader';
+const CACHE = 'phs-calendar-pwa-v21-featured-news';
 const APP_SHELL = [
   './',
   './index.html',
