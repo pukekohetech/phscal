@@ -3,21 +3,21 @@
     "NZQA": true,
     "NCEA": true,
     "Ministry": true,
-    "WorkSafe": true
+    "WorkSafe": false
   },
   "feeds": [
     {
       "name": "NCEA on TKI",
       "url": "https://ncea.tki.org.nz/layout/set/rss",
       "tags": ["Assessment", "Technology"],
-      "filterTechnology": true,
+      "filterTechnology": false,
       "enabled": true
     },
     {
       "name": "Technology Online - What's new",
       "url": "https://www.technology.tki.org.nz/rss/feed/whats-new",
       "tags": ["Technology", "Curriculum"],
-      "filterTechnology": false,
+      "filterTechnology": true,
       "enabled": true
     },
     {
