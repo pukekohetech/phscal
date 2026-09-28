@@ -1,26 +1,15 @@
-PHS Calendar v7.3 - News Control & Search patch
+PHS Calendar v7.4 - Reader Layout Fix
 
-Replace these repo files:
-- index.html
-- service-worker.js
-- update_official_updates.py
-- rss-feeds.json
+Replace only these two files in the ROOT of the GitHub repo:
+  index.html
+  service-worker.js
 
-The workflow file is included in the correct path for reference:
-.github/workflows/update-official-updates.yml
-(Replace it only if yours is missing or different.)
+What this fixes:
+- Article content can no longer expand underneath the Updates/RSS column.
+- Long links, wide tables, media and long text are constrained to the reader pane.
+- Open original stays visible; the toolbar reflows before controls can be pushed off-screen.
+- Below 980 px wide, the article switches to full-width reader mode and the feed list is hidden until Back is pressed.
+- Reader/table scrollbars remain visually hidden while mouse/touch scrolling still works.
 
-Then run:
-Actions > Update Official Education Feeds > Run workflow
-
-What changed:
-- Update/news search box.
-- Newest-first / oldest-first sorting.
-- Future exam/event dates are no longer treated as publication dates.
-- Built-in NZQA, NCEA, Ministry and WorkSafe sources can be turned off.
-- Custom RSS feeds can be disabled or removed.
-- Disabled/deleted sources are purged from updates.json on the next updater run.
-- Source changes hide from the list and ticker immediately in the current browser.
-- It is valid to disable every news source; the workflow no longer fails just because none are enabled.
-
-PHS Calendar.ics is intentionally NOT included.
+After upload, use Ctrl+F5 once.
+No feed, standards or workflow files need changing for this patch.
