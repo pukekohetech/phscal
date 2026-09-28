@@ -1,18 +1,26 @@
-PHS Calendar v7.1 - Rich Links Patch
+PHS Calendar v7.3 - News Control & Search patch
 
-Replace these three files in the ROOT of your GitHub repository:
-  index.html
-  update_official_updates.py
-  service-worker.js
+Replace these repo files:
+- index.html
+- service-worker.js
+- update_official_updates.py
+- rss-feeds.json
 
-Do not move update_official_updates.py into .github/workflows.
-Your existing .github/workflows/update-official-updates.yml should stay where it is.
+The workflow file is included in the correct path for reference:
+.github/workflows/update-official-updates.yml
+(Replace it only if yours is missing or different.)
 
-After committing the three files:
-1. GitHub -> Actions -> Update Official Education Feeds -> Run workflow.
-2. Wait for a green tick.
-3. Open updates.json and search for "readerHtml". You should now see rich HTML entries containing <a href=...> links.
-4. Hard refresh the calendar (Ctrl+F5).
+Then run:
+Actions > Update Official Education Feeds > Run workflow
 
-Example expected saved content:
-<a href="https://...pdf" target="_blank" rel="noopener noreferrer">Download the updated 2026 timetable [PDF, 163 KB]</a>
+What changed:
+- Update/news search box.
+- Newest-first / oldest-first sorting.
+- Future exam/event dates are no longer treated as publication dates.
+- Built-in NZQA, NCEA, Ministry and WorkSafe sources can be turned off.
+- Custom RSS feeds can be disabled or removed.
+- Disabled/deleted sources are purged from updates.json on the next updater run.
+- Source changes hide from the list and ticker immediately in the current browser.
+- It is valid to disable every news source; the workflow no longer fails just because none are enabled.
+
+PHS Calendar.ics is intentionally NOT included.

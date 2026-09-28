@@ -1,4 +1,10 @@
 {
+  "officialSources": {
+    "NZQA": true,
+    "NCEA": true,
+    "Ministry": true,
+    "WorkSafe": true
+  },
   "feeds": [
     {
       "name": "NCEA on TKI",

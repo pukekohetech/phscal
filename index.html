@@ -215,7 +215,7 @@
     @media (max-width:1180px){.header{grid-template-columns:1fr}.headerRight{justify-items:start}.date,.countdownNote{text-align:left}.settingsBody,.days{grid-template-columns:1fr}}
     @media (max-width:1180px){.searchRow{grid-template-columns:1fr}}
     @media (max-width:760px){.settingRow,.choiceGrid{grid-template-columns:1fr}.dayHead{display:grid}.dayTools{justify-content:flex-start;max-width:100%}}
-    @media (max-width:640px){.shell{padding:8px}.header,.main{padding:10px}.dayTitle{font-size:17px}.toolbar{justify-content:flex-start}.searchBox{flex-wrap:wrap}.summaryHint{display:none}}
+    @media (max-width:640px){.updatesSearchBar{grid-template-columns:1fr auto}.updatesSearchBar select{grid-column:1 / -1}.officialSourceRows{grid-template-columns:1fr}.shell{padding:8px}.header,.main{padding:10px}.dayTitle{font-size:17px}.toolbar{justify-content:flex-start}.searchBox{flex-wrap:wrap}.summaryHint{display:none}}
     /* v6 minimal dashboard */
     .iconSprite{position:absolute;width:0;height:0;overflow:hidden}
     .icon{width:19px;height:19px;display:block;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
@@ -237,7 +237,7 @@
     .updateBadge{position:absolute;right:-4px;top:-5px;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:var(--accent);color:#fff;border:2px solid #fff;display:grid;place-items:center;font-size:9px;font-weight:950;line-height:1}
     .updatesDrawer{position:fixed;inset:0;z-index:90;display:grid;grid-template-columns:1fr minmax(320px,520px)}
     .updatesBackdrop{background:rgba(15,23,42,.28);backdrop-filter:blur(3px)}
-    .updatesPanel{background:#fff;box-shadow:-20px 0 60px rgba(15,23,42,.18);padding:18px;display:grid;grid-template-rows:auto auto auto 1fr;gap:12px;min-height:100vh;max-height:100vh;overflow:hidden}
+    .updatesPanel{background:#fff;box-shadow:-20px 0 60px rgba(15,23,42,.18);padding:18px;display:grid;grid-template-rows:auto auto auto auto 1fr;gap:12px;min-height:100vh;max-height:100vh;overflow:hidden}
     .updatesHead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
     .updatesTitle{font-size:20px;font-weight:950;letter-spacing:-.35px}
     .updatesMeta{font-size:11px;color:var(--muted);font-weight:800;margin-top:3px}
@@ -245,6 +245,14 @@
     .updatesFilters{display:flex;gap:6px;flex-wrap:wrap}
     .updatesFilters button{padding:6px 9px;border-radius:999px;font-size:10px;color:var(--muted)}
     .updatesFilters button.active{background:var(--accent-soft);border-color:#e5c9d4;color:var(--accent)}
+    .updatesSearchBar{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px;align-items:center}
+    .updatesSearchBar input,.updatesSearchBar select{min-width:0;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--text);padding:8px 10px;font-size:11px;font-weight:800}
+    .updatesSearchBar select{padding-right:28px}
+    .updatesSearchBar button{padding:7px 9px;font-size:10px}
+    .officialSourceRows{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+    .officialSourceRow{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--line);border-radius:11px;padding:9px 10px;background:#fff}
+    .officialSourceRow label{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:900;cursor:pointer}
+    .officialSourceRow .sourceKind{font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:900}
     .standardsWatch{border:1px solid var(--line);background:#fafafa;border-radius:12px;padding:10px;display:grid;gap:8px}
     .standardsTop{display:flex;justify-content:space-between;gap:10px;align-items:center}
     .standardsTitle{font-size:11px;font-weight:950;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
@@ -508,6 +516,14 @@
           <button type="button" data-update-filter="safety">Safety</button>
           <button type="button" data-update-filter="standard-watch">Standards</button>
         </div>
+        <div class="updatesSearchBar">
+          <input id="updatesSearchInput" type="search" placeholder="Search updates, sources, standards, topics…" aria-label="Search official updates">
+          <button type="button" id="updatesSearchClearBtn">Clear</button>
+          <select id="updatesSortSelect" aria-label="Sort official updates">
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+          </select>
+        </div>
         <div class="standardsWatch">
           <div class="standardsTop"><div class="standardsTitle">Standards watch</div><div class="updatesMeta" id="standardsMeta">Watching key Technology standards</div></div>
           <div class="standardChips" id="standardChips"></div>
@@ -570,7 +586,7 @@
         <div class="card standardsSettings">
           <div>
             <div class="sectionTitle">Official updates</div>
-            <p class="helper">Choose watched NZQA standards and manage RSS feeds. The live news panel is always visible and advances automatically every 5 seconds.</p>
+            <p class="helper">Choose watched NZQA standards and control every news source. Hidden or deleted sources disappear from the update list and ticker immediately; publish to make the change shared.</p>
           </div>
           <div class="field">
             <label for="standardsWatchInput">Standards to watch</label>
@@ -585,17 +601,25 @@
           <div class="rssDivider"></div>
           <div class="rssFeedEditor">
             <div>
-              <div class="sectionTitle">RSS feeds</div>
-              <p class="helper">Add, edit, disable or remove RSS/Atom feeds. Tags are comma-separated, for example <b>Technology, Assessment</b>.</p>
+              <div class="sectionTitle">Built-in news sources</div>
+              <p class="helper">Turn any official source off completely. This hides it immediately and, once published, removes its saved stories from <b>updates.json</b>.</p>
+            </div>
+            <div class="officialSourceRows" id="officialSourceRows"></div>
+          </div>
+          <div class="rssDivider"></div>
+          <div class="rssFeedEditor">
+            <div>
+              <div class="sectionTitle">RSS / Atom feeds</div>
+              <p class="helper">Add, edit, switch off or permanently remove custom feeds. Removed feeds are purged on the next updater run.</p>
             </div>
             <div class="rssFeedHead"><span>Name</span><span>Feed URL</span><span>Tags</span><span>On</span><span>Tech only</span></div>
             <div class="rssFeedRows" id="rssFeedRows"></div>
             <div class="actions">
               <button type="button" id="addRssFeedBtn">Add RSS feed</button>
-              <button type="button" id="prepareRssFeedsBtn" class="primary">Publish RSS feeds</button>
-              <button type="button" id="reloadRssFeedsBtn">Reload shared list</button>
+              <button type="button" id="prepareRssFeedsBtn" class="primary">Publish news sources</button>
+              <button type="button" id="reloadRssFeedsBtn">Reload shared sources</button>
             </div>
-            <div class="rssConfigStatus" id="rssConfigStatus">RSS feeds are stored in <b>rss-feeds.json</b>. Publishing the file triggers the feed updater automatically.</div>
+            <div class="rssConfigStatus" id="rssConfigStatus">News-source settings are stored in <b>rss-feeds.json</b>. Publishing triggers the updater and purges disabled/deleted sources.</div>
           </div>
         </div>
 
@@ -724,6 +748,7 @@
     const DEFAULT_WATCHED_STANDARDS = ['92012','92014','92015','29655'];
     const STANDARDS_EDIT_URL = 'https://github.com/pukekohetech/phscal/edit/main/standards-watch.json';
     const RSS_FEEDS_EDIT_URL = 'https://github.com/pukekohetech/phscal/edit/main/rss-feeds.json';
+    const DEFAULT_OFFICIAL_SOURCE_PREFS = { NZQA:true, NCEA:true, Ministry:true, WorkSafe:true };
     const LEGACY_DEFAULT_FEED = 'https://raw.githubusercontent.com/pukekohetech/phscal/main/PHS%20Calendar.ics';
     const DEFAULT_WEATHER = { name:'Pukekohe, New Zealand', latitude:-37.2008, longitude:174.9010 };
     const WEATHER_CACHE_MS = 45 * 60 * 1000;
@@ -783,12 +808,15 @@
     let officialUpdates = { generatedAt:'', items:[], standardSnapshots:[], sources:[] };
     let updatesBusy = false;
     let updatesFilter = 'all';
+    let updatesSearchTerm = '';
+    let updatesSort = 'newest';
     let newsTickerIndex = 0;
     let newsTickerTimer = null;
     const NEWS_TICKER_MS = 5000;
     let sharedWatchStandards = [...DEFAULT_WATCHED_STANDARDS];
     let standardsEditorDirty = false;
     let sharedRssFeeds = [];
+    let sharedOfficialSourcePrefs = { ...DEFAULT_OFFICIAL_SOURCE_PREFS };
     let rssEditorDirty = false;
     let activeUpdateId = '';
     let updateReaderMode = 'reader';
@@ -800,7 +828,7 @@
     init();
 
     function mapEls(){
-      const ids = ['statusChip','rangeChip','sourceChip','lastUpdatedChip','periodLabel','periodTitle','periodMeta','periodProgress','periodCountdown','periodCountdownNote','clockTime','clockDate','termWeek','prevBtn','todayBtn','nextBtn','refreshBtn','fullscreenBtn','installBtn','updatesBtn','updatesBadge','updatesDrawer','updatesCloseBtn','updatesRefreshBtn','updatesMeta','updatesFilters','updatesList','standardChips','standardsMeta','updatesReaderPane','updatesReaderBackBtn','updatesReaderSource','updatesReaderTitle','updatesReaderHint','updatesReaderStage','updatesReaderEmpty','updatesReaderFrame','updatesReaderText','updatesLiveViewBtn','updatesReaderViewBtn','updatesOpenOriginal','newsTicker','newsTickerBtn','newsTickerTrack','standardsWatchInput','showNewsTicker','saveOfficialDisplayBtn','prepareStandardsWatchBtn','standardsConfigStatus','rssFeedRows','addRssFeedBtn','prepareRssFeedsBtn','reloadRssFeedsBtn','rssConfigStatus','noticeBox','errorBox','searchInput','clearSearchBtn','searchInfo','daysList','feedUrl','feedName','addFeedBtn','exampleBtn','icsFileInput','importFilesBtn','mirrorFileBtn','chooseFolderBtn','scanFolderBtn','pasteName','pasteText','importPasteBtn','refreshMinutes','returnMinutes','showWeekends','includeAllDay','showWeather','weatherLocation','saveWeatherBtn','detectWeatherBtn','refreshWeatherBtn','weatherStatusBox','periodRows','addPeriodBtn','savePeriodsBtn','periodsText','saveSettingsBtn','resetPeriodsBtn','reloadAllBtn','calendarRefreshBtn','clearAllBtn','sourceList','folderStatusBox'];
+      const ids = ['statusChip','rangeChip','sourceChip','lastUpdatedChip','periodLabel','periodTitle','periodMeta','periodProgress','periodCountdown','periodCountdownNote','clockTime','clockDate','termWeek','prevBtn','todayBtn','nextBtn','refreshBtn','fullscreenBtn','installBtn','updatesBtn','updatesBadge','updatesDrawer','updatesCloseBtn','updatesRefreshBtn','updatesMeta','updatesFilters','updatesSearchInput','updatesSearchClearBtn','updatesSortSelect','updatesList','standardChips','standardsMeta','updatesReaderPane','updatesReaderBackBtn','updatesReaderSource','updatesReaderTitle','updatesReaderHint','updatesReaderStage','updatesReaderEmpty','updatesReaderFrame','updatesReaderText','updatesLiveViewBtn','updatesReaderViewBtn','updatesOpenOriginal','newsTicker','newsTickerBtn','newsTickerTrack','standardsWatchInput','showNewsTicker','saveOfficialDisplayBtn','prepareStandardsWatchBtn','standardsConfigStatus','officialSourceRows','rssFeedRows','addRssFeedBtn','prepareRssFeedsBtn','reloadRssFeedsBtn','rssConfigStatus','noticeBox','errorBox','searchInput','clearSearchBtn','searchInfo','daysList','feedUrl','feedName','addFeedBtn','exampleBtn','icsFileInput','importFilesBtn','mirrorFileBtn','chooseFolderBtn','scanFolderBtn','pasteName','pasteText','importPasteBtn','refreshMinutes','returnMinutes','showWeekends','includeAllDay','showWeather','weatherLocation','saveWeatherBtn','detectWeatherBtn','refreshWeatherBtn','weatherStatusBox','periodRows','addPeriodBtn','savePeriodsBtn','periodsText','saveSettingsBtn','resetPeriodsBtn','reloadAllBtn','calendarRefreshBtn','clearAllBtn','sourceList','folderStatusBox'];
       return Object.fromEntries(ids.map(id => [id, document.getElementById(id)]));
     }
 
@@ -992,6 +1020,9 @@
       if (els.updatesReaderViewBtn) els.updatesReaderViewBtn.addEventListener('click', () => setUpdateReaderMode('reader'));
       if (els.updatesRefreshBtn) els.updatesRefreshBtn.addEventListener('click', () => reloadOfficialUpdates({ force:true }));
       if (els.updatesFilters) els.updatesFilters.addEventListener('click', handleUpdateFilterClick);
+      if (els.updatesSearchInput) els.updatesSearchInput.addEventListener('input', event => { updatesSearchTerm = String(event.target.value || ''); renderOfficialUpdates(); });
+      if (els.updatesSearchClearBtn) els.updatesSearchClearBtn.addEventListener('click', () => { updatesSearchTerm = ''; if (els.updatesSearchInput) els.updatesSearchInput.value = ''; renderOfficialUpdates(); });
+      if (els.updatesSortSelect) els.updatesSortSelect.addEventListener('change', event => { updatesSort = event.target.value === 'oldest' ? 'oldest' : 'newest'; renderOfficialUpdates(); });
       if (els.updatesList) els.updatesList.addEventListener('click', handleUpdateReaderClick);
       if (els.newsTickerTrack) els.newsTickerTrack.addEventListener('click', handleNewsTickerClick);
       if (els.newsTickerBtn) els.newsTickerBtn.addEventListener('click', openOfficialUpdates);
@@ -1004,9 +1035,12 @@
       if (els.addRssFeedBtn) els.addRssFeedBtn.addEventListener('click', addRssFeedRow);
       if (els.prepareRssFeedsBtn) els.prepareRssFeedsBtn.addEventListener('click', prepareRssFeedsUpdate);
       if (els.reloadRssFeedsBtn) els.reloadRssFeedsBtn.addEventListener('click', () => { rssEditorDirty = false; reloadRssFeedsConfig({ force:true }); });
+      if (els.officialSourceRows){
+        els.officialSourceRows.addEventListener('change', () => { rssEditorDirty = true; renderOfficialUpdates(); });
+      }
       if (els.rssFeedRows){
-        els.rssFeedRows.addEventListener('input', () => { rssEditorDirty = true; });
-        els.rssFeedRows.addEventListener('change', () => { rssEditorDirty = true; });
+        els.rssFeedRows.addEventListener('input', () => { rssEditorDirty = true; renderOfficialUpdates(); });
+        els.rssFeedRows.addEventListener('change', () => { rssEditorDirty = true; renderOfficialUpdates(); });
         els.rssFeedRows.addEventListener('click', handleRssFeedRowsClick);
       }
       if (els.updatesOpenOriginal) els.updatesOpenOriginal.addEventListener('click', event => { if (els.updatesOpenOriginal.getAttribute('aria-disabled') === 'true') event.preventDefault(); });
@@ -1808,14 +1842,57 @@
         if (!response.ok) throw new Error('HTTP ' + response.status);
         const data = await response.json();
         const feeds = (data && Array.isArray(data.feeds) ? data.feeds : []).map(normalizeRssFeed).filter(feed => feed.name && validRssUrl(feed.url));
-        if (!rssEditorDirty) sharedRssFeeds = feeds;
+        const officialSources = normalizeOfficialSourcePrefs(data && data.officialSources);
+        if (!rssEditorDirty){ sharedRssFeeds = feeds; sharedOfficialSourcePrefs = officialSources; }
+        renderOfficialSourceEditor();
         renderRssFeedEditor();
-        if (els.rssConfigStatus) els.rssConfigStatus.textContent = feeds.length + ' shared RSS feed' + (feeds.length === 1 ? '' : 's') + '. Publishing a change triggers the updater automatically.';
+        if (els.rssConfigStatus) els.rssConfigStatus.textContent = feeds.length + ' shared RSS/Atom feed' + (feeds.length === 1 ? '' : 's') + ' · built-in source controls loaded. Publish changes to purge disabled/deleted stories.';
       }catch(_){
         if (!rssEditorDirty && Array.isArray(state.rssFeedsDraft) && state.rssFeedsDraft.length) sharedRssFeeds = state.rssFeedsDraft.map(normalizeRssFeed);
+        renderOfficialSourceEditor();
         renderRssFeedEditor();
         if (els.rssConfigStatus) els.rssConfigStatus.textContent = 'Could not load rss-feeds.json right now. Existing official updates are unaffected.';
       }
+    }
+
+    function normalizeOfficialSourcePrefs(value){
+      const raw = value && typeof value === 'object' ? value : {};
+      return Object.fromEntries(Object.keys(DEFAULT_OFFICIAL_SOURCE_PREFS).map(name => [name, raw[name] !== false]));
+    }
+
+    function collectOfficialSourcePrefs(){
+      if (!els.officialSourceRows) return { ...sharedOfficialSourcePrefs };
+      const prefs = { ...DEFAULT_OFFICIAL_SOURCE_PREFS };
+      els.officialSourceRows.querySelectorAll('[data-official-source]').forEach(input => { prefs[input.getAttribute('data-official-source')] = !!input.checked; });
+      return prefs;
+    }
+
+    function renderOfficialSourceEditor(){
+      if (!els.officialSourceRows) return;
+      const prefs = rssEditorDirty ? collectOfficialSourcePrefs() : sharedOfficialSourcePrefs;
+      els.officialSourceRows.innerHTML = Object.keys(DEFAULT_OFFICIAL_SOURCE_PREFS).map(name =>
+        '<div class="officialSourceRow"><label><input type="checkbox" data-official-source="' + escapeHtml(name) + '"' + (prefs[name] !== false ? ' checked' : '') + '> ' + escapeHtml(name) + '</label><span class="sourceKind">Official</span></div>'
+      ).join('');
+    }
+
+    function activeOfficialSourcePrefs(){
+      return rssEditorDirty ? collectOfficialSourcePrefs() : sharedOfficialSourcePrefs;
+    }
+
+    function activeRssFeeds(){
+      return rssEditorDirty ? collectRssFeedEditor() : sharedRssFeeds;
+    }
+
+    function updateSourceIsEnabled(item){
+      if (!item) return false;
+      const source = String(item.source || '');
+      const prefs = activeOfficialSourcePrefs();
+      if (Object.prototype.hasOwnProperty.call(prefs, source) && prefs[source] === false) return false;
+      if (item.sourceType === 'rss' || item.feedUrl){
+        const feeds = activeRssFeeds();
+        return feeds.some(feed => feed.enabled !== false && ((item.feedUrl && feed.url === item.feedUrl) || feed.name === source));
+      }
+      return true;
     }
 
     function rssFeedRowHtml(feed, index){
@@ -1876,6 +1953,7 @@
       const row = button.closest('.rssFeedRow');
       if (row) row.remove();
       rssEditorDirty = true;
+      renderOfficialUpdates();
       if (!els.rssFeedRows.querySelector('.rssFeedRow')) els.rssFeedRows.innerHTML = '<div class="updatesEmpty">No RSS feeds configured yet.</div>';
     }
 
@@ -1887,10 +1965,12 @@
         return;
       }
       feeds = feeds.slice(0,30);
+      const officialSources = collectOfficialSourcePrefs();
       sharedRssFeeds = feeds;
+      sharedOfficialSourcePrefs = officialSources;
       state.rssFeedsDraft = feeds;
       saveState();
-      const configText = JSON.stringify({ feeds }, null, 2) + '\n';
+      const configText = JSON.stringify({ officialSources, feeds }, null, 2) + '\n';
       const tab = window.open(RSS_FEEDS_EDIT_URL, '_blank');
       try{ if (tab) tab.opener = null; }catch(_){ }
       let copied = false;
@@ -1904,11 +1984,11 @@
       }
       if (els.rssConfigStatus){
         els.rssConfigStatus.textContent = copied
-          ? 'Copied rss-feeds.json. Replace the GitHub file contents and commit; the updater will run automatically.'
+          ? 'Copied rss-feeds.json with source controls. Replace the GitHub file contents and commit; the updater will run automatically and purge disabled/deleted stories.'
           : 'GitHub opened. Save these ' + feeds.length + ' RSS feeds into rss-feeds.json.';
       }
       if (!tab) setTempNotice('Your browser blocked the GitHub tab. Allow pop-ups, then try again.');
-      else setTempNotice(copied ? 'RSS feed list copied. Paste it into GitHub and commit.' : 'GitHub RSS feed file opened.');
+      else setTempNotice(copied ? 'News-source config copied. Paste it into GitHub and commit.' : 'GitHub news-source config opened.');
     }
 
     function findOfficialUpdate(id){
@@ -2024,8 +2104,9 @@
       const fallbackBody = body
         ? body.split(/\n{2,}/).map(text => '<p>' + escapeHtml(text) + '</p>').join('')
         : '<p class="readerTextEmpty">A saved article snapshot was not available for this item. Use Open original to view the source website.</p>';
-      const readerDate = item.date ? new Date(item.date + 'T12:00:00') : null;
-      const readerDateText = readerDate && !Number.isNaN(readerDate.getTime()) ? readerDate.toLocaleDateString([], { day:'numeric', month:'long', year:'numeric' }) : '';
+      const readerDateValue = updateDateValue(item);
+      const readerDate = readerDateValue ? new Date(readerDateValue) : null;
+      const readerDateText = readerDate ? readerDate.toLocaleDateString([], { day:'numeric', month:'long', year:'numeric' }) : '';
       const dateLabel = readerDateText ? '<span>' + escapeHtml(readerDateText) + '</span>' : '';
       const tagLabel = Array.isArray(item.tags) && item.tags.length ? '<span>' + escapeHtml(item.tags.slice(0,3).join(' · ')) + '</span>' : '';
       const summary = String(item.summary || '').trim();
@@ -2043,7 +2124,7 @@
     }
 
     function tickerItems(){
-      const items = (officialUpdates.items || []).filter(item => item && item.title && item.url);
+      const items = (officialUpdates.items || []).filter(item => item && item.title && item.url && updateSourceIsEnabled(item)).sort(compareOfficialItemsNewest);
       if (!items.length) return [];
 
       // Keep each source represented instead of allowing one busy feed to fill
@@ -2183,7 +2264,7 @@
       els.updatesDrawer.hidden = false;
       document.body.style.overflow = 'hidden';
       renderOfficialUpdates();
-      const ids = (officialUpdates.items || []).map(item => item.id).filter(Boolean);
+      const ids = (officialUpdates.items || []).filter(updateSourceIsEnabled).map(item => item.id).filter(Boolean);
       state.officialSeenIds = [...new Set([...(state.officialSeenIds || []), ...ids])].slice(-250);
       saveState();
       renderOfficialUpdatesBadge();
@@ -2199,7 +2280,7 @@
     function renderOfficialUpdatesBadge(){
       if (!els.updatesBadge) return;
       const seen = new Set(state.officialSeenIds || []);
-      const unread = (officialUpdates.items || []).filter(item => item.id && !seen.has(item.id)).length;
+      const unread = (officialUpdates.items || []).filter(updateSourceIsEnabled).filter(item => item.id && !seen.has(item.id)).length;
       els.updatesBadge.textContent = unread > 99 ? '99+' : String(unread);
       els.updatesBadge.hidden = unread < 1;
       if (els.updatesBtn){
@@ -2224,6 +2305,30 @@
       const tags = (item.tags || []).map(tag => String(tag).toLowerCase());
       if (updatesFilter === 'standard-watch') return tags.includes('standards watch');
       return tags.includes(updatesFilter);
+    }
+
+    function updateSearchText(item){
+      return [item.source, item.title, item.summary, item.readerText, ...(item.tags || [])].map(value => String(value || '').toLowerCase()).join(' ');
+    }
+
+    function itemMatchesUpdateSearch(item){
+      const terms = String(updatesSearchTerm || '').toLowerCase().trim().split(/\s+/).filter(Boolean);
+      if (!terms.length) return true;
+      const haystack = updateSearchText(item);
+      return terms.every(term => haystack.includes(term));
+    }
+
+    function updateDateValue(item){
+      const raw = String(item && item.date || '');
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) return 0;
+      const value = new Date(raw + 'T12:00:00').getTime();
+      if (!Number.isFinite(value)) return 0;
+      if (value > Date.now() + 36 * 60 * 60 * 1000) return 0;
+      return value;
+    }
+
+    function compareOfficialItemsNewest(a,b){
+      return updateDateValue(b) - updateDateValue(a) || String(a.source || '').localeCompare(String(b.source || '')) || String(a.title || '').localeCompare(String(b.title || ''));
     }
 
     function renderOfficialUpdates(){
@@ -2253,14 +2358,19 @@
         const changed = (officialUpdates.standardSnapshots || []).filter(row => watchedSet.has(String(row.standard)) && row.changed).length;
         els.standardsMeta.textContent = changed ? changed + ' watched standard' + (changed === 1 ? '' : 's') + ' changed' : 'Watching ' + getWatchedStandards().join(', ');
       }
-      const items = (officialUpdates.items || []).filter(itemMatchesUpdateFilter);
+      if (els.updatesSearchInput && els.updatesSearchInput.value !== updatesSearchTerm) els.updatesSearchInput.value = updatesSearchTerm;
+      if (els.updatesSortSelect) els.updatesSortSelect.value = updatesSort;
+      let items = (officialUpdates.items || []).filter(updateSourceIsEnabled).filter(itemMatchesUpdateFilter).filter(itemMatchesUpdateSearch);
+      items.sort(compareOfficialItemsNewest);
+      if (updatesSort === 'oldest') items.reverse();
       if (!items.length){
-        els.updatesList.innerHTML = '<div class="updatesEmpty">' + (updatesBusy ? 'Checking official sources…' : 'No updates in this filter yet.') + '</div>';
+        els.updatesList.innerHTML = '<div class="updatesEmpty">' + (updatesBusy ? 'Checking official sources…' : (updatesSearchTerm ? 'No updates matched your search.' : 'No updates in this filter yet.')) + '</div>';
         return;
       }
       els.updatesList.innerHTML = items.map(item => {
-        const date = item.date ? new Date(item.date + 'T12:00:00') : null;
-        const dateText = date && !Number.isNaN(date.getTime()) ? date.toLocaleDateString([], { day:'numeric', month:'short' }) : '';
+        const dateValue = updateDateValue(item);
+        const date = dateValue ? new Date(dateValue) : null;
+        const dateText = date ? date.toLocaleDateString([], { day:'numeric', month:'short' }) : '';
         const tags = (item.tags || []).slice(0,4).map(tag => '<span class="updateTag">' + escapeHtml(tag) + '</span>').join('');
         return '<a class="updateItem ' + updateItemClass(item) + (activeUpdateId === item.id ? ' selected' : '') + '" data-update-id="' + escapeHtml(item.id || '') + '" href="' + escapeHtml(item.url || '#') + '">'
           + '<div class="updateItemTop"><div class="updateSource">' + escapeHtml(item.source || 'Official update') + '</div><div class="updateDate">' + escapeHtml(dateText) + '</div></div>'

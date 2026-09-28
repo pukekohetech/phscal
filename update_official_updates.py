@@ -16,7 +16,7 @@ import re
 import sys
 import time
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from html.parser import HTMLParser
 from email.utils import parsedate_to_datetime
 import xml.etree.ElementTree as ET
@@ -520,21 +520,31 @@ def date_from_url(url: str) -> str:
     return ""
 
 
+def publication_date_is_plausible(value: str) -> bool:
+    try:
+        d = datetime.strptime(value, "%Y-%m-%d").date()
+        return d <= datetime.now(timezone.utc).date() + timedelta(days=1)
+    except Exception:
+        return False
+
+
 def item_date(parser: PageParser, url: str) -> str:
+    # Prefer explicit publication metadata. Do not scan the whole article body:
+    # assessment/exam dates inside an article are not publication dates.
     for key in (
         "article:published_time", "date", "datepublished", "publish-date",
         "dc.date", "dcterms.date", "parsely-pub-date",
     ):
         if key in parser.meta:
             parsed = parse_date_text(parser.meta[key])
-            if parsed:
+            if parsed and publication_date_is_plausible(parsed):
                 return parsed
-    for value in parser.times:
+    for value in parser.times[:4]:
         parsed = parse_date_text(value)
-        if parsed:
+        if parsed and publication_date_is_plausible(parsed):
             return parsed
-    parsed = parse_date_text(parser.visible_text[:5000])
-    return parsed or date_from_url(url)
+    parsed = date_from_url(url)
+    return parsed if parsed and publication_date_is_plausible(parsed) else ""
 
 
 GENERIC_PAGE_TITLES = {
@@ -779,6 +789,15 @@ def load_rss_sources() -> list[RssSource]:
     return sources
 
 
+def load_official_source_preferences() -> dict[str, bool]:
+    try:
+        data = json.loads(RSS_CONFIG.read_text(encoding="utf-8"))
+        raw = data.get("officialSources", {}) if isinstance(data, dict) else {}
+    except Exception:
+        raw = {}
+    return {source.name: (raw.get(source.name, True) is not False) for source in SOURCES}
+
+
 def standard_url(standard: str) -> str:
     return "https://www.nzqa.govt.nz/ncea/assessment/view-detailed.do?standardNumber=" + standard
 
@@ -787,13 +806,16 @@ def rss_date(value: str) -> str:
     text = clean_text(value)
     if not text:
         return ""
+    parsed = ""
     try:
         dt = parsedate_to_datetime(text)
         if dt:
-            return dt.date().isoformat()
+            parsed = dt.date().isoformat()
     except Exception:
         pass
-    return parse_date_text(text)
+    if not parsed:
+        parsed = parse_date_text(text)
+    return parsed if parsed and publication_date_is_plausible(parsed) else ""
 
 
 def strip_markup(value: str) -> str:
@@ -980,19 +1002,32 @@ def main() -> int:
     previous = load_previous()
     items = list(previous.get("items", []))
     statuses: list[dict] = []
+    official_source_prefs = load_official_source_preferences()
+    disabled_official_sources = {name for name, enabled in official_source_prefs.items() if not enabled}
+    if disabled_official_sources:
+        items = [item for item in items if item.get("source") not in disabled_official_sources]
     rss_sources = load_rss_sources()
     configured_rss_urls = {source.feed_url for source in rss_sources}
     configured_rss_names = {source.name for source in rss_sources}
+    official_source_names = {source.name for source in SOURCES}
+    previous_rss_names = {
+        str(row.get("name")) for row in previous.get("sources", [])
+        if row.get("name") and str(row.get("name")) not in official_source_names
+    } | {source.name for source in DEFAULT_RSS_SOURCES}
     items = [
         item for item in items
         if not (
-            item.get("sourceType") == "rss" and item.get("feedUrl") not in configured_rss_urls
-        ) and not (
-            item.get("source") == "NCEA on TKI" and "NCEA on TKI" not in configured_rss_names
+            (item.get("sourceType") == "rss" or item.get("feedUrl") or item.get("source") in previous_rss_names)
+            and (item.get("feedUrl") not in configured_rss_urls)
+            and (item.get("source") not in configured_rss_names)
         )
     ]
 
     for source in SOURCES:
+        if not official_source_prefs.get(source.name, True):
+            statuses.append({"name": source.name, "url": source.listing_url, "status": "off"})
+            print(f"{source.name}: disabled")
+            continue
         try:
             fresh = scrape_source(source)
             if not fresh:
@@ -1016,8 +1051,9 @@ def main() -> int:
             print(f"WARN {source.name}: {exc}; keeping previous items", file=sys.stderr)
 
     successful_sources = sum(1 for row in statuses if row.get("status") == "ok")
-    if successful_sources == 0:
-        print("ERROR: none of the official update sources could be refreshed", file=sys.stderr)
+    enabled_source_count = sum(1 for enabled in official_source_prefs.values() if enabled) + len(rss_sources)
+    if successful_sources == 0 and enabled_source_count > 0:
+        print("ERROR: none of the enabled official update sources could be refreshed", file=sys.stderr)
         return 1
 
     standards = load_watch_standards()
@@ -1027,6 +1063,13 @@ def main() -> int:
     for alert in alerts:
         if alert["id"] not in previous_alert_ids:
             items.append(alert)
+
+    # Remove dates accidentally captured from future assessment/exam events.
+    # A publication date cannot be in the future; blank dates sort after dated items.
+    for item in items:
+        raw_date = str(item.get("date", ""))
+        if raw_date and not publication_date_is_plausible(raw_date):
+            item["date"] = ""
 
     # Dedupe and keep newest, prioritising Technology / Standards Watch items on equal dates.
     deduped: dict[str, dict] = {}
