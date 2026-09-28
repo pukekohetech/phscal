@@ -32,7 +32,8 @@ WATCH_CONFIG = ROOT / "standards-watch.json"
 RSS_CONFIG = ROOT / "rss-feeds.json"
 USER_AGENT = "Mozilla/5.0 (compatible; PHS-Calendar-Official-Updates/1.0; +https://pukekohetech.github.io/phscal/)"
 TIMEOUT = 25
-MAX_ITEMS = 70
+DEFAULT_MAX_ITEMS = 20
+DEFAULT_MAX_AGE_DAYS = 60
 
 MONTHS = {
     "january": 1, "february": 2, "march": 3, "april": 4,
@@ -63,7 +64,7 @@ SAFETY_KEYWORDS = {
     "electrical", "guard", "workplace exposure", "working at height", "work-related health", "hswa",
 }
 
-DEFAULT_STANDARD_NUMBERS = ("92012", "92014", "92015", "29655")
+DEFAULT_STANDARD_NUMBERS = ("92012")
 
 
 @dataclass(frozen=True)
@@ -798,6 +799,33 @@ def load_official_source_preferences() -> dict[str, bool]:
     return {source.name: (raw.get(source.name, True) is not False) for source in SOURCES}
 
 
+def load_retention_settings() -> tuple[int, int]:
+    """Return global story retention limits from rss-feeds.json.
+
+    Defaults are 20 stories total and a maximum age of 60 days.
+    Optional config example:
+      "retention": {"maxStories": 20, "maxAgeDays": 60}
+    """
+    try:
+        data = json.loads(RSS_CONFIG.read_text(encoding="utf-8"))
+        raw = data.get("retention", {}) if isinstance(data, dict) else {}
+    except Exception:
+        raw = {}
+
+    try:
+        max_items = int(raw.get("maxStories", DEFAULT_MAX_ITEMS))
+    except Exception:
+        max_items = DEFAULT_MAX_ITEMS
+    try:
+        max_age_days = int(raw.get("maxAgeDays", DEFAULT_MAX_AGE_DAYS))
+    except Exception:
+        max_age_days = DEFAULT_MAX_AGE_DAYS
+
+    max_items = max(1, min(100, max_items))
+    max_age_days = max(1, min(3650, max_age_days))
+    return max_items, max_age_days
+
+
 def standard_url(standard: str) -> str:
     return "https://www.nzqa.govt.nz/ncea/assessment/view-detailed.do?standardNumber=" + standard
 
@@ -995,12 +1023,14 @@ def semantic_payload(data: dict) -> dict:
             {k: row.get(k) for k in ("name", "url", "status")}
             for row in data.get("sources", [])
         ],
+        "retention": data.get("retention", {}),
     }
 
 
 def main() -> int:
     previous = load_previous()
     items = list(previous.get("items", []))
+    max_items, max_age_days = load_retention_settings()
     statuses: list[dict] = []
     official_source_prefs = load_official_source_preferences()
     disabled_official_sources = {name for name, enabled in official_source_prefs.items() if not enabled}
@@ -1071,6 +1101,23 @@ def main() -> int:
         if raw_date and not publication_date_is_plausible(raw_date):
             item["date"] = ""
 
+    # Apply global retention before sorting and capping. Dated stories older
+    # than the configured age are removed. Undated items can remain as a
+    # fallback, but the global story cap still prevents them accumulating.
+    cutoff_date = datetime.now(timezone.utc).date() - timedelta(days=max_age_days)
+    retained_items: list[dict] = []
+    for item in items:
+        raw_date = str(item.get("date", "")).strip()
+        if raw_date:
+            try:
+                published_date = datetime.strptime(raw_date, "%Y-%m-%d").date()
+            except Exception:
+                published_date = None
+            if published_date and published_date < cutoff_date:
+                continue
+        retained_items.append(item)
+    items = retained_items
+
     # Dedupe and keep newest, prioritising Technology / Standards Watch items on equal dates.
     deduped: dict[str, dict] = {}
     for item in items:
@@ -1087,13 +1134,17 @@ def main() -> int:
         ),
         reverse=True,
     )
-    items = items[:MAX_ITEMS]
+    items = items[:max_items]
 
     output = {
         "generatedAt": datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
         "items": items,
         "standardSnapshots": snapshots,
         "sources": statuses,
+        "retention": {
+            "maxStories": max_items,
+            "maxAgeDays": max_age_days,
+        },
     }
 
     if semantic_payload(output) == semantic_payload(previous):
@@ -1101,7 +1152,7 @@ def main() -> int:
         return 0
 
     OUTPUT.write_text(json.dumps(output, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(f"Wrote {OUTPUT.name}: {len(items)} items")
+    print(f"Wrote {OUTPUT.name}: {len(items)} items (max {max_items}, {max_age_days}-day retention)")
     return 0
 
 
