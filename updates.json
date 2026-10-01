@@ -1,6 +1,20 @@
 {
-  "generatedAt": "2026-10-01T06:02:54Z",
+  "generatedAt": "2026-10-01T13:25:16Z",
   "items": [
+    {
+      "id": "standard-92012-43a53f28a593",
+      "source": "NZQA Standards",
+      "title": "NZQA page changed for standard 92012",
+      "date": "2026-10-01",
+      "url": "https://www.nzqa.govt.nz/ncea/assessment/view-detailed.do?standardNumber=92012",
+      "summary": "The public NZQA page for this watched standard changed since the previous check. Open it to review the current standard or supporting materials.",
+      "readerText": "The public NZQA page for this watched standard changed since the previous check. Review the live NZQA page for the current wording, version and supporting materials.",
+      "tags": [
+        "Standards Watch",
+        "Assessment",
+        "Technology"
+      ]
+    },
     {
       "id": "standard-92015-52c8582b4500",
       "source": "NZQA Standards",
@@ -277,8 +291,8 @@
     {
       "standard": "92012",
       "url": "https://www.nzqa.govt.nz/ncea/assessment/view-detailed.do?standardNumber=92012",
-      "fingerprint": "a2e3b474e243602fb5274adc880cf910723bf62d6c7517e1ad1661f41c10d8dc",
-      "changed": false,
+      "fingerprint": "43a53f28a5932de160fb73465c6926e9148806dbdc610ec6c85130e4a311deac",
+      "changed": true,
       "status": "ok"
     }
   ],
