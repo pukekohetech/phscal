@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-01T13:25:16Z",
+  "generatedAt": "2026-10-01T22:44:44Z",
   "items": [
     {
       "id": "standard-92012-43a53f28a593",
@@ -114,6 +114,19 @@
         "Assessment",
         "Technology",
         "Safety"
+      ]
+    },
+    {
+      "id": "ministry-ee58223a2dbf66995f",
+      "source": "Ministry",
+      "title": "Website Blocked",
+      "date": "2026-08-05",
+      "url": "https://www.education.govt.nz/bulletins/te-poutahu-curriculum-centre-school-update/05-08-26",
+      "summary": "The Ministry of Education website is currently undergoing maintenance",
+      "readerText": "The Ministry of Education website is currently undergoing maintenance\n\nWe apologise for any inconvenience caused",
+      "readerHtml": "",
+      "tags": [
+        "Curriculum"
       ]
     },
     {
@@ -272,19 +285,6 @@
         "Assessment",
         "Curriculum"
       ]
-    },
-    {
-      "id": "nzqa-0eae5236ed59a96070",
-      "source": "NZQA",
-      "title": "2026 Examination Timetable dates and intra-year Assessment Timetable - A2025/12",
-      "date": "",
-      "url": "https://www2.nzqa.govt.nz/about-us/publications/newsletters-circulars/assessment-matters/a2025-12/",
-      "summary": "The published end-of-year examination dates for 2026 have been pushed back a week to allow more time for teaching and learning in Term 4, and to enable students to be better prepared for external assessments.",
-      "readerText": "The published end-of-year examination dates for 2026 have been pushed back a week to allow more time for teaching and learning in Term 4, and to enable students to be better prepared for external assessments.\n\nThe 2026 End of Year Examination Timetable for NCEA and New Zealand Scholarship will run from Tuesday 10 November until Friday 4 December 2026. No sessions are scheduled for the following regional anniversary days:\n\nCanterbury Anniversary Day (observed Friday 13 November 2026)\n\nWestland Anniversary Day and Chatham Islands Anniversary Day (observed Monday 30 November 2026).\n\nTe Ao Haka TAPā external assessments have been moved into the end-of-year examination period to allow more time for teaching and learning, and to enable students to be better prepared for the external assessments.\n\nTAPā with dates yet to be confirmed will be published as soon as is practicable.\n\nThe full 2026 examination timetable will be published in early December 2025, following the conclusion of the 2025 examinations.\n\nThe previously published 2026 intra-year assessment dates for Literacy and Numeracy and Te Reo Matatini me te Pāngarau have been changed to avoid clashing with significant events.\n\nPlease refer any enquiries relating to this circular to your School Relationship Manager.",
-      "readerHtml": "<p></p><p><strong>To:</strong></p><ul><li><strong>Principal</strong></li><li><strong>Principal’s Nominee</strong></li><li><strong>All Teachers</strong></li></ul><p>The published end-of-year examination dates for 2026 have been pushed back a week to allow more time for teaching and learning in Term 4, and to enable students to be better prepared for external assessments. </p><p>The 2026 End of Year Examination Timetable for NCEA and New Zealand Scholarship will run from Tuesday 10 November until Friday 4 December 2026. No sessions are scheduled for the following regional anniversary days:</p><ul><li>Canterbury Anniversary Day (observed Friday 13 November 2026)</li><li>Westland Anniversary Day and Chatham Islands Anniversary Day (observed Monday 30 November 2026). </li></ul><p>Te Ao Haka TAPā external assessments have been moved into the end-of-year examination period to allow more time for teaching and learning, and to enable students to be better prepared for the external assessments. </p><p>TAPā with dates yet to be confirmed will be published as soon as is practicable. </p><p>The full 2026 examination timetable will be published in early December 2025, following the conclusion of the 2025 examinations.</p><p>The previously published 2026 intra-year assessment dates for Literacy and Numeracy and Te Reo Matatini me te Pāngarau have been changed to avoid clashing with significant events. </p><p><a href=\"https://www2.nzqa.govt.nz/ncea/exam-timetable-and-key-assessment-dates/exam-timetable/\" target=\"_blank\" rel=\"noopener noreferrer\">Download the updated timetable</a></p><h2>Enquiries</h2><p>Please refer any enquiries relating to this circular to your School Relationship Manager.</p><p>School Relationship Manager</p><p>School Quality Assurance and Support</p><p>Telephone: 04 463 3000</p><p>Email: firstname.lastname@nzqa.govt.nz</p><h3>Find more newsletters and circulars</h3><a href=\"https://www2.nzqa.govt.nz/about-us/publications/newsletters-circulars/\" target=\"_blank\" rel=\"noopener noreferrer\">\n                Go now\n            </a>",
-      "tags": [
-        "Assessment"
-      ]
     }
   ],
   "standardSnapshots": [
@@ -292,7 +292,7 @@
       "standard": "92012",
       "url": "https://www.nzqa.govt.nz/ncea/assessment/view-detailed.do?standardNumber=92012",
       "fingerprint": "43a53f28a5932de160fb73465c6926e9148806dbdc610ec6c85130e4a311deac",
-      "changed": true,
+      "changed": false,
       "status": "ok"
     }
   ],
