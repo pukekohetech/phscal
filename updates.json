@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-21T04:56:33Z",
+  "generatedAt": "2026-10-22T04:56:12Z",
   "items": [
     {
       "id": "standard-92012-43a53f28a593",
@@ -275,7 +275,7 @@
     {
       "name": "NCEA",
       "url": "https://ncea.education.govt.nz/whats-new",
-      "status": "ok"
+      "status": "error"
     },
     {
       "name": "Ministry",
