@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-27T05:12:11Z",
+  "generatedAt": "2026-11-02T06:16:37Z",
   "items": [
     {
       "id": "standard-92012-43a53f28a593",
@@ -263,7 +263,7 @@
       "url": "https://www.nzqa.govt.nz/ncea/assessment/view-detailed.do?standardNumber=92012",
       "fingerprint": "43a53f28a5932de160fb73465c6926e9148806dbdc610ec6c85130e4a311deac",
       "changed": false,
-      "status": "ok"
+      "status": "error"
     }
   ],
   "sources": [
